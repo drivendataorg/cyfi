@@ -4,7 +4,7 @@
 
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 PROJECT_NAME = cyanobacteria-prediction
-PYTHON_VERSION = 3.8
+PYTHON_VERSION = 3.10
 PYTHON_INTERPRETER = python
 
 #################################################################################
@@ -19,7 +19,6 @@ create_environment:
 ## Install Python Dependencies
 requirements:
 	pip install -r requirements_dev.txt
-	nbautoexport install
 
 ## Format using black
 format:
@@ -30,7 +29,7 @@ lint:
 	flake8 cyano tests
 	black --check cyano tests
 
-## Generate assets and run tests
+## Run tests
 test: lint
 	pytest tests -vv
 
