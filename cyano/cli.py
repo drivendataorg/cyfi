@@ -69,7 +69,7 @@ def train(
 
 
 @app.command()
-def predict(sample_list_path: Path, preds_save_path: Path, config: Dict):
+def predict(sample_list_path: Path, preds_save_path: Path, model_dir: Path):
     """Load an existing cyanobacteria prediction model and generate
     severity level predictions for a set of samples.
 
@@ -77,10 +77,13 @@ def predict(sample_list_path: Path, preds_save_path: Path, config: Dict):
         sample_list_path (Path): Path to a csv with columns for date,
             longitude, and latitude
         preds_save_path (Path): Path to save the generated predictions
-        config (Dict): Experiment config
+        model_dir (Path): Directory containing model weights and
+            experiment configuration
     """
-    if config is None:
-        config = DEFAULT_CONFIG
+    ## Load model and experiment config
+    model = CyanoModel.load_model(model_dir)
+    logger.info(f"Loaded model from {model_dir}")
+    config = model.config
 
     ## Load data
     samples = pd.read_csv(sample_list_path)
@@ -89,7 +92,7 @@ def predict(sample_list_path: Path, preds_save_path: Path, config: Dict):
 
     ## Query from feature data sources and save
     satellite_meta = identify_satellite_data(samples, config)
-    save_satellite_to = Path(config["model_dir"]) / "satellite_metadata_predict.csv"
+    save_satellite_to = model_dir / "satellite_metadata_predict.csv"
     satellite_meta.to_csv(save_satellite_to, index=False)
     logger.info(f"Satellite metadata saved to {save_satellite_to}")
     download_satellite_data(satellite_meta, config)
@@ -100,15 +103,11 @@ def predict(sample_list_path: Path, preds_save_path: Path, config: Dict):
 
     ## Generate features
     features = generate_features(samples, config, satellite_meta)
-    save_features_to = Path(config["model_dir"]) / "all_features_predict.csv"
+    save_features_to = model_dir / "all_features_predict.csv"
     features.to_csv(save_features_to, index=True)
     logger.info(
         f"Generated {features.shape[1]:,} features for {features.shape[0]:,} samples. Saved to {save_features_to}"
     )
-
-    ## Load model
-    model = CyanoModel.load_model(config["model_dir"])
-    logger.info(f"Loaded model with config: {model.config}")
 
     ## Predict
     preds = model.predict(features)
