@@ -2,6 +2,19 @@ import pandas as pd
 from pathlib import Path
 
 
+def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
+    """Given a dataframe, create a unique identifier for each row
+    and set as the index
+
+    Args:
+        df (pd.DataFrame): Dataframe
+
+    Returns:
+        pd.DataFrame: Dataframe with unique identifiers as the index
+    """
+    pass
+
+
 def load_sample_list(sample_list_path: Path) -> pd.DataFrame:
     """Load and check dataframe with a list of samples for prediction
 
@@ -27,7 +40,8 @@ def load_sample_list(sample_list_path: Path) -> pd.DataFrame:
     # Clean data
     # - remove duplicates and log
 
-    # Add uid column with unique identifiers
+    # Add unique identifier for each sample
+    samples = add_unique_identifier(samples)
 
     return samples
 
@@ -56,5 +70,8 @@ def load_labels(labels_path: Path) -> pd.DataFrame:
 
     # Clean data
     # - remove duplicates and log
+
+    # Add unique identifier for each sample
+    samples = add_unique_identifier(samples)
 
     return labels

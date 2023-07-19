@@ -41,13 +41,13 @@ def search_planetary_computer(
 def select_items(
     date: Union[str, pd.Timestamp], latitude: float, longitude: float, items: List[pc.Item]
 ) -> List[pc.Item]:
-    """Select which pystac items to include for each sample
+    """Select which pystac items to include for a given sample
 
     Args:
         date (Union[str, pd.Timestamp]): Sample date
         latitude (float): Sample latitude
         longitude (float): Sample longitude
-        items (List[pc.Item]): List of all pystac items returned by the planerary computer
+        items (List[pc.Item]): List of all pystac items returned by the planetary computer
 
     Returns:
         List[pc.Item]: List of pystac items to use when generating features for the sample
@@ -77,7 +77,7 @@ def download_satellite_data(
     days_search_window: int = 15,
     meters_search_window: int = 50000,
 ):
-    """Query the planetary computer for satellite data for a set of sample,
+    """Query the planetary computer for satellite data for a set of samples,
     select which items to include for each sample, and save out the raw results
     for processing.
 

@@ -12,18 +12,18 @@ def generate_climate_features(
     """Generate features from climate data
 
     Args:
-        uids (List[str]): List of unique indices for each sample
+        uids (Union[List[str], pd.Index]): List of unique indices for each sample
         features_dir (Path): Directory with raw climate data
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is
-         one columns for each climate feature
+            one columns for each climate feature
     """
     # Load files
     # - filter to those containing '_climate' in the name or other pattern
     # - identify data for each sample based on uid
 
-    # Generate features
+    # Generate features for each sample
     pass
 
 
@@ -33,18 +33,18 @@ def generate_elevation_features(
     """Generate features from elevation data
 
     Args:
-        uids (List[str]): List of unique indices for each sample
+        uids (Union[List[str], pd.Index]): List of unique indices for each sample
         features_dir (Path): Directory with raw elevation data
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is
-         one columns for each elevation feature
+            one columns for each elevation feature
     """
     # Load files
     # - filter to those containing '_elevation' in the name or other pattern
     # - identify data for each sample based on uid
 
-    # Generate features
+    # Generate features for each sample
     pass
 
 
@@ -54,7 +54,7 @@ def generate_satellite_features(
     """Generate features from satellite data
 
     Args:
-        uids (List[str]): List of unique indices for each sample
+        uids (Union[List[str], pd.Index]): List of unique indices for each sample
         features_dir (Path): Directory with raw satellite data
 
     Returns:
@@ -68,7 +68,7 @@ def generate_satellite_features(
     # - filter based on geographic area
     # - filter based on water boundary
 
-    # Generate features
+    # Generate features for each sample
     pass
 
 
@@ -81,24 +81,24 @@ def generate_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is
-         one columns for each metadata-based feature
+            one columns for each metadata-based feature
     """
     # Pull in any external information needed (eg land use by state)
 
-    # Generate features
+    # Generate features for each sample
     pass
 
 
 def generate_features(df: pd.DataFrame, features_dir: Path) -> pd.DataFrame:
     """Generate a dataframe of features for the given set of samples.
     Requires that the raw satellite, climate, and elevation data for
-    the given samples is already saved in features_dir
+    the given samples are already saved in features_dir
 
     Args:
         df (pd.DataFrame): Dataframe where the index is uid and there are
             columns for date, longitude, and latitude
         features_dir (Path): Directory in which raw satellite, climate,
-            and elevation data for the given samples is saved
+            and elevation data for the given samples are saved
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is one

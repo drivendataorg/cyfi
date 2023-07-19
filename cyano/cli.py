@@ -56,7 +56,8 @@ def train(
 
     ## Train model and save
     logger.info(f"Training model with config: {model.config}")
-    model.train(features)
+    model.train(features, labels)
+
     logger.info(f"Saving model to {model_save_dir}")
     model.save(model_save_dir)
 
