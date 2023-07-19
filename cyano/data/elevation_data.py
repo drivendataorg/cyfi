@@ -30,19 +30,24 @@ def download_sample_elevation(
     pass
 
 
-def download_elevation_data(sample_list: pd.Dataframe, save_dir: Path):
+def download_elevation_data(sample_list: pd.Dataframe, config: Dict):
     """Query Copernicus' DEM elevation database for a list of samples, and
     save out the raw results.
 
     Args:
         sample_list (pd.Dataframe): Dataframe with columns for date,
             longitude, latitude, and uid
-        save_dir (Path): Directory in which to save raw elevation data
+        config (Dict): Experiment configuration, including directory to save
+            raw source data
     """
     logger.info(f"Querying elevation data for {sample_list.shape[0]:,} samples")
 
     # Iterate over samples (parallelize later)
     for sample in tqdm(sample_list.itertuples()):
         download_sample_elevation(
-            sample.Index, sample.date, sample.latitude, sample.longitude, save_dir=save_dir
+            sample.Index,
+            sample.date,
+            sample.latitude,
+            sample.longitude,
+            save_dir=config["features_dir"],
         )

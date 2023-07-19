@@ -1,19 +1,46 @@
 ## Code to generate features from raw downloaded source data
-from typing import List, Union
+from typing import Dict, List, Union
 
 from loguru import logger
 import pandas as pd
 from pathlib import Path
 
 
-def generate_climate_features(
-    uids: Union[List[str], pd.Index], features_dir: Path
+def generate_satellite_features(
+    uids: Union[List[str], pd.Index], config: Dict, satellite_meta: pd.DataFrame
 ) -> pd.DataFrame:
+    """Generate features from satellite data
+
+    Args:
+        uids (Union[List[str], pd.Index]): List of unique indices for each sample
+        config (Dict): Experiment configuration, including directory where raw
+            source data is saved
+        satellite_meta (pd.DataFrame): Dataframe of metadata for the pystac items
+            that will be used when generating features, including a columnmapping
+            each sample ID to the relevant pystac item(s)
+
+    Returns:
+        pd.DataFrame: Dataframe where the index is uid and there is
+            one columns for each satellite feature
+    """
+    # Load files
+    # - identify data for each sample based satellite meta
+
+    # Process data
+    # - filter based on geographic area
+    # - filter based on water boundary
+
+    # Generate features for each sample
+    pass
+
+
+def generate_climate_features(uids: Union[List[str], pd.Index], config: Dict) -> pd.DataFrame:
     """Generate features from climate data
 
     Args:
         uids (Union[List[str], pd.Index]): List of unique indices for each sample
-        features_dir (Path): Directory with raw climate data
+        config (Dict): Experiment configuration, including directory where raw
+            source data is saved
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is
@@ -27,14 +54,13 @@ def generate_climate_features(
     pass
 
 
-def generate_elevation_features(
-    uids: Union[List[str], pd.Index], features_dir: Path
-) -> pd.DataFrame:
+def generate_elevation_features(uids: Union[List[str], pd.Index], config: Dict) -> pd.DataFrame:
     """Generate features from elevation data
 
     Args:
         uids (Union[List[str], pd.Index]): List of unique indices for each sample
-        features_dir (Path): Directory with raw elevation data
+        config (Dict): Experiment configuration, including directory where raw
+            source data is saved
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is
@@ -43,30 +69,6 @@ def generate_elevation_features(
     # Load files
     # - filter to those containing '_elevation' in the name or other pattern
     # - identify data for each sample based on uid
-
-    # Generate features for each sample
-    pass
-
-
-def generate_satellite_features(
-    uids: Union[List[str], pd.Index], features_dir: Path
-) -> pd.DataFrame:
-    """Generate features from satellite data
-
-    Args:
-        uids (Union[List[str], pd.Index]): List of unique indices for each sample
-        features_dir (Path): Directory with raw satellite data
-
-    Returns:
-        pd.DataFrame: Dataframe where the index is uid and there is
-         one columns for each satellite feature
-    """
-    # Load files
-    # - identify data for each sample based on uid
-
-    # Process data
-    # - filter based on geographic area
-    # - filter based on water boundary
 
     # Generate features for each sample
     pass
@@ -89,7 +91,9 @@ def generate_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
     pass
 
 
-def generate_features(df: pd.DataFrame, features_dir: Path) -> pd.DataFrame:
+def generate_features(
+    df: pd.DataFrame, config: Dict, satellite_meta: pd.DataFrame
+) -> pd.DataFrame:
     """Generate a dataframe of features for the given set of samples.
     Requires that the raw satellite, climate, and elevation data for
     the given samples are already saved in features_dir
@@ -97,17 +101,20 @@ def generate_features(df: pd.DataFrame, features_dir: Path) -> pd.DataFrame:
     Args:
         df (pd.DataFrame): Dataframe where the index is uid and there are
             columns for date, longitude, and latitude
-        features_dir (Path): Directory in which raw satellite, climate,
-            and elevation data for the given samples are saved
+        config (Dict): Experiment configuration, including directory where raw
+            source data is saved
+        satellite_meta (pd.DataFrame): Dataframe of metadata for the pystac items
+            that will be used when generating features, including a columnmapping
+            each sample ID to the relevant pystac item(s)
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is one
             column for each feature
     """
     uids = df.index
-    satellite_features = generate_satellite_features(uids, features_dir)
-    climate_features = generate_climate_features(uids, features_dir)
-    elevation_features = generate_elevation_features(uids, features_dir)
+    satellite_features = generate_satellite_features(uids, config, satellite_meta)
+    climate_features = generate_climate_features(uids, config)
+    elevation_features = generate_elevation_features(uids, config)
     metadata_features = generate_metadata_features(df)
 
     logstr = (

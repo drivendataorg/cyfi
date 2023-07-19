@@ -5,7 +5,7 @@ import pandas as pd
 from pathlib import Path
 
 
-class EnsembledModel:
+class CyanoModel:
     def __init__(self, config: Dict):
         """Instantiate ensembled cyanobacteria prediction model
 
@@ -15,17 +15,17 @@ class EnsembledModel:
         self.config = config
 
     @classmethod
-    def load_model(cls, model_weights_dir: Path) -> "EnsembledModel":
+    def load_model(cls, model_dir: Path) -> "CyanoModel":
         """Load an ensembled model from existing weights
 
         Args:
-            model_weights_dir (Path): Directory containing all model weights
-                and a hyperparameter configuration
+            model_dir (Path): Directory containing all model weights
+                and a configuration
 
         Returns:
             EnsembledModel
         """
-        # Load hyperparameter config from model weights dir
+        # Load config from model dir
         # Instantiate class
         # Load in existing weights
         pass

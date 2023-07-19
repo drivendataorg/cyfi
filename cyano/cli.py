@@ -1,16 +1,17 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from loguru import logger
+import pandas as pd
 from pathlib import Path
 import typer
 
 from cyano.data.climate_data import download_climate_data
 from cyano.data.elevation_data import download_elevation_data
 from cyano.data.features import generate_features
-from cyano.data.satellite_data import download_satellite_data
-from cyano.data.utils import load_sample_list, load_labels
-from cyano.models.utils import EnsembledModel
-from cyano.settings import MODEL_WEIGHTS_DIR, DEFAULT_TMP_FEATURES_DIR
+from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
+from cyano.data.utils import add_unique_identifier
+from cyano.models.cyano_model import CyanoModel
+from cyano.settings import DEFAULT_CONFIG
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -18,57 +19,57 @@ app = typer.Typer(pretty_exceptions_show_locals=False)
 @app.command()
 def train(
     labels_path: Path,
-    model_config: Dict,
-    model_save_dir: Path,
-    prediction_col: str = "severity",
-    features_dir: Path = DEFAULT_TMP_FEATURES_DIR,
+    config: Optional[Dict] = None,
 ):
     """Train a cyanobacteria prediction model
 
     Args:
         labels_path (Path): Path to a csv with columns for date,
             longitude, latitude, and severity
-        model_config (Dict): Model hyperparameters
-        model_save_dir (Path): Directory to save the trained model
-        prediction_col (str, optional): Target column in the labels dataframe.
-            Defaults to "severity".
-        features_dir (Path, optional): Directory to save interim raw
-            data from satellite, climate, and elevation sources. Defaults to
-            DEFAULT_TMP_FEATURES_DIR
+        config (Dict): Experiment config
     """
+    if config is None:
+        config = DEFAULT_CONFIG
+
     ## Load labels
-    labels = load_labels(labels_path)
+    labels = pd.read_csv(labels_path)
+    labels = add_unique_identifier(labels)
     logger.info(f"Loaded {labels.shape[0]:,} samples for training")
 
-    ## Generate features for labeled samples
-    samples = labels.drop(columns=[prediction_col])
+    ## Query from feature data sources and save
+    samples = labels[["date", "latitude", "longitude"]]
 
-    download_satellite_data(samples, features_dir=features_dir)
-    download_climate_data(samples, features_dir=features_dir)
-    download_elevation_data(samples, features_dir=features_dir)
-    logger.success(f"Raw source data saved to {features_dir}")
+    satellite_meta = identify_satellite_data(samples, config)
+    save_satellite_to = Path(config["model_dir"]) / "satellite_metadata_train.csv"
+    satellite_meta.to_csv(save_satellite_to, index=False)
+    logger.info(f"Satellite metadata saved to {save_satellite_to}")
+    download_satellite_data(satellite_meta, config)
 
-    features = generate_features(samples, features_dir)
-    logger.info(f"Generated {features.shape[1]:,} features for {features.shape[0]:,} samples")
+    download_climate_data(samples, config)
+    download_elevation_data(samples, config)
+    logger.success(f"Raw source data saved to {config['features_dir']}")
+
+    ## Generate features
+    features = generate_features(samples, config, satellite_meta)
+    save_features_to = Path(config["model_dir"]) / "all_features_train.csv"
+    features.to_csv(save_features_to, index=True)
+    logger.info(
+        f"Generated {features.shape[1]:,} features for {features.shape[0]:,} samples. Saved to {save_features_to}"
+    )
 
     ## Instantiate model
-    model = EnsembledModel(model_config)
+    model = CyanoModel(config)
 
     ## Train model and save
     logger.info(f"Training model with config: {model.config}")
     model.train(features, labels)
 
-    logger.info(f"Saving model to {model_save_dir}")
-    model.save(model_save_dir)
+    logger.info(f"Saving model to {config['model_dir']}")
+    model.save(config["model_dir"])
 
 
 @app.command()
-def predict(
-    sample_list_path: Path,
-    preds_save_path: Path,
-    features_dir: Path = DEFAULT_TMP_FEATURES_DIR,
-    model_weights_dir: Path = MODEL_WEIGHTS_DIR,
-):
+def predict(sample_list_path: Path, preds_save_path: Path, config: Dict):
     """Load an existing cyanobacteria prediction model and generate
     severity level predictions for a set of samples.
 
@@ -76,34 +77,43 @@ def predict(
         sample_list_path (Path): Path to a csv with columns for date,
             longitude, and latitude
         preds_save_path (Path): Path to save the generated predictions
-        features_dir (Path, optional): Directory to save interim raw
-            data from satellite, climate, and elevation sources. Defaults to
-            DEFAULT_TMP_FEATURES_DIR
-        model_weights_dir (Path, optional): Directory with existing model
-            weights and configuration to load. Defaults to MODEL_WEIGHTS_DIR
+        config (Dict): Experiment config
     """
+    if config is None:
+        config = DEFAULT_CONFIG
+
     ## Load data
-    samples = load_sample_list(sample_list_path)
+    samples = pd.read_csv(sample_list_path)
+    samples = add_unique_identifier(samples)
     logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
 
-    ## Query for from data sources and save
-    download_satellite_data(samples, features_dir=features_dir)
-    download_climate_data(samples, features_dir=features_dir)
-    download_elevation_data(samples, features_dir=features_dir)
-    logger.success(f"Raw source data saved to {features_dir}")
+    ## Query from feature data sources and save
+    satellite_meta = identify_satellite_data(samples, config)
+    save_satellite_to = Path(config["model_dir"]) / "satellite_metadata_predict.csv"
+    satellite_meta.to_csv(save_satellite_to, index=False)
+    logger.info(f"Satellite metadata saved to {save_satellite_to}")
+    download_satellite_data(satellite_meta, config)
+
+    download_climate_data(samples, config)
+    download_elevation_data(samples, config)
+    logger.success(f"Raw source data saved to {config['features_dir']}")
 
     ## Generate features
-    features = generate_features(samples, features_dir)
-    logger.info(f"Generated {features.shape[1]:,} features for {features.shape[0]:,} samples")
+    features = generate_features(samples, config, satellite_meta)
+    save_features_to = Path(config["model_dir"]) / "all_features_predict.csv"
+    features.to_csv(save_features_to, index=True)
+    logger.info(
+        f"Generated {features.shape[1]:,} features for {features.shape[0]:,} samples. Saved to {save_features_to}"
+    )
 
     ## Load model
-    model = EnsembledModel.load_model(model_weights_dir)
+    model = CyanoModel.load_model(config["model_dir"])
     logger.info(f"Loaded model with config: {model.config}")
 
     ## Predict
     preds = model.predict(features)
-
-    preds.to_csv(preds_save_path)
+    preds = preds.join(samples)  # Add sample info
+    preds.to_csv(preds_save_path, index=True)
     logger.success(f"Predictions saved to {preds_save_path}")
 
 
