@@ -1,6 +1,7 @@
 ## Code to generate features from raw downloaded source data
 from typing import List, Union
 
+from loguru import logger
 import pandas as pd
 from pathlib import Path
 
@@ -108,6 +109,14 @@ def generate_features(df: pd.DataFrame, features_dir: Path) -> pd.DataFrame:
     climate_features = generate_climate_features(uids, features_dir)
     elevation_features = generate_elevation_features(uids, features_dir)
     metadata_features = generate_metadata_features(df)
+
+    logstr = (
+        f"Features generated: {satellite_features.shape[0]} satellite, "
+        f"{climate_features.shape[0]} climate, "
+        f"{elevation_features.shape[0]} elevation, "
+        f"and {metadata_features.shape[0]} metadata."
+    )
+    logger.info(logstr)
 
     features = pd.concat(
         [

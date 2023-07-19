@@ -53,12 +53,12 @@ def train(
 
     ## Instantiate model
     model = EnsembledModel(model_config)
-    logger.info(f"Instantiated model with config: {model.config}")
 
     ## Train model and save
+    logger.info(f"Training model with config: {model.config}")
     model.train(features)
+    logger.info(f"Saving model to {model_save_dir}")
     model.save(model_save_dir)
-    logger.success(f"Trained model saved to {model_save_dir}")
 
 
 @app.command()

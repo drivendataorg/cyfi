@@ -30,6 +30,11 @@ def search_planetary_computer(
     Returns:
         List[pc.Item]: List of all pystac items returned
     """
+    # Define time search string
+
+    # Generating search bounding box
+
+    # Search planetary computer
     pass
 
 
@@ -47,6 +52,9 @@ def select_items(
     Returns:
         List[pc.Item]: List of pystac items to use when generating features for the sample
     """
+    # Filter to items containing the sample point
+
+    # Sort the possible items and determine which to select
     pass
 
 
