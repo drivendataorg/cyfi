@@ -3,4 +3,6 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parents[1].resolve()
 
-PRODUCTION_MODEL_DIR = "Path/to/production/model/weights"
+NUM_THREADS = 4
+MODEL_WEIGHTS_DIR = "Path/to/model/weights"
+DEFAULT_TMP_FEATURES_DIR = "Path/to/default/tmp/dir/for/source/data"

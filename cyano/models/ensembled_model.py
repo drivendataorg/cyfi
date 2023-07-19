@@ -30,6 +30,10 @@ class EnsembledModel:
         # Load in existing weights
         pass
 
+    def save(cls, save_dir: Path):
+        """Save model weights and config to save_dir"""
+        pass
+
     def train(self, features: pd.DataFrame, labels: pd.DataFrame):
         """Train an ensembled cyanobacteria prediction model
 
