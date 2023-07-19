@@ -80,9 +80,9 @@ def identify_satellite_data(samples, config):
             sample.date,
             sample.latitude,
             sample.longitude,
-            collections=config["collections"],
-            days_search_window=config["days_search_window"],
-            meters_search_window=config["meters_search_window"],
+            collections=config["pc_collections"],
+            days_search_window=config["pc_days_search_window"],
+            meters_search_window=config["pc_meters_search_window"],
         )
 
         # Select items from results
