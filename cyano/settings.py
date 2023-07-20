@@ -10,3 +10,9 @@ DEFAULT_CONFIG = {
     "pc_days_search_window": 15,
     "pc_meters_search_window": 50000,
 }
+
+EXP_CONFIG = {
+    "pc_collections": ["sentinel-2-l2a"],
+    "pc_days_search_window": 30,
+    "pc_meters_search_window": 1000,
+}

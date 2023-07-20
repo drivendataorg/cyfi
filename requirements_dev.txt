@@ -1,0 +1,16 @@
+-e .
+
+cloudpathlib[s3]>=0.4.1
+faker
+geopandas
+geopy
+lightgbm
+loguru
+numpy
+odc-stac
+pandas
+pathlib
+planetary-computer
+pystac
+pystac-client
+tqdm
