@@ -6,6 +6,7 @@ geopandas
 geopy
 lightgbm
 loguru
+matplotlib
 numpy
 odc-stac
 pandas
@@ -13,4 +14,5 @@ pathlib
 planetary-computer
 pystac
 pystac-client
+rioxarray
 tqdm
