@@ -87,18 +87,19 @@ def search_planetary_computer(
 def get_items_metadata(
     search_results: ItemSearch, latitude: float, longitude: float, config: Dict
 ) -> pd.DataFrame:
-    """Get item metadata for a list of pystac items, including all information
-    needed to select items for feature generation as well as the hrefs to
-    download all relevant bands.
+    """Get item metadata for a list of pystac items returned for a given sample,
+    including all information needed to select items for feature generation as
+    well as the hrefs to download all relevant bands.
 
     Args:
-        search_results (ItemSearch): _description_
-        latitude (float): _description_
-        longitude (float): _description_
-        config (Dict): _description_
+        search_results (ItemSearch): Result of searching the planetary computer
+            for the given item
+        latitude (float): Sample latitude
+        longitude (float): Sample longitude
+        config (Dict): Experiment configuration
 
     Returns:
-        pd.DataFrame: _description_
+        pd.DataFrame: Item metadata
     """
     # Get metadata from pystac items
     items_meta = []
@@ -134,35 +135,31 @@ def get_items_metadata(
 
 def select_items(
     items_meta: pd.DataFrame,
-    date: Union[str, pd.Timestamp],
 ) -> List[str]:
     """Select which pystac items to include for a given sample
 
     Args:
         item_meta (pd.DataFrame): Dataframe with metadata about all possible
             pystac items to include for the given sample
-        date (Union[str, pd.Timestamp]): Sample date
 
     Returns:
         List[str]: List of the pystac items IDs for the selected items
     """
     # Select least cloudy item
-    # items_meta.datetime = pd.to_datetime(items_meta.datetime)
-    # items_meta["time_diff"] = np.abs(items_meta.datetime - pd.to_datetime(date))
-    # closest_time = items_meta.sort_values(by="time_diff").iloc[0].item_id
     least_cloudy = items_meta.sort_values(by="cloud_cover").iloc[0].item_id
 
     return [least_cloudy]
-    # return set([closest_time, least_cloudy])
 
 
-def download_band(href: str, save_path: Path, bounding_box):
+def download_band(href: str, save_path: Path, bounding_box: List[float]):
     """Download the geotiff for one band of a given pystac item
     based on the band's href, if the file does not already exist
 
     Args:
-        href (str): _description_
-        save_path (Path): _description_
+        href (str): Link to the asset for the given band
+        save_path (Path): Path to save the asset as a numpy array
+        bounding_box (List[float]): Area of the image to save, in the
+            format (minx, miny, maxx, maxy)
     """
 
     if save_path.exists():
@@ -187,19 +184,21 @@ def download_band(href: str, save_path: Path, bounding_box):
 
 
 def identify_satellite_data(samples: pd.DataFrame, config: Dict):
-    """_summary_
+    """Identify all pystac items to be used during feature
+    generation for a given set of samples
 
     Args:
-        samples (pd.DataFrame): _description_
-        config (Dict): _description_
+        samples (pd.DataFrame): Dataframe where the index is uid and
+            there are columns for date, longitude, and latitude
+        config (Dict): Experiment config
 
     Returns:
         pd.DataFrame: Each row is a unique combination of sample ID
-            and pystac item id
+            and pystac item id. The 'selected' column indicates
+            which will be used in feature generation
     """
     save_dir = Path(config["features_dir"]) / "satellite"
     save_dir.mkdir(exist_ok=True, parents=True)
-    logger.info(f"Saving pystac items to {save_dir}")
     logger.info(
         f"Searching {config['pc_collections']} within {config['pc_days_search_window']} days and {config['pc_meters_search_window']} meters"
     )
@@ -238,23 +237,21 @@ def identify_satellite_data(samples: pd.DataFrame, config: Dict):
 
 
 def download_satellite_data(satellite_meta: pd.DataFrame, samples: pd.DataFrame, config: Dict):
-    """_summary_
+    """Download satellite images as numpy arrays
 
     Args:
-        satellite_meta (pd.DataFrame): Each row is unique combo of satellite item ID and sample ID
-        samples (pd.DataFrame): _description_
-        config (Dict): _description_
-
-    Raises:
-        ValueError: _description_
+        satellite_meta (pd.DataFrame): Dataframe of satellite metadata
+            indicating which pystac item(s) will be used in feature
+            generation for each sample
+        samples (pd.DataFrame): Dataframe where the index is uid and
+            there are columns for date, longitude, and latitude
+        config (Dict): Experiment config
     """
     # Filter to images selected for feature generation
     selected = satellite_meta[satellite_meta.selected]
 
     # Iterate over all rows (item / sample combos)
-    logger.info(
-        f"Downloading bands {config['use_sentinel_bands']} for {selected.shape[0]:,} items"
-    )
+    logger.info(f"Downloading bands {config['use_sentinel_bands']}")
     for _, download_row in tqdm(selected.iterrows(), total=len(selected)):
         sample_row = samples.loc[download_row.sample_id]
         sample_dir = Path(config["features_dir"]) / f"satellite/{download_row.sample_id}"
@@ -267,5 +264,3 @@ def download_satellite_data(satellite_meta: pd.DataFrame, samples: pd.DataFrame,
         for band in config["use_sentinel_bands"]:
             band_save_path = sample_dir / f"{download_row.item_id}_{band}.npy"
             download_band(download_row[f"{band}_href"], band_save_path, save_bbox)
-
-        pass

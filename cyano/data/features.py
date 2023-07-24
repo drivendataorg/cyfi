@@ -15,13 +15,10 @@ def generate_satellite_features(uids: Union[List[str], pd.Index], config: Dict) 
         uids (Union[List[str], pd.Index]): List of unique indices for each sample
         config (Dict): Experiment configuration, including directory where raw
             source data is saved
-        satellite_meta (pd.DataFrame): Dataframe of metadata for the pystac items
-            that will be used when generating features, including a column mapping
-            each sample ID to the relevant pystac item(s)
 
     Returns:
-        pd.DataFrame: Dataframe where the index is uid and there is
-            one columns for each satellite feature
+        pd.DataFrame: Dataframe where the index is uid and there is one column
+            for each satellite feature
     """
     logger.info(f"Generating features for {len(uids):,} samples")
     satellite_features_dict = {}
@@ -132,9 +129,6 @@ def generate_features(samples: pd.DataFrame, config: Dict) -> pd.DataFrame:
             columns for date, longitude, and latitude
         config (Dict): Experiment configuration, including directory where raw
             source data is saved
-        satellite_meta (pd.DataFrame): Dataframe of metadata for the pystac items
-            that will be used when generating features, including a columnmapping
-            each sample ID to the relevant pystac item(s)
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is one
@@ -144,7 +138,7 @@ def generate_features(samples: pd.DataFrame, config: Dict) -> pd.DataFrame:
     all_features = []
     satellite_features = generate_satellite_features(uids, config)
     all_features.append(satellite_features.loc[uids])
-    logger.info(f"Generated {satellite_features.shape[0]} satellite features")
+    logger.info(f"Generated {satellite_features.shape[1]} satellite features")
     if config["climate_features"]:
         climate_features = generate_climate_features(uids, config)
         all_features.append(climate_features.loc[uids])

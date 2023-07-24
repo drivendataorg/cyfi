@@ -7,18 +7,7 @@ from loguru import logger
 import pandas as pd
 from pathlib import Path
 
-DEFAULT_LGB_PARAMS = {
-    "application": "regression",
-    "boosting": "gbdt",
-    "metric": "rmse",
-    "learning_rate": 0.005,
-    "bagging_fraction": 0.3,
-    "feature_fraction": 0.3,
-    "min_split_gain": 0.1,
-    "verbosity": -1,
-    "data_random_seed": 2023,
-    "early_stop": 500,
-}
+from cyano.settings import DEFAULT_LGB_PARAMS
 
 
 class CyanoModel:
@@ -26,7 +15,9 @@ class CyanoModel:
         """Instantiate ensembled cyanobacteria prediction model
 
         Args:
-            config (Dict): Model hyperparameters
+            config (Dict): Experiment config
+            lgb_model (Optional[lgb.Booster]): LightGBM Booster model,
+                if it already exists. Defaults to None.
         """
         self.config = config
         lgb_params = DEFAULT_LGB_PARAMS.copy()
@@ -35,12 +26,12 @@ class CyanoModel:
         self.lgb_model = lgb_model
 
     @classmethod
-    def load_lgb_model(cls, model_dir: Path) -> "CyanoModel":
+    def load_model(cls, model_dir: Path) -> "CyanoModel":
         """Load an ensembled model from existing weights
 
         Args:
             model_dir (Path): Directory containing all model weights
-                and a configuration
+                and an experiment configuration
 
         Returns:
             CyanoModel
@@ -56,7 +47,7 @@ class CyanoModel:
         return cls(config=config, lgb_model=lgb_model)
 
     def save(self, save_dir: Path):
-        """Save model weights and config"""
+        """Save model weights and config to save_dir"""
         Path(save_dir).mkdir(exist_ok=True, parents=True)
 
         # Save model
@@ -68,13 +59,13 @@ class CyanoModel:
 
         logger.success(f"Model and config saved to {save_dir}")
 
-    def train(self, features: pd.DataFrame, labels: pd.DataFrame):
-        """Train an ensembled cyanobacteria prediction model
+    def train(self, features: pd.DataFrame, labels: pd.Series):
+        """Train a cyanobacteria prediction model
 
         Args:
             features (pd.DataFrame): DataFrame where the index is uid
                 and there is one column for each feature
-            labels (pd.DataFrame): DataFrame where the index is uid
+            labels (pd.Series): DataFrame where the index is uid
                 and there is one column for `severity`
         """
         lgb_train = lgb.Dataset(features, label=labels.loc[features.index])

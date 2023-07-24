@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Dict, Union
 
 from loguru import logger
 import pandas as pd
@@ -30,7 +30,7 @@ def download_sample_elevation(
     pass
 
 
-def download_elevation_data(sample_list: pd.Dataframe, config: Dict):
+def download_elevation_data(sample_list: pd.DataFrame, config: Dict):
     """Query Copernicus' DEM elevation database for a list of samples, and
     save out the raw results.
 

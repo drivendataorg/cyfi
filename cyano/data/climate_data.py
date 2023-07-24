@@ -30,7 +30,7 @@ def download_sample_climate(
     pass
 
 
-def download_climate_data(sample_list: pd.Dataframe, config: Dict):
+def download_climate_data(sample_list: pd.DataFrame, config: Dict):
     """Query NOAA's HRRR database for a list of samples, and save out
     the raw results.
 

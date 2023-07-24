@@ -16,3 +16,4 @@ pystac
 pystac-client
 rioxarray
 tqdm
+typer
