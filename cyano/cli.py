@@ -53,8 +53,8 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     ## Load labels
     labels = add_unique_identifier(labels)
     if debug:
-        data = data.head(10)
-    logger.info(f"Loaded {data.shape[0]:,} samples for training")
+        labels = labels.head(10)
+    logger.info(f"Loaded {labels.shape[0]:,} samples for training")
 
     ## Query from feature data sources and save
     samples = labels[["date", "latitude", "longitude"]]
@@ -73,7 +73,7 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
 
     ## Generate features
     features = generate_features(samples, config)
-    save_features_to = Path(config["model_dir"]) / "all_features_train.csv"
+    save_features_to = Path(config["model_dir"]) / "features_train.csv"
     features.to_csv(save_features_to, index=True)
     logger.success(
         f"Generated {features.shape[1]:,} features for {features.shape[0]:,} samples. Saved to {save_features_to}"
@@ -89,13 +89,14 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     logger.info(f"Saving model to {config['model_dir']}")
     model.save(config["model_dir"])
 
+    return model
+
 
 @app.command()
 def predict(
-    samples_path: Path,
-    #   = typer.Argument(
-    #     exists=True, help="Path to a csv of samples with columns for date, longitude, and latitude"
-    # ),
+    samples_path: Path = typer.Argument(
+        exists=True, help="Path to a csv of samples with columns for date, longitude, and latitude"
+    ),
     model_dir: Path = typer.Argument(
         exists=True, help="Path to directory with saved model weights and config"
     ),
@@ -151,7 +152,7 @@ def predict_model(
 
     ## Generate features
     features = generate_features(samples, config)
-    save_features_to = model_dir / "all_features_predict.csv"
+    save_features_to = model_dir / "features_predict.csv"
     features.to_csv(save_features_to, index=True)
     logger.info(
         f"Generated {features.shape[1]:,} features for {features.shape[0]:,} samples. Saved to {save_features_to}"
@@ -162,6 +163,8 @@ def predict_model(
     samples["predicted_severity"] = preds.loc[samples.index]
     samples.to_csv(preds_save_path, index=True)
     logger.success(f"Predictions saved to {preds_save_path}")
+
+    return samples
 
 
 if __name__ == "__main__":

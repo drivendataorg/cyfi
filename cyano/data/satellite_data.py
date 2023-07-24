@@ -225,7 +225,7 @@ def identify_satellite_data(samples: pd.DataFrame, config: Dict):
             continue
 
         # Select items to use for features
-        selected_ids = select_items(sample_items_meta, sample.date)
+        selected_ids = select_items(sample_items_meta)
         sample_items_meta["selected"] = sample_items_meta.item_id.isin(selected_ids)
         sample_items_meta["sample_id"] = sample.Index
         satellite_meta.append(sample_items_meta)
