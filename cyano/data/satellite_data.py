@@ -9,6 +9,7 @@ from pathlib import Path
 import planetary_computer as pc
 import pystac
 from pystac_client import Client, ItemSearch
+import rioxarray
 from tqdm import tqdm
 
 # Establish a connection to the STAC API
@@ -17,14 +18,14 @@ catalog = Client.open(
 )
 
 
-def get_bounding_box(latitude: float, longitude: float, meters_search_window: int) -> List[float]:
+def get_bounding_box(latitude: float, longitude: float, meters_window: int) -> List[float]:
     """
     Given a latitude, longitude, and buffer in meters, returns a bounding
     box around the point with the buffer on the left, right, top, and bottom.
 
     Returns a list of [minx, miny, maxx, maxy]
     """
-    distance_search = distance.distance(meters=meters_search_window)
+    distance_search = distance.distance(meters=meters_window)
 
     # calculate the lat/long bounds based on ground distance
     # bearings are cardinal directions to move (south, west, north, and east)
@@ -71,9 +72,7 @@ def search_planetary_computer(
             sample location when searching for imagery
 
     Returns:
-        pd.DataFrame: List of metadata about each pystac item for filtering,
-            including a unique item identifier and a URL column that can
-            be used to download the item
+        ItemSearch: Search results
     """
     # Define search query parameters
     bbox = get_bounding_box(latitude, longitude, meters_search_window)
@@ -86,13 +85,26 @@ def search_planetary_computer(
 
 
 def get_items_metadata(
-    search_results: ItemSearch, latitude: float, longitude: float
+    search_results: ItemSearch, latitude: float, longitude: float, config: Dict
 ) -> pd.DataFrame:
+    """Get item metadata for a list of pystac items, including all information
+    needed to select items for feature generation as well as the hrefs to
+    download all relevant bands.
+
+    Args:
+        search_results (ItemSearch): _description_
+        latitude (float): _description_
+        longitude (float): _description_
+        config (Dict): _description_
+
+    Returns:
+        pd.DataFrame: _description_
+    """
     # Get metadata from pystac items
     items_meta = []
     for item in search_results.item_collection():
         item_meta = {
-            "id": item.id,
+            "item_id": item.id,
             "datetime": item.datetime.strftime("%Y-%m-%d"),
             "min_long": item.bbox[0],
             "max_long": item.bbox[2],
@@ -101,6 +113,9 @@ def get_items_metadata(
         }
         if "eo:cloud_cover" in item.properties:
             item_meta.update({"cloud_cover": item.properties["eo:cloud_cover"]})
+        # Add links to download each band needed for features
+        for band in config["use_sentinel_bands"]:
+            item_meta.update({f"{band}_href": item.assets[band].href})
         items_meta.append(item_meta)
     items_meta = pd.DataFrame(items_meta)
     if len(items_meta) == 0:
@@ -127,30 +142,61 @@ def select_items(
         item_meta (pd.DataFrame): Dataframe with metadata about all possible
             pystac items to include for the given sample
         date (Union[str, pd.Timestamp]): Sample date
-        latitude (float): Sample latitude
-        longitude (float): Sample longitude
 
     Returns:
-        pd.DataFrame: Dataframe of metadata for the pystac items that will be
-            used when generating features for the sample
+        List[str]: List of the pystac items IDs for the selected items
     """
-    # Select closest in time and least cloudy
-    items_meta.datetime = pd.to_datetime(items_meta.datetime)
-    items_meta["time_diff"] = np.abs(items_meta.datetime - pd.to_datetime(date))
-    closest_time = items_meta.sort_values(by="time_diff").iloc[0].id
-    least_cloudy = items_meta.sort_values(by="cloud_cover").iloc[0].id
+    # Select least cloudy item
+    # items_meta.datetime = pd.to_datetime(items_meta.datetime)
+    # items_meta["time_diff"] = np.abs(items_meta.datetime - pd.to_datetime(date))
+    # closest_time = items_meta.sort_values(by="time_diff").iloc[0].item_id
+    least_cloudy = items_meta.sort_values(by="cloud_cover").iloc[0].item_id
 
-    return set([closest_time, least_cloudy])
-
-
-def download_item(item: pystac.Item, save_dir: Path):
-    item_save_path = save_dir / item.id
-    if not item_save_path.exists():
-        item.save_object(dest_href=item_save_path)
-    pass
+    return [least_cloudy]
+    # return set([closest_time, least_cloudy])
 
 
-def download_satellite_data(samples, config: Dict):
+def download_band(href: str, save_path: Path, bounding_box):
+    """Download the geotiff for one band of a given pystac item
+    based on the band's href, if the file does not already exist
+
+    Args:
+        href (str): _description_
+        save_path (Path): _description_
+    """
+
+    if save_path.exists():
+        return
+
+    # Get image data
+    (minx, miny, maxx, maxy) = bounding_box
+    image_array = (
+        rioxarray.open_rasterio(pc.sign(href))
+        .rio.clip_box(
+            minx=minx,
+            miny=miny,
+            maxx=maxx,
+            maxy=maxy,
+            crs="EPSG:4326",
+        )
+        .to_numpy()
+    )
+
+    # Save as numpy array
+    np.save(save_path, image_array)
+
+
+def identify_satellite_data(samples: pd.DataFrame, config: Dict):
+    """_summary_
+
+    Args:
+        samples (pd.DataFrame): _description_
+        config (Dict): _description_
+
+    Returns:
+        pd.DataFrame: Each row is a unique combination of sample ID
+            and pystac item id
+    """
     save_dir = Path(config["features_dir"]) / "satellite"
     save_dir.mkdir(exist_ok=True, parents=True)
     logger.info(f"Saving pystac items to {save_dir}")
@@ -172,29 +218,54 @@ def download_satellite_data(samples, config: Dict):
         )
 
         # Get satelite metadata
-        sample_items_meta = get_items_metadata(search_results, sample.latitude, sample.longitude)
+        sample_items_meta = get_items_metadata(
+            search_results, sample.latitude, sample.longitude, config
+        )
         if len(sample_items_meta) == 0:
             no_results += 1
             continue
 
         # Select items to use for features
         selected_ids = select_items(sample_items_meta, sample.date)
-        sample_items_meta["selected"] = sample_items_meta.id.isin(selected_ids)
+        sample_items_meta["selected"] = sample_items_meta.item_id.isin(selected_ids)
         sample_items_meta["sample_id"] = sample.Index
         satellite_meta.append(sample_items_meta)
 
-        download_items = [
-            item for item in search_results.item_collection() if item.id in selected_ids
-        ]
-        for item in download_items:
-            download_item(item, save_dir)
+    logger.info(f"{no_results} samples did not return any satellite imagery results")
 
-    logger.info(f"{no_results} samples did not return any results")
+    # Concatenate satellite meta for all samples
+    return pd.concat(satellite_meta)
 
-    # Concatenate satellite meta for all samples and save
-    satellite_meta = pd.concat(satellite_meta)
-    save_satellite_to = Path(config["features_dir"]) / "satellite_metadata.csv"
-    satellite_meta.to_csv(save_satellite_to, index=False)
+
+def download_satellite_data(satellite_meta: pd.DataFrame, samples: pd.DataFrame, config: Dict):
+    """_summary_
+
+    Args:
+        satellite_meta (pd.DataFrame): Each row is unique combo of satellite item ID and sample ID
+        samples (pd.DataFrame): _description_
+        config (Dict): _description_
+
+    Raises:
+        ValueError: _description_
+    """
+    # Filter to images selected for feature generation
+    selected = satellite_meta[satellite_meta.selected]
+
+    # Iterate over all rows (item / sample combos)
     logger.info(
-        f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
+        f"Downloading bands {config['use_sentinel_bands']} for {selected.shape[0]:,} items"
     )
+    for _, download_row in tqdm(selected.iterrows(), total=len(selected)):
+        sample_row = samples.loc[download_row.sample_id]
+        sample_dir = Path(config["features_dir"]) / f"satellite/{download_row.sample_id}"
+        sample_dir.mkdir(exist_ok=True, parents=True)
+
+        save_bbox = get_bounding_box(
+            sample_row.latitude, sample_row.longitude, config["image_feature_meter_window"]
+        )
+        # Iterate over bands to be saved
+        for band in config["use_sentinel_bands"]:
+            band_save_path = sample_dir / f"{download_row.item_id}_{band}.npy"
+            download_band(download_row[f"{band}_href"], band_save_path, save_bbox)
+
+        pass
