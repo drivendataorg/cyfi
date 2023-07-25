@@ -25,5 +25,8 @@
     "climate_features": [],
     "elevation_features": [],
     "metadata_features": [],
-    "lgb_params": {}
+    "lgb_config": {
+        "params": {},
+        "num_boost_round": 1000
+    }
 }

@@ -2,17 +2,21 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parents[0].resolve()
 
-DEFAULT_LGB_PARAMS = {
-    "application": "regression",
-    "boosting": "gbdt",
-    "metric": "rmse",
-    "learning_rate": 0.005,
-    "bagging_fraction": 0.3,
-    "feature_fraction": 0.3,
-    "min_split_gain": 0.1,
-    "verbosity": -1,
-    "data_random_seed": 2023,
-    "early_stop": 500,
+RANDOM_STATE = 40
+
+DEFAULT_LGB_CONFIG = {
+    "params": {
+        "application": "regression",
+        "metric": "rmse",
+        "max_depth": -1,
+        "num_leaves": 31,
+        "learning_rate": 0.1,
+        "verbosity": -1,
+        "bagging_seed": RANDOM_STATE,
+        "seed": RANDOM_STATE,
+        # "early_stopping_round": 100, # add back early stopping rounds when we have valid set
+    },
+    "num_boost_round": 100000,
 }
 
 AVAILABLE_SENTINEL_BANDS = [

@@ -12,6 +12,7 @@ from cyano.data.features import generate_features
 from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
 from cyano.data.utils import add_unique_identifier
 from cyano.models.cyano_model import CyanoModel
+from cyano.settings import RANDOM_STATE
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -53,7 +54,7 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     ## Load labels
     labels = add_unique_identifier(labels)
     if debug:
-        labels = labels.head(10)
+        labels = labels.sample(n=10, random_state=RANDOM_STATE)
     logger.info(f"Loaded {labels.shape[0]:,} samples for training")
 
     ## Query from feature data sources and save
@@ -83,7 +84,7 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     model = CyanoModel(config)
 
     ## Train model and save
-    logger.info(f"Training model with LGB params: {model.config['lgb_params']}")
+    logger.info(f"Training model with LGB params: {model.config['lgb_config']}")
     model.train(features, labels)
 
     logger.info(f"Saving model to {config['model_dir']}")
@@ -129,13 +130,13 @@ def predict_model(
 
     ## Load model and experiment config
     model = CyanoModel.load_model(model_dir)
-    logger.info(f"Loaded model from {model_dir} with lgb params {model.config['lgb_params']}")
+    logger.info(f"Loaded model from {model_dir} with lgb params {model.config['lgb_config']}")
     config = model.config
 
     ## Load data
     samples = add_unique_identifier(samples)
     if debug:
-        samples = samples.head(10)
+        samples = samples.sample(n=10, random_state=RANDOM_STATE)
     logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
 
     ## Query from feature data sources and save

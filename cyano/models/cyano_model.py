@@ -7,7 +7,7 @@ from loguru import logger
 import pandas as pd
 from pathlib import Path
 
-from cyano.settings import DEFAULT_LGB_PARAMS
+from cyano.settings import DEFAULT_LGB_CONFIG
 
 
 class CyanoModel:
@@ -19,10 +19,16 @@ class CyanoModel:
             lgb_model (Optional[lgb.Booster]): LightGBM Booster model,
                 if it already exists. Defaults to None.
         """
+        lgb_params = DEFAULT_LGB_CONFIG["params"].copy()
+        lgb_params.update(config["lgb_config"]["params"])
+
+        lgb_config = DEFAULT_LGB_CONFIG.copy()
+        lgb_config.update(config["lgb_config"])
+        lgb_config["params"] = lgb_params
+
         self.config = config
-        lgb_params = DEFAULT_LGB_PARAMS.copy()
-        lgb_params.update(config["lgb_params"])
-        self.config["lgb_params"] = lgb_params
+        self.config["lgb_config"] = lgb_config
+
         self.lgb_model = lgb_model
 
     @classmethod
@@ -69,7 +75,11 @@ class CyanoModel:
                 and there is one column for `severity`
         """
         lgb_train = lgb.Dataset(features, label=labels.loc[features.index])
-        model = lgb.train(self.config["lgb_params"], lgb_train)
+        model = lgb.train(
+            self.config["lgb_config"]["params"],
+            lgb_train,
+            num_boost_round=self.config["lgb_config"]["num_boost_round"],
+        )
 
         self.lgb_model = model
 
