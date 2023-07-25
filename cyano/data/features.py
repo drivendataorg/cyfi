@@ -7,6 +7,28 @@ import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
 
+# Create a dictionary mapping feature names to feature generator
+# functions, which take a dictionary of band arrays as input
+FEATURE_GENERATORS = {
+    "ndvi_b04": lambda x: (x["B08"].mean() - x["B04"].mean())
+    / (x["B08"].mean() + x["B04"].mean() + 1),
+    "ndvi_b05": lambda x: (x["B08"].mean() - x["B05"].mean())
+    / (x["B08"].mean() + x["B05"].mean() + 1),
+    "ndvi_b06": lambda x: (x["B08"].mean() - x["B06"].mean())
+    / (x["B08"].mean() + x["B06"].mean() + 1),
+    "blue_red_ratio": lambda x: x["B02"].mean() / x["B04"].mean(),
+    "blue_green_ratio": lambda x: x["B02"].mean() / x["B03"].mean(),
+    "B02_mean": lambda x: x["B02"].mean(),
+    "B02_min": lambda x: x["B02"].min(),
+    "B02_max": lambda x: x["B02"].max(),
+    "B03_mean": lambda x: x["B03"].mean(),
+    "B03_min": lambda x: x["B03"].min(),
+    "B03_max": lambda x: x["B03"].max(),
+    "B04_mean": lambda x: x["B04"].mean(),
+    "B04_min": lambda x: x["B04"].min(),
+    "B04_max": lambda x: x["B04"].max(),
+}
+
 
 def generate_satellite_features(uids: Union[List[str], pd.Index], config: Dict) -> pd.DataFrame:
     """Generate features from satellite data
@@ -25,27 +47,26 @@ def generate_satellite_features(uids: Union[List[str], pd.Index], config: Dict) 
     for uid in tqdm(uids):
         satellite_features_dict[uid] = {}
         sample_dir = Path(config["features_dir"]) / f"satellite/{uid}"
+        # Skip samples with no imagery
         if not sample_dir.exists():
             continue
 
-        # Generate features - min, mean, and max for selected bands
+        # Generate features
         # Right now we only have one item per sample, process will need to
         # change if we have multiple
-        # For now based on fixed code, later make this more easily modular
+        band_arrays = {}
         for band in config["use_sentinel_bands"]:
-            band_path = list(sample_dir.glob(f"*{band}*.npy"))[0]
-            if band_path.exists():
-                image_arr = np.load(band_path)
+            band_paths = list(sample_dir.glob(f"*{band}*.npy"))
+            band_arrays[band] = np.load(band_paths[0])
 
-                satellite_features_dict[uid][f"{band}_mean"] = image_arr.mean()
-                satellite_features_dict[uid][f"{band}_min"] = image_arr.min()
-                satellite_features_dict[uid][f"{band}_max"] = image_arr.max()
+        for feature in config["satellite_features"]:
+            satellite_features_dict[uid][feature] = FEATURE_GENERATORS[feature](band_arrays)
 
     satellite_features = pd.DataFrame(satellite_features_dict).T[config["satellite_features"]]
 
     # For now, fill missing values with the average over all samples
     logger.info(
-        f"Filling {satellite_features.isna().sum().sum()} missing satellite values (across {satellite_features.isna().any(axis=1).sum()} samples)"
+        f"Filling missing satellite values for {satellite_features.isna().any(axis=1).sum()} samples"
     )
     for col in satellite_features:
         satellite_features[col] = satellite_features[col].fillna(satellite_features[col].mean())

@@ -14,3 +14,19 @@ DEFAULT_LGB_PARAMS = {
     "data_random_seed": 2023,
     "early_stop": 500,
 }
+
+AVAILABLE_SENTINEL_BANDS = [
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "B06",
+    "B07",
+    "B08",
+    "B08a",
+    "B09",
+    "B10",
+    "B11",
+    "B12",
+]

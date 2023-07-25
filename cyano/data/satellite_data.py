@@ -37,15 +37,15 @@ def get_bounding_box(latitude: float, longitude: float, meters_window: int) -> L
     return [min_long, min_lat, max_long, max_lat]
 
 
-def get_date_range(date: str, days_search_window: int) -> str:
+def get_date_range(date: str, days_window: int) -> str:
     """Get a date range to search for in the planetary computer based
     on a sample's date. The time range will go from time_buffer_days
     before the sample date to time_buffer_days after the sample date
 
     Returns a string"""
     datetime_format = "%Y-%m-%d"
-    range_start = pd.to_datetime(date) - timedelta(days=days_search_window)
-    range_end = pd.to_datetime(date) + timedelta(days=days_search_window)
+    range_start = pd.to_datetime(date) - timedelta(days=days_window)
+    range_end = pd.to_datetime(date) + timedelta(days=days_window)
     date_range = f"{range_start.strftime(datetime_format)}/{range_end.strftime(datetime_format)}"
 
     return date_range

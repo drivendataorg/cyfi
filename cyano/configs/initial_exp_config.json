@@ -20,9 +20,7 @@
         "B03_mean",
         "B03_min",
         "B03_max",
-        "B04_mean",
-        "B04_min",
-        "B04_max"
+        "B04_mean"
     ],
     "climate_features": [],
     "elevation_features": [],

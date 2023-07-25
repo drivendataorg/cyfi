@@ -19,6 +19,7 @@ def add_unique_identifier(df: pd.DataFrame, id_len: int = 4) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Dataframe with unique identifiers as the index
     """
+    df = df.copy()
     redundancy = 3
     ids = [
         fake.unique.pystr(min_chars=id_len, max_chars=id_len).lower()
