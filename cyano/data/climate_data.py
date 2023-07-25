@@ -1,0 +1,53 @@
+from typing import Dict, Union
+
+from loguru import logger
+import pandas as pd
+from pathlib import Path
+from tqdm import tqdm
+
+
+def download_sample_climate(
+    sample_id: str,
+    date: Union[str, pd.Timestamp],
+    latitude: float,
+    longitude: float,
+    save_dir: Path,
+):
+    """Query one sample's climate data based on its date, latitude,
+    and longitude, and download the result.
+
+    Args:
+        sample_id (str): ID of the sample for which the item will be
+            used when generating features
+        date (Union[str, pd.Timestamp]): Sample date
+        latitude (float): Sample latitude
+        longitude (float): Sample longitude
+        save_dir (Path): Directory to save all raw source data
+    """
+    # Query HRRR data
+
+    # Save out data for sample
+    pass
+
+
+def download_climate_data(sample_list: pd.Dataframe, config: Dict):
+    """Query NOAA's HRRR database for a list of samples, and save out
+    the raw results.
+
+    Args:
+        sample_list (pd.Dataframe): Dataframe with columns for date,
+            longitude, latitude, and uid
+        config (Dict): Experiment configuration, including directory to save
+            raw source data
+    """
+    logger.info(f"Querying climate data for {sample_list.shape[0]:,} samples")
+
+    # Iterate over samples (parallelize later)
+    for sample in tqdm(sample_list.itertuples()):
+        download_sample_climate(
+            sample.Index,
+            sample.date,
+            sample.latitude,
+            sample.longitude,
+            save_dir=config["features_dir"],
+        )
