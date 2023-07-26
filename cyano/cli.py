@@ -63,9 +63,13 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
         config["cache_dir"] = tmp_cache_dir.name
 
     ## Load labels
+    labels = labels[["date", "latitude", "longitude", "severity"]]
     labels = add_unique_identifier(labels)
     if debug:
-        labels = labels.sample(n=10, random_state=RANDOM_STATE)
+        labels = labels.head(10)
+    # Save out samples with uids
+    if not debug:
+        labels.to_csv(Path(config["model_dir"]) / "train_samples_uid_mapping.csv", index=True)
     logger.info(f"Loaded {labels.shape[0]:,} samples for training")
 
     ## Query from feature data sources and save
@@ -73,11 +77,11 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     labels = labels["severity"]
 
     satellite_meta = identify_satellite_data(samples, config)
-    save_satellite_to = Path(config["model_dir"]) / "satellite_metadata_train.csv"
-    satellite_meta.to_csv(save_satellite_to, index=False)
-    logger.info(
-        f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
-    )
+    logger.info(f"Generated {satellite_meta.shape[0]:,} rows of satellite metadata")
+    if not debug:
+        save_satellite_to = Path(config["model_dir"]) / "satellite_metadata_train.csv"
+        satellite_meta.to_csv(save_satellite_to, index=False)
+        logger.info(f"Satellite metadata saved to {save_satellite_to}")
     download_satellite_data(satellite_meta, samples, config)
     if config["climate_features"]:
         download_climate_data(samples, config)
@@ -87,11 +91,11 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
 
     ## Generate features
     features = generate_features(samples, config)
-    save_features_to = Path(config["model_dir"]) / "features_train.csv"
-    features.to_csv(save_features_to, index=True)
-    logger.success(
-        f"Generated {features.shape[1]:,} features for {features.shape[0]:,} samples. Saved to {save_features_to}"
-    )
+    logger.success(f"Generated {features.shape[1]:,} features for {features.shape[0]:,} samples")
+    if not debug:
+        save_features_to = Path(config["model_dir"]) / "features_train.csv"
+        features.to_csv(save_features_to, index=True)
+        logger.success(f"Features saved to {save_features_to}")
 
     ## Instantiate model
     model = CyanoModel(config)
@@ -156,18 +160,22 @@ def predict_model(
         config["cache_dir"] = tmp_cache_dir.name
 
     ## Load data
+    samples = samples[["date", "latitude", "longitude"]]
     samples = add_unique_identifier(samples)
     if debug:
-        samples = samples.sample(n=10, random_state=RANDOM_STATE)
+        samples = samples.head(10)
+    # Save out samples with uids
+    if not debug:
+        samples.to_csv(Path(config["model_dir"]) / "predict_samples_uid_mapping.csv", index=True)
     logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
 
     ## Query from feature data sources and save
     satellite_meta = identify_satellite_data(samples, config)
-    save_satellite_to = model_dir / "satellite_metadata_predict.csv"
-    satellite_meta.to_csv(save_satellite_to, index=False)
-    logger.info(
-        f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
-    )
+    logger.info(f"Generated {satellite_meta.shape[0]:,} rows of satellite metadata")
+    if not debug:
+        save_satellite_to = Path(config["model_dir"]) / "satellite_metadata_train.csv"
+        satellite_meta.to_csv(save_satellite_to, index=False)
+        logger.info(f"Satellite metadata saved to {save_satellite_to}")
     download_satellite_data(satellite_meta, samples, config)
     if config["climate_features"]:
         download_climate_data(samples, config)
@@ -177,11 +185,11 @@ def predict_model(
 
     ## Generate features
     features = generate_features(samples, config)
-    save_features_to = model_dir / "features_predict.csv"
-    features.to_csv(save_features_to, index=True)
-    logger.info(
-        f"Generated {features.shape[1]:,} features for {features.shape[0]:,} samples. Saved to {save_features_to}"
-    )
+    logger.success(f"Generated {features.shape[1]:,} features for {features.shape[0]:,} samples")
+    if not debug:
+        save_features_to = Path(config["model_dir"]) / "features_train.csv"
+        features.to_csv(save_features_to, index=True)
+        logger.success(f"Features saved to {save_features_to}")
 
     ## Predict and combine with sample info
     preds = model.predict(features)
