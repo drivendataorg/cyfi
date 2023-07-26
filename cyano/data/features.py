@@ -47,7 +47,7 @@ def generate_satellite_features(uids: Union[List[str], pd.Index], config: Dict) 
     # Iterate over samples
     for uid in tqdm(uids):
         satellite_features_dict[uid] = {}
-        sample_dir = Path(config["features_dir"]) / f"satellite/{uid}"
+        sample_dir = Path(config["cache_dir"]) / f"satellite/{uid}"
         # Skip samples with no imagery
         if not sample_dir.exists():
             continue
@@ -146,7 +146,7 @@ def generate_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
 def generate_features(samples: pd.DataFrame, config: Dict) -> pd.DataFrame:
     """Generate a dataframe of features for the given set of samples.
     Requires that the raw satellite, climate, and elevation data for
-    the given samples are already saved in features_dir
+    the given samples are already saved in cache_dir
 
     Args:
         samples (pd.DataFrame): Dataframe where the index is uid and there are

@@ -1,4 +1,5 @@
 import json
+import tempfile
 from typing import Dict
 
 from loguru import logger
@@ -12,7 +13,7 @@ from cyano.data.features import generate_features
 from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
 from cyano.data.utils import add_unique_identifier
 from cyano.models.cyano_model import CyanoModel
-from cyano.settings import RANDOM_STATE
+from cyano.settings import RANDOM_STATE, FeatureCacheMode
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -51,6 +52,16 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     """
     Path(config["model_dir"]).mkdir(exist_ok=True, parents=True)
 
+    ## Create temp dir for features if dir not specified
+    # If cache_dir is specified, it won't be cleared after training
+    if "cache_dir" in config:
+        config["cache_mode"] = FeatureCacheMode.persistent
+        Path(config["cache_dir"]).mkdir(exist_ok=True, parents=True)
+    else:
+        config["cache_mode"] = FeatureCacheMode.tmp_dir
+        tmp_cache_dir = tempfile.TemporaryDirectory(prefix="features")
+        config["cache_dir"] = tmp_cache_dir.name
+
     ## Load labels
     labels = add_unique_identifier(labels)
     if debug:
@@ -68,9 +79,11 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
         f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
     )
     download_satellite_data(satellite_meta, samples, config)
-    # download_climate_data(samples, config)
-    # download_elevation_data(samples, config)
-    logger.success(f"Raw source data saved to {config['features_dir']}")
+    if config["climate_features"]:
+        download_climate_data(samples, config)
+    if config["elevation_features"]:
+        download_elevation_data(samples, config)
+    logger.success(f"Raw source data saved to {config['cache_dir']}")
 
     ## Generate features
     features = generate_features(samples, config)
@@ -89,6 +102,10 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
 
     logger.info(f"Saving model to {config['model_dir']}")
     model.save(config["model_dir"])
+
+    ## If cache_dir wasn't specified, clear temp dir
+    if config["cache_mode"] == FeatureCacheMode.tmp_dir:
+        tmp_cache_dir.cleanup()
 
     return model
 
@@ -133,6 +150,11 @@ def predict_model(
     logger.info(f"Loaded model from {model_dir} with lgb params {model.config['lgb_config']}")
     config = model.config
 
+    ## Create new tmp dir if cache mode is tmp
+    if config["cache_mode"] == FeatureCacheMode.tmp_dir:
+        tmp_cache_dir = tempfile.TemporaryDirectory(prefix="features")
+        config["cache_dir"] = tmp_cache_dir.name
+
     ## Load data
     samples = add_unique_identifier(samples)
     if debug:
@@ -147,9 +169,11 @@ def predict_model(
         f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
     )
     download_satellite_data(satellite_meta, samples, config)
-    # download_climate_data(samples, config)
-    # download_elevation_data(samples, config)
-    logger.success(f"Raw source data saved to {config['features_dir']}")
+    if config["climate_features"]:
+        download_climate_data(samples, config)
+    if config["elevation_features"]:
+        download_elevation_data(samples, config)
+    logger.success(f"Raw source data saved to {config['cache_dir']}")
 
     ## Generate features
     features = generate_features(samples, config)
@@ -164,6 +188,10 @@ def predict_model(
     samples["predicted_severity"] = preds.loc[samples.index]
     samples.to_csv(preds_save_path, index=True)
     logger.success(f"Predictions saved to {preds_save_path}")
+
+    ## If cache_dir wasn't specified, clear temp dir
+    if config["cache_mode"] == FeatureCacheMode.tmp_dir:
+        tmp_cache_dir.cleanup()
 
     return samples
 

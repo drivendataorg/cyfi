@@ -165,7 +165,7 @@ def identify_satellite_data(samples: pd.DataFrame, config: Dict):
             and pystac item id. The 'selected' column indicates
             which will be used in feature generation
     """
-    save_dir = Path(config["features_dir"]) / "satellite"
+    save_dir = Path(config["cache_dir"]) / "satellite"
     save_dir.mkdir(exist_ok=True, parents=True)
     logger.info(
         f"Searching {config['pc_collections']} within {config['pc_days_search_window']} days and {config['pc_meters_search_window']} meters"
@@ -222,7 +222,7 @@ def download_satellite_data(satellite_meta: pd.DataFrame, samples: pd.DataFrame,
     logger.info(f"Downloading bands {config['use_sentinel_bands']}")
     for _, download_row in tqdm(selected.iterrows(), total=len(selected)):
         sample_row = samples.loc[download_row.sample_id]
-        sample_dir = Path(config["features_dir"]) / f"satellite/{download_row.sample_id}"
+        sample_dir = Path(config["cache_dir"]) / f"satellite/{download_row.sample_id}"
         sample_dir.mkdir(exist_ok=True, parents=True)
 
         # Get bounding box for array to save out
