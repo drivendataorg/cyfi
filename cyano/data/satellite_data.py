@@ -151,38 +151,6 @@ def select_items(
     return [least_cloudy]
 
 
-def download_band(href: str, save_path: Path, bounding_box: List[float]):
-    """Download the geotiff for one band of a given pystac item
-    based on the band's href, if the file does not already exist
-
-    Args:
-        href (str): Link to the asset for the given band
-        save_path (Path): Path to save the asset as a numpy array
-        bounding_box (List[float]): Area of the image to save, in the
-            format (minx, miny, maxx, maxy)
-    """
-
-    if save_path.exists():
-        return
-
-    # Get image data
-    (minx, miny, maxx, maxy) = bounding_box
-    image_array = (
-        rioxarray.open_rasterio(pc.sign(href))
-        .rio.clip_box(
-            minx=minx,
-            miny=miny,
-            maxx=maxx,
-            maxy=maxy,
-            crs="EPSG:4326",
-        )
-        .to_numpy()
-    )
-
-    # Save as numpy array
-    np.save(save_path, image_array)
-
-
 def identify_satellite_data(samples: pd.DataFrame, config: Dict):
     """Identify all pystac items to be used during feature
     generation for a given set of samples
@@ -237,7 +205,7 @@ def identify_satellite_data(samples: pd.DataFrame, config: Dict):
 
 
 def download_satellite_data(satellite_meta: pd.DataFrame, samples: pd.DataFrame, config: Dict):
-    """Download satellite images as numpy arrays
+    """Download satellite images as one stacked numpy arrays per pystac item
 
     Args:
         satellite_meta (pd.DataFrame): Dataframe of satellite metadata
@@ -257,10 +225,27 @@ def download_satellite_data(satellite_meta: pd.DataFrame, samples: pd.DataFrame,
         sample_dir = Path(config["features_dir"]) / f"satellite/{download_row.sample_id}"
         sample_dir.mkdir(exist_ok=True, parents=True)
 
-        save_bbox = get_bounding_box(
+        # Get bounding box for array to save out
+        (minx, miny, maxx, maxy) = get_bounding_box(
             sample_row.latitude, sample_row.longitude, config["image_feature_meter_window"]
         )
-        # Iterate over bands to be saved
+        # Iterate over bands and stack
+        band_arrays = []
         for band in config["use_sentinel_bands"]:
-            band_save_path = sample_dir / f"{download_row.item_id}_{band}.npy"
-            download_band(download_row[f"{band}_href"], band_save_path, save_bbox)
+            band_array = (
+                rioxarray.open_rasterio(pc.sign(download_row[f"{band}_href"]))
+                .rio.clip_box(
+                    minx=minx,
+                    miny=miny,
+                    maxx=maxx,
+                    maxy=maxy,
+                    crs="EPSG:4326",
+                )
+                .to_numpy()
+            )
+            band_arrays.append(band_array)
+        stacked_array = np.vstack(band_arrays)
+
+        # Save stacked array
+        array_save_path = sample_dir / f"{download_row.item_id}.npy"
+        np.save(array_save_path, stacked_array)

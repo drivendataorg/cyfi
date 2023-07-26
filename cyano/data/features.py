@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 # Create a dictionary mapping feature names to feature generator
 # functions, which take a dictionary of band arrays as input
-FEATURE_GENERATORS = {
+SATELLITE_FEATURE_CALCULATORS = {
     "ndvi_b04": lambda x: (x["B08"].mean() - x["B04"].mean())
     / (x["B08"].mean() + x["B04"].mean() + 1),
     "ndvi_b05": lambda x: (x["B08"].mean() - x["B05"].mean())
@@ -44,6 +44,7 @@ def generate_satellite_features(uids: Union[List[str], pd.Index], config: Dict) 
     """
     logger.info(f"Generating features for {len(uids):,} samples")
     satellite_features_dict = {}
+    # Iterate over samples
     for uid in tqdm(uids):
         satellite_features_dict[uid] = {}
         sample_dir = Path(config["features_dir"]) / f"satellite/{uid}"
@@ -51,16 +52,27 @@ def generate_satellite_features(uids: Union[List[str], pd.Index], config: Dict) 
         if not sample_dir.exists():
             continue
 
-        # Generate features
+        # Load stacked array for each image
         # Right now we only have one item per sample, process will need to
         # change if we have multiple
-        band_arrays = {}
-        for band in config["use_sentinel_bands"]:
-            band_paths = list(sample_dir.glob(f"*{band}*.npy"))
-            band_arrays[band] = np.load(band_paths[0])
+        item_paths = list(sample_dir.glob(f"*.npy"))
+        if len(item_paths) > 1:
+            raise NotImplementedError(
+                f"{uid} has multiple items, cannot process multiple items per sample"
+            )
+        stacked_array = np.load(item_paths[0])
 
+        # Load stacked array in dictionary form with band names for keys
+        band_arrays = {}
+        # If we want to mask image data with water boundaries in some way, add here
+        for idx, band in enumerate(config["use_sentinel_bands"]):
+            band_arrays[band] = stacked_array[idx]
+
+        # Iterate over features to generate
         for feature in config["satellite_features"]:
-            satellite_features_dict[uid][feature] = FEATURE_GENERATORS[feature](band_arrays)
+            satellite_features_dict[uid][feature] = SATELLITE_FEATURE_CALCULATORS[feature](
+                band_arrays
+            )
 
     satellite_features = pd.DataFrame(satellite_features_dict).T[config["satellite_features"]]
 
@@ -72,15 +84,6 @@ def generate_satellite_features(uids: Union[List[str], pd.Index], config: Dict) 
         satellite_features[col] = satellite_features[col].fillna(satellite_features[col].mean())
 
     return satellite_features
-
-    # Load files
-    # - identify data for each sample based satellite meta
-
-    # Process data
-    # - filter based on geographic area
-    # - filter based on water boundary
-
-    # Generate features for each sample
 
 
 def generate_climate_features(uids: Union[List[str], pd.Index], config: Dict) -> pd.DataFrame:
@@ -160,14 +163,17 @@ def generate_features(samples: pd.DataFrame, config: Dict) -> pd.DataFrame:
     satellite_features = generate_satellite_features(uids, config)
     all_features.append(satellite_features.loc[uids])
     logger.info(f"Generated {satellite_features.shape[1]} satellite features")
+
     if config["climate_features"]:
         climate_features = generate_climate_features(uids, config)
         all_features.append(climate_features.loc[uids])
         logger.info(f"Generated {satellite_features.shape[0]} climate features")
+
     if config["elevation_features"]:
         elevation_features = generate_elevation_features(uids, config)
         all_features.append(elevation_features.loc[uids])
         logger.info(f"Generated {satellite_features.shape[0]} elevation features")
+
     if config["metadata_features"]:
         metadata_features = generate_metadata_features(samples)
         all_features.append(metadata_features.loc[uids])
