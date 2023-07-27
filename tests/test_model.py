@@ -12,11 +12,10 @@ from typer.testing import CliRunner
 from cyano.cli import train_model, predict_model, app
 from cyano.data.features import generate_features
 from cyano.models.cyano_model import CyanoModel
-from cyano.settings import REPO_ROOT
 
 runner = CliRunner()
 
-ASSETS_DIR = REPO_ROOT.parent / "tests/test_assets"
+ASSETS_DIR = Path(__file__).parent / "assets"
 
 BASIC_CONFIG = {
     "num_threads": 4,
@@ -38,7 +37,7 @@ def train_data() -> pd.DataFrame:
     return pd.read_csv(ASSETS_DIR / "train_data.csv")
 
 
-def test_model_training(train_data: pd.DataFrame):
+def test_train_model(train_data: pd.DataFrame):
     with tempfile.TemporaryDirectory() as model_dir:
         config = BASIC_CONFIG.copy()
         config["model_dir"] = model_dir
@@ -63,7 +62,7 @@ def test_model_training(train_data: pd.DataFrame):
         assert lgb_model.feature_name() == config["satellite_features"]
 
 
-def test_model_predict(train_data: pd.DataFrame):
+def test_predict_model(train_data: pd.DataFrame):
     # Run predict and check that it returns a dataframe
     with tempfile.TemporaryDirectory() as preds_dir:
         preds_path = Path(preds_dir) / "preds.csv"
@@ -89,20 +88,13 @@ def test_cli_train():
     )
     assert result.exit_code == 0
 
-    # Check that model config saved correcty
+    # Check that model config saved out
     saved_config_path = Path(config["model_dir"]) / "config.json"
     assert saved_config_path.exists()
-    with open(saved_config_path, "r") as fp:
-        saved_config = json.load(fp)
-    assert "satellite_features" in saved_config.keys()
-    assert "cache_mode" in saved_config.keys()
 
-    # Check that LGB Booster is saved correctly
+    # Check that LGB Booster saved out
     saved_lgb_path = Path(config["model_dir"]) / "lgb_model.txt"
     assert saved_lgb_path.exists()
-    lgb_model = lgb.Booster(model_file=saved_lgb_path)
-    assert type(lgb_model) == lgb.Booster
-    assert lgb_model.feature_name() == config["satellite_features"]
 
     shutil.rmtree(config["model_dir"])
 

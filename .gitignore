@@ -87,6 +87,3 @@ target/
 
 # Mypy cache
 .mypy_cache/
-
-# Temporary files
-*tmp*

@@ -1,6 +1,6 @@
 {
     "num_threads": 4,
-    "model_dir": "/Users/katewetstone/Repos/cyanobacteria-prediction/tests/test_assets/trained_model",
+    "model_dir": "/Users/katewetstone/Repos/cyanobacteria-prediction/tests/assets/trained_model",
     "pc_collections": [
         "sentinel-2-l2a"
     ],

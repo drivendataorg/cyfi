@@ -1,5 +1,5 @@
 {
-    "model_dir": "tests/test_assets/cli_trained_model",
+    "model_dir": "tests/assets/cli_trained_model",
     "num_threads": 4,
     "pc_collections": [
         "sentinel-2-l2a"
