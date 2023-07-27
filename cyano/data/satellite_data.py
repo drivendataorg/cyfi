@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import planetary_computer as pc
-import pystac
 from pystac_client import Client, ItemSearch
 import rioxarray
 from tqdm import tqdm
@@ -151,7 +150,7 @@ def select_items(
     return [least_cloudy]
 
 
-def identify_satellite_data(samples: pd.DataFrame, config: Dict):
+def identify_satellite_data(samples: pd.DataFrame, config: Dict) -> pd.DataFrame:
     """Identify all pystac items to be used during feature
     generation for a given set of samples
 

@@ -55,7 +55,7 @@ def generate_satellite_features(uids: Union[List[str], pd.Index], config: Dict) 
         # Load stacked array for each image
         # Right now we only have one item per sample, process will need to
         # change if we have multiple
-        item_paths = list(sample_dir.glob(f"*.npy"))
+        item_paths = list(sample_dir.glob("*.npy"))
         if len(item_paths) > 1:
             raise NotImplementedError(
                 f"{uid} has multiple items, cannot process multiple items per sample"

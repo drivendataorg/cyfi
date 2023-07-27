@@ -1,7 +1,6 @@
 from faker import Faker
 import numpy as np
 import pandas as pd
-from pathlib import Path
 
 RANDOM_SEED = 40
 rng = np.random.RandomState(RANDOM_SEED)
