@@ -49,5 +49,5 @@ def download_elevation_data(sample_list: pd.DataFrame, config: Dict):
             sample.date,
             sample.latitude,
             sample.longitude,
-            save_dir=config["cache_dir"],
+            save_dir=config.cache_dir,
         )

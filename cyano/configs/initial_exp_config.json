@@ -1,6 +1,6 @@
 {
     "num_threads": 4,
-    "model_dir": "/tmp/model",
+    "model_save_dir": "/tmp/model",
     "cache_dir": "/tmp/features",
     "pc_collections": [
         "sentinel-2-l2a"

@@ -114,7 +114,7 @@ def get_items_metadata(
         if "eo:cloud_cover" in item.properties:
             item_meta.update({"cloud_cover": item.properties["eo:cloud_cover"]})
         # Add links to download each band needed for features
-        for band in config["use_sentinel_bands"]:
+        for band in config.use_sentinel_bands:
             item_meta.update({f"{band}_href": item.assets[band].href})
         items_meta.append(item_meta)
     items_meta = pd.DataFrame(items_meta)
@@ -164,10 +164,10 @@ def identify_satellite_data(samples: pd.DataFrame, config: Dict) -> pd.DataFrame
             and pystac item id. The 'selected' column indicates
             which will be used in feature generation
     """
-    save_dir = Path(config["cache_dir"]) / "satellite"
+    save_dir = Path(config.cache_dir) / "satellite"
     save_dir.mkdir(exist_ok=True, parents=True)
     logger.info(
-        f"Searching {config['pc_collections']} within {config['pc_days_search_window']} days and {config['pc_meters_search_window']} meters"
+        f"Searching {config.pc_collections} within {config.pc_days_search_window} days and {config.pc_meters_search_window} meters"
     )
 
     satellite_meta = []
@@ -178,9 +178,9 @@ def identify_satellite_data(samples: pd.DataFrame, config: Dict) -> pd.DataFrame
             sample.date,
             sample.latitude,
             sample.longitude,
-            collections=config["pc_collections"],
-            days_search_window=config["pc_days_search_window"],
-            meters_search_window=config["pc_meters_search_window"],
+            collections=config.pc_collections,
+            days_search_window=config.pc_days_search_window,
+            meters_search_window=config.pc_meters_search_window,
         )
 
         # Get satelite metadata
@@ -218,19 +218,19 @@ def download_satellite_data(satellite_meta: pd.DataFrame, samples: pd.DataFrame,
     selected = satellite_meta[satellite_meta.selected]
 
     # Iterate over all rows (item / sample combos)
-    logger.info(f"Downloading bands {config['use_sentinel_bands']}")
+    logger.info(f"Downloading bands {config.use_sentinel_bands}")
     for _, download_row in tqdm(selected.iterrows(), total=len(selected)):
         sample_row = samples.loc[download_row.sample_id]
-        sample_dir = Path(config["cache_dir"]) / f"satellite/{download_row.sample_id}"
+        sample_dir = Path(config.cache_dir) / f"satellite/{download_row.sample_id}"
         sample_dir.mkdir(exist_ok=True, parents=True)
 
         # Get bounding box for array to save out
         (minx, miny, maxx, maxy) = get_bounding_box(
-            sample_row.latitude, sample_row.longitude, config["image_feature_meter_window"]
+            sample_row.latitude, sample_row.longitude, config.image_feature_meter_window
         )
         # Iterate over bands and stack
         band_arrays = []
-        for band in config["use_sentinel_bands"]:
+        for band in config.use_sentinel_bands:
             band_array = (
                 rioxarray.open_rasterio(pc.sign(download_row[f"{band}_href"]))
                 .rio.clip_box(

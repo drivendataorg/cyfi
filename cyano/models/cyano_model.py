@@ -7,8 +7,6 @@ from loguru import logger
 import pandas as pd
 from pathlib import Path
 
-from cyano.settings import DEFAULT_LGB_CONFIG
-
 
 class CyanoModel:
     def __init__(self, config: Dict, lgb_model: Optional[lgb.Booster] = None):
@@ -19,16 +17,7 @@ class CyanoModel:
             lgb_model (Optional[lgb.Booster]): LightGBM Booster model,
                 if it already exists. Defaults to None.
         """
-        lgb_params = DEFAULT_LGB_CONFIG["params"].copy()
-        lgb_params.update(config["lgb_config"]["params"])
-
-        lgb_config = DEFAULT_LGB_CONFIG.copy()
-        lgb_config.update(config["lgb_config"])
-        lgb_config["params"] = lgb_params
-
         self.config = config
-        self.config["lgb_config"] = lgb_config
-
         self.lgb_model = lgb_model
 
     @classmethod
@@ -36,13 +25,13 @@ class CyanoModel:
         """Load an ensembled model from existing weights
 
         Args:
-            config (Dict): Experiment configuration including model_dir
+            config (Dict): Experiment configuration including model_save_dir
 
         Returns:
             CyanoModel
         """
         # Load existing model
-        lgb_model = lgb.Booster(model_file=f"{config['model_dir']}/lgb_model.txt")
+        lgb_model = lgb.Booster(model_file=f"{config.model_save_dir}/lgb_model.txt")
 
         # Instantiate class
         return cls(config=config, lgb_model=lgb_model)
@@ -56,7 +45,7 @@ class CyanoModel:
 
         # Save config
         with open(f"{save_dir}/run_config.json", "w") as fp:
-            json.dump(self.config, fp)
+            json.dump(self.config.model_dump(), fp)
 
         logger.success(f"Model and run config saved to {save_dir}")
 
@@ -71,9 +60,9 @@ class CyanoModel:
         """
         lgb_train = lgb.Dataset(features, label=labels.loc[features.index])
         model = lgb.train(
-            self.config["lgb_config"]["params"],
+            self.config.lgb_config.params.model_dump(),
             lgb_train,
-            num_boost_round=self.config["lgb_config"]["num_boost_round"],
+            num_boost_round=self.config.lgb_config.num_boost_round,
         )
 
         self.lgb_model = model
