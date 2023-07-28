@@ -1,5 +1,5 @@
 import json
-import shutil
+import tempfile
 from typing import Dict
 
 from loguru import logger
@@ -13,7 +13,6 @@ from cyano.data.features import generate_features
 from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
 from cyano.data.utils import add_unique_identifier
 from cyano.models.cyano_model import CyanoModel
-from cyano.settings import DEFAULT_CACHE_DIR
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -53,10 +52,11 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     Path(config["model_dir"]).mkdir(exist_ok=True, parents=True)
 
     ## Create temp dir for features if dir not specified
-    # If cache_dir is specified, it won't be cleared after training
     if "cache_dir" not in config:
-        config["cache_dir"] = DEFAULT_CACHE_DIR
-    Path(config["cache_dir"]).mkdir(exist_ok=True, parents=True)
+        temp_dir = tempfile.TemporaryDirectory()
+        config["cache_dir"] = temp_dir.name
+    else:
+        Path(config["cache_dir"]).mkdir(exist_ok=True, parents=True)
 
     ## Load labels
     labels = labels[["date", "latitude", "longitude", "severity"]]
@@ -102,10 +102,6 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     logger.info(f"Saving model to {config['model_dir']}")
     model.save(config["model_dir"])
 
-    ## Clear temp cache dir
-    if Path(DEFAULT_CACHE_DIR).exists():
-        shutil.rmtree(DEFAULT_CACHE_DIR)
-
     return model
 
 
@@ -114,9 +110,7 @@ def predict(
     samples_path: Path = typer.Argument(
         exists=True, help="Path to a csv of samples with columns for date, longitude, and latitude"
     ),
-    model_dir: Path = typer.Argument(
-        exists=True, help="Path to directory with saved model weights and config"
-    ),
+    config_path: Path = typer.Argument(exists=True, help="Path to an experiment configuration"),
     preds_save_path: Path = typer.Argument(help="Destination to save predictions csv"),
     debug: bool = typer.Option(
         False, help="Whether to generate predictions for only a small subset of samples"
@@ -124,14 +118,15 @@ def predict(
 ):
     """Load an existing cyanobacteria prediction model from model_dir and generate
     severity level predictions for a set of samples."""
+    with open(config_path, "r") as fp:
+        config = json.load(fp)
+
     samples = pd.read_csv(samples_path)
 
-    predict_model(samples, preds_save_path=preds_save_path, model_dir=model_dir, debug=debug)
+    predict_model(samples, preds_save_path=preds_save_path, config=config, debug=debug)
 
 
-def predict_model(
-    samples: pd.DataFrame, preds_save_path: Path, model_dir: Path, debug: bool = False
-):
+def predict_model(samples: pd.DataFrame, preds_save_path: Path, config: Dict, debug: bool = False):
     """Load an existing cyanobacteria prediction model from model_dir and generate
     severity level predictions for a set of samples.
 
@@ -139,20 +134,22 @@ def predict_model(
         samples (pd.DataFrame): Dataframe of samples with columns for date,
             longitude, and latitude
         preds_save_path (Path): Path to save the generated predictions
-        model_dir (Path): Directory containing model weights and
-            experiment configuration
+        config (Dict): Experiment configuration
     """
-    model_dir = Path(model_dir)
-
     ## Load model and experiment config
-    model = CyanoModel.load_model(model_dir)
-    logger.info(f"Loaded model from {model_dir} with lgb params {model.config['lgb_config']}")
-    config = model.config
+    model = CyanoModel.load_model(config)
+    logger.info(
+        f"Loaded model from {config['model_dir']} with lgb params {model.config['lgb_config']}"
+    )
 
-    Path(config["cache_dir"]).mkdir(exist_ok=True, parents=True)
+    ## Create temp dir for features if dir not specified
+    if "cache_dir" not in config:
+        temp_dir = tempfile.TemporaryDirectory()
+        config["cache_dir"] = temp_dir.name
+    else:
+        Path(config["cache_dir"]).mkdir(exist_ok=True, parents=True)
 
     ## Load data
-    samples = samples[["date", "latitude", "longitude"]]
     samples = add_unique_identifier(samples)
     if debug:
         samples = samples.head(10)
@@ -187,10 +184,6 @@ def predict_model(
     samples["predicted_severity"] = preds.loc[samples.index]
     samples.to_csv(preds_save_path, index=True)
     logger.success(f"Predictions saved to {preds_save_path}")
-
-    ## Clear temp cache dir
-    if Path(DEFAULT_CACHE_DIR).exists():
-        shutil.rmtree(DEFAULT_CACHE_DIR)
 
     return samples
 

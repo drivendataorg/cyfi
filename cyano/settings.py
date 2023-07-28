@@ -19,8 +19,6 @@ DEFAULT_LGB_CONFIG = {
     "num_boost_round": 100000,
 }
 
-DEFAULT_CACHE_DIR = "/tmp/feature_cache"
-
 AVAILABLE_SENTINEL_BANDS = [
     "B01",
     "B02",

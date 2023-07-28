@@ -32,22 +32,17 @@ class CyanoModel:
         self.lgb_model = lgb_model
 
     @classmethod
-    def load_model(cls, model_dir: Path) -> "CyanoModel":
+    def load_model(cls, config: Dict) -> "CyanoModel":
         """Load an ensembled model from existing weights
 
         Args:
-            model_dir (Path): Directory containing all model weights
-                and an experiment configuration
+            config (Dict): Experiment configuration including model_dir
 
         Returns:
             CyanoModel
         """
-        # Load config from model dir
-        with open(f"{model_dir}/config.json", "r") as fp:
-            config = json.load(fp)
-
         # Load existing model
-        lgb_model = lgb.Booster(model_file=f"{model_dir}/lgb_model.txt")
+        lgb_model = lgb.Booster(model_file=f"{config['model_dir']}/lgb_model.txt")
 
         # Instantiate class
         return cls(config=config, lgb_model=lgb_model)
@@ -60,10 +55,10 @@ class CyanoModel:
         self.lgb_model.save_model(f"{save_dir}/lgb_model.txt")
 
         # Save config
-        with open(f"{save_dir}/config.json", "w") as fp:
+        with open(f"{save_dir}/run_config.json", "w") as fp:
             json.dump(self.config, fp)
 
-        logger.success(f"Model and config saved to {save_dir}")
+        logger.success(f"Model and run config saved to {save_dir}")
 
     def train(self, features: pd.DataFrame, labels: pd.Series):
         """Train a cyanobacteria prediction model
