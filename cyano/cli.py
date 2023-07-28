@@ -7,6 +7,7 @@ import pandas as pd
 from pathlib import Path
 import typer
 
+from cyano.config import ExperimentConfig
 from cyano.data.climate_data import download_climate_data
 from cyano.data.elevation_data import download_elevation_data
 from cyano.data.features import generate_features
@@ -29,7 +30,7 @@ def train(
 ):
     """Train a cyanobacteria prediction model based on the labels in labels_path
     and the config file saved at config_path. The trained model and full experiment
-    configuration will be saved to the "model_dir" specified in the config
+    configuration will be saved to the "model_save_dir" specified in the config
     """
     with open(config_path, "r") as fp:
         config = json.load(fp)
@@ -49,14 +50,15 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
         debug (bool, optional): Whether to run training on only a small
             subset of samples. Defaults to False.
     """
-    Path(config["model_dir"]).mkdir(exist_ok=True, parents=True)
+    config = ExperimentConfig(**config)
+    Path(config.model_save_dir).mkdir(exist_ok=True, parents=True)
 
     ## Create temp dir for features if dir not specified
     if "cache_dir" not in config:
         temp_dir = tempfile.TemporaryDirectory()
-        config["cache_dir"] = temp_dir.name
+        config.cache_dir = temp_dir.name
     else:
-        Path(config["cache_dir"]).mkdir(exist_ok=True, parents=True)
+        Path(config.cache_dir).mkdir(exist_ok=True, parents=True)
 
     ## Load labels
     labels = labels[["date", "latitude", "longitude", "severity"]]
@@ -64,7 +66,7 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     if debug:
         labels = labels.head(10)
     # Save out samples with uids
-    labels.to_csv(Path(config["cache_dir"]) / "train_samples_uid_mapping.csv", index=True)
+    labels.to_csv(Path(config.cache_dir) / "train_samples_uid_mapping.csv", index=True)
     logger.info(f"Loaded {labels.shape[0]:,} samples for training")
 
     ## Query from feature data sources and save
@@ -72,21 +74,21 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     labels = labels["severity"]
 
     satellite_meta = identify_satellite_data(samples, config)
-    save_satellite_to = Path(config["cache_dir"]) / "satellite_metadata_train.csv"
+    save_satellite_to = Path(config.cache_dir) / "satellite_metadata_train.csv"
     satellite_meta.to_csv(save_satellite_to, index=False)
     logger.info(
         f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
     )
     download_satellite_data(satellite_meta, samples, config)
-    if config["climate_features"]:
+    if config.climate_features:
         download_climate_data(samples, config)
-    if config["elevation_features"]:
+    if config.elevation_features:
         download_elevation_data(samples, config)
-    logger.success(f"Raw source data saved to {config['cache_dir']}")
+    logger.success(f"Raw source data saved to {config.cache_dir}")
 
     ## Generate features
     features = generate_features(samples, config)
-    save_features_to = Path(config["cache_dir"]) / "features_train.csv"
+    save_features_to = Path(config.cache_dir) / "features_train.csv"
     features.to_csv(save_features_to, index=True)
     logger.success(
         f"{features.shape[1]:,} features for {features.shape[0]:,} samples saved to {save_features_to}"
@@ -96,11 +98,11 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     model = CyanoModel(config)
 
     ## Train model and save
-    logger.info(f"Training model with LGB params: {model.config['lgb_config']}")
+    logger.info(f"Training model with LGB params: {model.config.lgb_config}")
     model.train(features, labels)
 
-    logger.info(f"Saving model to {config['model_dir']}")
-    model.save(config["model_dir"])
+    logger.info(f"Saving model to {config.model_save_dir}")
+    model.save(config.model_save_dir)
 
     return model
 
@@ -116,7 +118,7 @@ def predict(
         False, help="Whether to generate predictions for only a small subset of samples"
     ),
 ):
-    """Load an existing cyanobacteria prediction model from model_dir and generate
+    """Load an existing cyanobacteria prediction model from model_save_dir and generate
     severity level predictions for a set of samples."""
     with open(config_path, "r") as fp:
         config = json.load(fp)
@@ -127,7 +129,7 @@ def predict(
 
 
 def predict_model(samples: pd.DataFrame, preds_save_path: Path, config: Dict, debug: bool = False):
-    """Load an existing cyanobacteria prediction model from model_dir and generate
+    """Load an existing cyanobacteria prediction model from model_save_dir and generate
     severity level predictions for a set of samples.
 
     Args:
@@ -136,44 +138,46 @@ def predict_model(samples: pd.DataFrame, preds_save_path: Path, config: Dict, de
         preds_save_path (Path): Path to save the generated predictions
         config (Dict): Experiment configuration
     """
+    config = ExperimentConfig(**config)
+
     ## Load model and experiment config
     model = CyanoModel.load_model(config)
     logger.info(
-        f"Loaded model from {config['model_dir']} with lgb params {model.config['lgb_config']}"
+        f"Loaded model from {config.model_save_dir} with lgb params {model.config.lgb_config}"
     )
 
     ## Create temp dir for features if dir not specified
     if "cache_dir" not in config:
         temp_dir = tempfile.TemporaryDirectory()
-        config["cache_dir"] = temp_dir.name
+        config.cache_dir = temp_dir.name
     else:
-        Path(config["cache_dir"]).mkdir(exist_ok=True, parents=True)
+        Path(config.cache_dir).mkdir(exist_ok=True, parents=True)
 
     ## Load data
     samples = add_unique_identifier(samples)
     if debug:
         samples = samples.head(10)
     # Save out samples with uids
-    samples.to_csv(Path(config["cache_dir"]) / "predict_samples_uid_mapping.csv", index=True)
+    samples.to_csv(Path(config.cache_dir) / "predict_samples_uid_mapping.csv", index=True)
     logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
 
     ## Query from feature data sources and save
     satellite_meta = identify_satellite_data(samples, config)
-    save_satellite_to = Path(config["cache_dir"]) / "satellite_metadata_train.csv"
+    save_satellite_to = Path(config.cache_dir) / "satellite_metadata_train.csv"
     satellite_meta.to_csv(save_satellite_to, index=False)
     logger.info(
         f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
     )
     download_satellite_data(satellite_meta, samples, config)
-    if config["climate_features"]:
+    if config.climate_features:
         download_climate_data(samples, config)
-    if config["elevation_features"]:
+    if config.elevation_features:
         download_elevation_data(samples, config)
-    logger.success(f"Raw source data saved to {config['cache_dir']}")
+    logger.success(f"Raw source data saved to {config.cache_dir}")
 
     ## Generate features
     features = generate_features(samples, config)
-    save_features_to = Path(config["cache_dir"]) / "features_train.csv"
+    save_features_to = Path(config.cache_dir) / "features_train.csv"
     features.to_csv(save_features_to, index=True)
     logger.success(
         f"{features.shape[1]:,} features for {features.shape[0]:,} samples saved to {save_features_to}"
