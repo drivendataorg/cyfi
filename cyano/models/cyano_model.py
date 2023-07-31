@@ -7,13 +7,15 @@ from loguru import logger
 import pandas as pd
 from pathlib import Path
 
+from cyano.config import ExperimentConfig
+
 
 class CyanoModel:
-    def __init__(self, config: Dict, lgb_model: Optional[lgb.Booster] = None):
+    def __init__(self, config: ExperimentConfig, lgb_model: Optional[lgb.Booster] = None):
         """Instantiate ensembled cyanobacteria prediction model
 
         Args:
-            config (Dict): Experiment config
+            config (ExperimentConfig): Experiment config
             lgb_model (Optional[lgb.Booster]): LightGBM Booster model,
                 if it already exists. Defaults to None.
         """
@@ -21,11 +23,11 @@ class CyanoModel:
         self.lgb_model = lgb_model
 
     @classmethod
-    def load_model(cls, config: Dict) -> "CyanoModel":
+    def load_model(cls, config: ExperimentConfig) -> "CyanoModel":
         """Load an ensembled model from existing weights
 
         Args:
-            config (Dict): Experiment configuration including model_save_dir
+            config (ExperimentConfig): Experiment configuration including model_save_dir
 
         Returns:
             CyanoModel

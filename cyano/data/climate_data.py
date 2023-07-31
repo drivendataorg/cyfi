@@ -5,6 +5,8 @@ import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
 
+from cyano.config import ExperimentConfig
+
 
 def download_sample_climate(
     sample_id: str,
@@ -30,15 +32,15 @@ def download_sample_climate(
     pass
 
 
-def download_climate_data(sample_list: pd.DataFrame, config: Dict):
+def download_climate_data(sample_list: pd.DataFrame, config: ExperimentConfig):
     """Query NOAA's HRRR database for a list of samples, and save out
     the raw results.
 
     Args:
         sample_list (pd.Dataframe): Dataframe with columns for date,
             longitude, latitude, and uid
-        config (Dict): Experiment configuration, including directory to save
-            raw source data
+        config (ExperimentConfig): Experiment configuration, including
+            directory to save raw source data
     """
     logger.info(f"Querying climate data for {sample_list.shape[0]:,} samples")
 
