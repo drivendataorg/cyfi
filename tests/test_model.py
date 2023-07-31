@@ -1,5 +1,4 @@
 import json
-import shutil
 
 import lightgbm as lgb
 import numpy as np
@@ -54,8 +53,6 @@ def test_train_model(tmp_path_factory, train_data: pd.DataFrame):
     assert type(lgb_model) == lgb.Booster
     assert lgb_model.feature_name() == config["satellite_features"]
 
-    shutil.rmtree(config["cyano_model_config"]["trained_model_dir"])
-
 
 def test_predict_model(tmp_path_factory, train_data: pd.DataFrame):
     # Run predict and check that it returns a dataframe
@@ -70,8 +67,6 @@ def test_predict_model(tmp_path_factory, train_data: pd.DataFrame):
     assert preds_path.exists()
     saved_preds = pd.read_csv(preds_path)
     assert saved_preds.shape[0] == train_data.shape[0]
-
-    shutil.rmtree(preds_path.parent)
 
 
 def test_cli_train(tmp_path_factory):
@@ -98,8 +93,6 @@ def test_cli_train(tmp_path_factory):
     # Check that LGB Booster saved out
     saved_lgb_path = Path(config["cyano_model_config"]["trained_model_dir"]) / "lgb_model.txt"
     assert saved_lgb_path.exists()
-
-    shutil.rmtree(tmp_cli_train_dir)
 
 
 def test_cli_predict(tmp_path_factory, train_data: pd.DataFrame):
@@ -129,8 +122,6 @@ def test_cli_predict(tmp_path_factory, train_data: pd.DataFrame):
     assert preds_path.exists()
     preds = pd.read_csv(preds_path)
     assert preds.shape[0] == train_data.shape[0]
-
-    shutil.rmtree(tmp_cli_predict_dir)
 
 
 def test_known_features(train_data: pd.DataFrame):
