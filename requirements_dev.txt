@@ -12,6 +12,7 @@ odc-stac
 pandas
 pathlib
 planetary-computer
+pydantic
 pystac
 pystac-client
 pytest
