@@ -1,21 +1,21 @@
 ## Define class for ensembled set of models to predict cyanobacteria
 import json
-from typing import Dict, Optional
+from typing import Optional
 
 import lightgbm as lgb
 from loguru import logger
 import pandas as pd
 from pathlib import Path
 
-from cyano.config import ExperimentConfig
+from cyano.config import CyanoModelConfig
 
 
 class CyanoModel:
-    def __init__(self, config: ExperimentConfig, lgb_model: Optional[lgb.Booster] = None):
+    def __init__(self, config: CyanoModelConfig, lgb_model: Optional[lgb.Booster] = None):
         """Instantiate ensembled cyanobacteria prediction model
 
         Args:
-            config (ExperimentConfig): Experiment config
+            config (CyanoModelConfig): Experiment config
             lgb_model (Optional[lgb.Booster]): LightGBM Booster model,
                 if it already exists. Defaults to None.
         """
@@ -23,11 +23,11 @@ class CyanoModel:
         self.lgb_model = lgb_model
 
     @classmethod
-    def load_model(cls, config: ExperimentConfig) -> "CyanoModel":
+    def load_model(cls, config: CyanoModelConfig) -> "CyanoModel":
         """Load an ensembled model from existing weights
 
         Args:
-            config (ExperimentConfig): Experiment configuration including trained_model_dir
+            config (CyanoModelConfig): Experiment configuration including trained_model_dir
 
         Returns:
             CyanoModel
@@ -62,9 +62,9 @@ class CyanoModel:
         """
         lgb_train = lgb.Dataset(features, label=labels.loc[features.index])
         model = lgb.train(
-            self.config.lgb_config.params.model_dump(),
+            self.config.params.model_dump(),
             lgb_train,
-            num_boost_round=self.config.lgb_config.num_boost_round,
+            num_boost_round=self.config.num_boost_round,
         )
 
         self.lgb_model = model

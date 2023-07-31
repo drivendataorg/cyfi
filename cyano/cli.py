@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 import typer
 
-from cyano.config import ExperimentConfig
+from cyano.config import TrainConfig, PredictConfig
 from cyano.data.climate_data import download_climate_data
 from cyano.data.elevation_data import download_elevation_data
 from cyano.data.features import generate_features
@@ -46,19 +46,17 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     Args:
         labels (pd.DataFrame): Dataframe with columns for date, longitude,
             latitude, and severity
-        config (Dict): Experiment configuration
+        config (Dict): Training configuration
         debug (bool, optional): Whether to run training on only a small
             subset of samples. Defaults to False.
     """
-    config = ExperimentConfig(**config)
-    Path(config.trained_model_dir).mkdir(exist_ok=True, parents=True)
-
     ## Create temp dir for features if dir not specified
-    if "cache_dir" not in config:
-        temp_dir = tempfile.TemporaryDirectory()
-        config.cache_dir = temp_dir.name
-    else:
-        Path(config.cache_dir).mkdir(exist_ok=True, parents=True)
+    if not config.get("cache_dir"):
+        config["cache_dir"] = tempfile.TemporaryDirectory().name
+    Path(config["cache_dir"]).mkdir(exist_ok=True, parents=True)
+
+    config = TrainConfig(**config)
+    Path(config.cyano_model_config.trained_model_dir).mkdir(exist_ok=True, parents=True)
 
     ## Load labels
     labels = labels[["date", "latitude", "longitude", "severity"]]
@@ -95,14 +93,14 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     )
 
     ## Instantiate model
-    model = CyanoModel(config)
+    model = CyanoModel(config.cyano_model_config)
 
     ## Train model and save
-    logger.info(f"Training model with LGB params: {model.config.lgb_config}")
+    logger.info(f"Training model with LGB params: {model.config}")
     model.train(features, labels)
 
-    logger.info(f"Saving model to {config.trained_model_dir}")
-    model.save(config.trained_model_dir)
+    logger.info(f"Saving model to {config.cyano_model_config.trained_model_dir}")
+    model.save(config.cyano_model_config.trained_model_dir)
 
     return model
 
@@ -113,7 +111,7 @@ def predict(
         exists=True, help="Path to a csv of samples with columns for date, longitude, and latitude"
     ),
     config_path: Path = typer.Argument(exists=True, help="Path to an experiment configuration"),
-    preds_save_path: Path = typer.Argument(help="Destination to save predictions csv"),
+    # preds_save_path: Path = typer.Argument(help="Destination to save predictions csv"),
     debug: bool = typer.Option(
         False, help="Whether to generate predictions for only a small subset of samples"
     ),
@@ -125,10 +123,10 @@ def predict(
 
     samples = pd.read_csv(samples_path)
 
-    predict_model(samples, preds_save_path=preds_save_path, config=config, debug=debug)
+    predict_model(samples, config=config, debug=debug)
 
 
-def predict_model(samples: pd.DataFrame, preds_save_path: Path, config: Dict, debug: bool = False):
+def predict_model(samples: pd.DataFrame, config: Dict, debug: bool = False):
     """Load an existing cyanobacteria prediction model from trained_model_dir and generate
     severity level predictions for a set of samples.
 
@@ -136,22 +134,20 @@ def predict_model(samples: pd.DataFrame, preds_save_path: Path, config: Dict, de
         samples (pd.DataFrame): Dataframe of samples with columns for date,
             longitude, and latitude
         preds_save_path (Path): Path to save the generated predictions
-        config (Dict): Experiment configuration
+        config (Dict): Prediction configuration
     """
-    config = ExperimentConfig(**config)
+    ## Create temp dir for features if dir not specified
+    if not config.get("cache_dir"):
+        config["cache_dir"] = tempfile.TemporaryDirectory().name
+    Path(config["cache_dir"]).mkdir(exist_ok=True, parents=True)
+
+    config = PredictConfig(**config)
 
     ## Load model and experiment config
-    model = CyanoModel.load_model(config)
+    model = CyanoModel.load_model(config.cyano_model_config)
     logger.info(
-        f"Loaded model from {config.trained_model_dir} with lgb params {model.config.lgb_config}"
+        f"Loaded model from {config.cyano_model_config.trained_model_dir} with configs {model.config}"
     )
-
-    ## Create temp dir for features if dir not specified
-    if "cache_dir" not in config:
-        temp_dir = tempfile.TemporaryDirectory()
-        config.cache_dir = temp_dir.name
-    else:
-        Path(config.cache_dir).mkdir(exist_ok=True, parents=True)
 
     ## Load data
     samples = add_unique_identifier(samples)
@@ -186,8 +182,10 @@ def predict_model(samples: pd.DataFrame, preds_save_path: Path, config: Dict, de
     ## Predict and combine with sample info
     preds = model.predict(features)
     samples["predicted_severity"] = preds.loc[samples.index]
-    samples.to_csv(preds_save_path, index=True)
-    logger.success(f"Predictions saved to {preds_save_path}")
+
+    Path(config.preds_save_path).parent.mkdir(exist_ok=True, parents=True)
+    samples.to_csv(config.preds_save_path, index=True)
+    logger.success(f"Predictions saved to {config.preds_save_path}")
 
     return samples
 

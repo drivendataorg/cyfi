@@ -1,6 +1,9 @@
 {
+    "cyano_model_config": {
+        "trained_model_dir": "/tmp/model",
+        "num_boost_round": 1000
+    },
     "num_threads": 4,
-    "trained_model_dir": "/tmp/model",
     "cache_dir": "/tmp/features",
     "pc_collections": [
         "sentinel-2-l2a"
@@ -24,9 +27,5 @@
     ],
     "climate_features": [],
     "elevation_features": [],
-    "metadata_features": [],
-    "lgb_config": {
-        "params": {},
-        "num_boost_round": 1000
-    }
+    "metadata_features": []
 }

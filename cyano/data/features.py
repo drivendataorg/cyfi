@@ -1,5 +1,5 @@
 ## Code to generate features from raw downloaded source data
-from typing import Dict, List, Union
+from typing import List, Union
 
 from loguru import logger
 import numpy as np
@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
 
-from cyano.config import ExperimentConfig
+from cyano.config import PredictConfig, TrainConfig
 
 # Create a dictionary mapping feature names to feature generator
 # functions, which take a dictionary of band arrays as input
@@ -33,14 +33,14 @@ SATELLITE_FEATURE_CALCULATORS = {
 
 
 def generate_satellite_features(
-    uids: Union[List[str], pd.Index], config: ExperimentConfig
+    uids: Union[List[str], pd.Index], config: Union[PredictConfig, TrainConfig]
 ) -> pd.DataFrame:
     """Generate features from satellite data
 
     Args:
         uids (Union[List[str], pd.Index]): List of unique indices for each sample
-        config (ExperimentConfig): Experiment configuration, including directory
-            where raw source data is saved
+        config (Union[PredictConfig, TrainConfig]): Configuration, including
+            directory where raw source data is saved
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is one column
@@ -91,14 +91,14 @@ def generate_satellite_features(
 
 
 def generate_climate_features(
-    uids: Union[List[str], pd.Index], config: ExperimentConfig
+    uids: Union[List[str], pd.Index], config: Union[PredictConfig, TrainConfig]
 ) -> pd.DataFrame:
     """Generate features from climate data
 
     Args:
         uids (Union[List[str], pd.Index]): List of unique indices for each sample
-        config (ExperimentConfig): Experiment configuration, including directory
-            where raw source data is saved
+        config (Union[PredictConfig, TrainConfig]): Configuration, including
+            directory where raw source data is saved
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is
@@ -113,14 +113,14 @@ def generate_climate_features(
 
 
 def generate_elevation_features(
-    uids: Union[List[str], pd.Index], config: ExperimentConfig
+    uids: Union[List[str], pd.Index], config: Union[PredictConfig, TrainConfig]
 ) -> pd.DataFrame:
     """Generate features from elevation data
 
     Args:
         uids (Union[List[str], pd.Index]): List of unique indices for each sample
-        config (ExperimentConfig): Experiment configuration, including directory
-            where raw source data is saved
+        config (Union[PredictConfig, TrainConfig]): Configuration, including
+            directory where raw source data is saved
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is
@@ -151,7 +151,9 @@ def generate_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
     pass
 
 
-def generate_features(samples: pd.DataFrame, config: ExperimentConfig) -> pd.DataFrame:
+def generate_features(
+    samples: pd.DataFrame, config: Union[PredictConfig, TrainConfig]
+) -> pd.DataFrame:
     """Generate a dataframe of features for the given set of samples.
     Requires that the raw satellite, climate, and elevation data for
     the given samples are already saved in cache_dir
@@ -159,8 +161,8 @@ def generate_features(samples: pd.DataFrame, config: ExperimentConfig) -> pd.Dat
     Args:
         samples (pd.DataFrame): Dataframe where the index is uid and there are
             columns for date, longitude, and latitude
-        config (ExperimentConfig): Experiment configuration, including directory
-            where raw source data is saved
+        config (Union[PredictConfig, TrainConfig]): Configuration, including
+            directory where raw source data is saved
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is one

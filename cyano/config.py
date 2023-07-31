@@ -16,15 +16,14 @@ class LGBParams(BaseModel):
     seed: Optional[int] = RANDOM_STATE
 
 
-class LGBConfig(BaseModel):
+class CyanoModelConfig(BaseModel):
+    trained_model_dir: str
     params: Optional[LGBParams] = LGBParams()
     num_boost_round: Optional[int] = 1000
 
 
-class ExperimentConfig(BaseModel):
-    # protected_namespaces = ()
-
-    trained_model_dir: str
+class BaseConfig(BaseModel):
+    cyano_model_config: CyanoModelConfig
     num_threads: Optional[int] = 5
     cache_dir: Optional[str] = None
     pc_collections: Optional[List] = ["sentinel-2-l2a"]
@@ -44,4 +43,13 @@ class ExperimentConfig(BaseModel):
     climate_features: Optional[List] = []
     elevation_features: Optional[List] = []
     metadata_features: Optional[List] = []
-    lgb_config: Optional[LGBConfig] = LGBConfig()
+
+
+class TrainConfig(BaseConfig):
+    # Extra arguments only needed for training
+    pass
+
+
+class PredictConfig(BaseConfig):
+    # Extra arguments only needed for prediction
+    preds_save_path: str
