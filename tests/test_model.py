@@ -1,5 +1,4 @@
 import json
-import shutil
 import tempfile
 
 import lightgbm as lgb
@@ -72,45 +71,54 @@ def test_predict_model(train_data: pd.DataFrame):
 
 
 def test_cli_train():
-    # Load config
-    config_path = ASSETS_DIR / "cli_train_config.json"
-    with open(config_path, "r") as fp:
-        config = json.load(fp)
+    with tempfile.TemporaryDirectory() as tmp_cli_train_dir:
+        # Write out config with model save dir in tmp dir
+        config = TRAIN_CONFIG.copy()
+        config_path = f"{tmp_cli_train_dir}/config.json"
+        config["model_save_dir"] = f"{tmp_cli_train_dir}/trained_model"
+        with open(config_path, "w") as fp:
+            json.dump(config, fp)
 
-    # Run cli command
-    result = runner.invoke(
-        app,
-        ["train", str(ASSETS_DIR / "train_data.csv"), str(config_path), "--debug"],
-    )
-    assert result.exit_code == 0
+        # Run cli command
+        result = runner.invoke(
+            app,
+            ["train", str(ASSETS_DIR / "train_data.csv"), config_path, "--debug"],
+        )
+        assert result.exit_code == 0
 
-    # Check that model config saved out
-    saved_config_path = Path(config["model_save_dir"]) / "run_config.json"
-    assert saved_config_path.exists()
+        # Check that model config saved out
+        saved_config_path = Path(config["model_save_dir"]) / "run_config.json"
+        assert saved_config_path.exists()
 
-    # Check that LGB Booster saved out
-    saved_lgb_path = Path(config["model_save_dir"]) / "lgb_model.txt"
-    assert saved_lgb_path.exists()
-
-    shutil.rmtree(config["model_save_dir"])
+        # Check that LGB Booster saved out
+        saved_lgb_path = Path(config["model_save_dir"]) / "lgb_model.txt"
+        assert saved_lgb_path.exists()
 
 
 def test_cli_predict(train_data: pd.DataFrame):
-    with tempfile.TemporaryDirectory() as preds_dir:
-        preds_path = Path(preds_dir) / "preds.csv"
+    with tempfile.TemporaryDirectory() as tmp_cli_predict_dir:
+        # Write out config into tmp dir
+        config = PREDICT_CONFIG.copy()
+        config_path = f"{tmp_cli_predict_dir}/config.json"
+        with open(config_path, "w") as fp:
+            json.dump(config, fp)
+
+        # Run cli command
+        preds_path = f"{tmp_cli_predict_dir}/preds.csv"
         result = runner.invoke(
             app,
             [
                 "predict",
                 str(ASSETS_DIR / "train_data.csv"),
-                str(ASSETS_DIR / "cli_predict_config.json"),
-                str(preds_path),
+                config_path,
+                preds_path,
                 "--debug",
             ],
         )
         assert result.exit_code == 0
 
-        assert preds_path.exists()
+        # Check that preds saved out
+        assert Path(preds_path).exists()
         preds = pd.read_csv(preds_path)
         assert preds.shape[0] == train_data.shape[0]
 
