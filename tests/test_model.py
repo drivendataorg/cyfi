@@ -24,7 +24,7 @@ TRAIN_CONFIG = {
 }
 
 PREDICT_CONFIG = TRAIN_CONFIG.copy()
-PREDICT_CONFIG["model_save_dir"] = str(ASSETS_DIR / "trained_model")
+PREDICT_CONFIG["trained_model_dir"] = str(ASSETS_DIR / "trained_model")
 
 
 @pytest.fixture
@@ -35,14 +35,14 @@ def train_data() -> pd.DataFrame:
 def test_train_model(train_data: pd.DataFrame):
     with tempfile.TemporaryDirectory() as model_dir:
         config = TRAIN_CONFIG.copy()
-        config["model_save_dir"] = model_dir
+        config["trained_model_dir"] = model_dir
 
         # Run train model and check that it returns a model
         trained_model = train_model(train_data, config, debug=True)
         assert type(trained_model) == CyanoModel
 
         # Check that model config is saved correctly
-        saved_config_path = Path(trained_model.config.model_save_dir) / "run_config.json"
+        saved_config_path = Path(trained_model.config.trained_model_dir) / "run_config.json"
         assert saved_config_path.exists()
         with open(saved_config_path, "r") as fp:
             saved_config = json.load(fp)
@@ -50,7 +50,7 @@ def test_train_model(train_data: pd.DataFrame):
         assert "cache_dir" in saved_config.keys()
 
         # Check that LGB Booster is saved correctly
-        saved_lgb_path = Path(trained_model.config.model_save_dir) / "lgb_model.txt"
+        saved_lgb_path = Path(trained_model.config.trained_model_dir) / "lgb_model.txt"
         assert saved_lgb_path.exists()
         lgb_model = lgb.Booster(model_file=saved_lgb_path)
         assert type(lgb_model) == lgb.Booster
@@ -75,7 +75,7 @@ def test_cli_train():
         # Write out config with model save dir in tmp dir
         config = TRAIN_CONFIG.copy()
         config_path = f"{tmp_cli_train_dir}/config.json"
-        config["model_save_dir"] = f"{tmp_cli_train_dir}/trained_model"
+        config["trained_model_dir"] = f"{tmp_cli_train_dir}/trained_model"
         with open(config_path, "w") as fp:
             json.dump(config, fp)
 
@@ -87,11 +87,11 @@ def test_cli_train():
         assert result.exit_code == 0
 
         # Check that model config saved out
-        saved_config_path = Path(config["model_save_dir"]) / "run_config.json"
+        saved_config_path = Path(config["trained_model_dir"]) / "run_config.json"
         assert saved_config_path.exists()
 
         # Check that LGB Booster saved out
-        saved_lgb_path = Path(config["model_save_dir"]) / "lgb_model.txt"
+        saved_lgb_path = Path(config["trained_model_dir"]) / "lgb_model.txt"
         assert saved_lgb_path.exists()
 
 

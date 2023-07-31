@@ -30,7 +30,7 @@ def train(
 ):
     """Train a cyanobacteria prediction model based on the labels in labels_path
     and the config file saved at config_path. The trained model and full experiment
-    configuration will be saved to the "model_save_dir" specified in the config
+    configuration will be saved to the "trained_model_dir" specified in the config
     """
     with open(config_path, "r") as fp:
         config = json.load(fp)
@@ -51,7 +51,7 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
             subset of samples. Defaults to False.
     """
     config = ExperimentConfig(**config)
-    Path(config.model_save_dir).mkdir(exist_ok=True, parents=True)
+    Path(config.trained_model_dir).mkdir(exist_ok=True, parents=True)
 
     ## Create temp dir for features if dir not specified
     if "cache_dir" not in config:
@@ -101,8 +101,8 @@ def train_model(labels: pd.DataFrame, config: Dict, debug: bool = False):
     logger.info(f"Training model with LGB params: {model.config.lgb_config}")
     model.train(features, labels)
 
-    logger.info(f"Saving model to {config.model_save_dir}")
-    model.save(config.model_save_dir)
+    logger.info(f"Saving model to {config.trained_model_dir}")
+    model.save(config.trained_model_dir)
 
     return model
 
@@ -118,7 +118,7 @@ def predict(
         False, help="Whether to generate predictions for only a small subset of samples"
     ),
 ):
-    """Load an existing cyanobacteria prediction model from model_save_dir and generate
+    """Load an existing cyanobacteria prediction model from trained_model_dir and generate
     severity level predictions for a set of samples."""
     with open(config_path, "r") as fp:
         config = json.load(fp)
@@ -129,7 +129,7 @@ def predict(
 
 
 def predict_model(samples: pd.DataFrame, preds_save_path: Path, config: Dict, debug: bool = False):
-    """Load an existing cyanobacteria prediction model from model_save_dir and generate
+    """Load an existing cyanobacteria prediction model from trained_model_dir and generate
     severity level predictions for a set of samples.
 
     Args:
@@ -143,7 +143,7 @@ def predict_model(samples: pd.DataFrame, preds_save_path: Path, config: Dict, de
     ## Load model and experiment config
     model = CyanoModel.load_model(config)
     logger.info(
-        f"Loaded model from {config.model_save_dir} with lgb params {model.config.lgb_config}"
+        f"Loaded model from {config.trained_model_dir} with lgb params {model.config.lgb_config}"
     )
 
     ## Create temp dir for features if dir not specified

@@ -27,13 +27,13 @@ class CyanoModel:
         """Load an ensembled model from existing weights
 
         Args:
-            config (ExperimentConfig): Experiment configuration including model_save_dir
+            config (ExperimentConfig): Experiment configuration including trained_model_dir
 
         Returns:
             CyanoModel
         """
         # Load existing model
-        lgb_model = lgb.Booster(model_file=f"{config.model_save_dir}/lgb_model.txt")
+        lgb_model = lgb.Booster(model_file=f"{config.trained_model_dir}/lgb_model.txt")
 
         # Instantiate class
         return cls(config=config, lgb_model=lgb_model)

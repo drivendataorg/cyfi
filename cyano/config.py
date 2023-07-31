@@ -22,7 +22,9 @@ class LGBConfig(BaseModel):
 
 
 class ExperimentConfig(BaseModel):
-    model_save_dir: str
+    # protected_namespaces = ()
+
+    trained_model_dir: str
     num_threads: Optional[int] = 5
     cache_dir: Optional[str] = None
     pc_collections: Optional[List] = ["sentinel-2-l2a"]
