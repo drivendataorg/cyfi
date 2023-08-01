@@ -17,7 +17,7 @@ class CyanoModel:
         """Instantiate ensembled cyanobacteria prediction model
 
         Args:
-            train_config (ModelConfig): Model config for training
+            train_config (Optional[ModelConfig]): Model config for training
             lgb_model (Optional[lgb.Booster]): LightGBM Booster model,
                 if it already exists. Defaults to None.
         """
