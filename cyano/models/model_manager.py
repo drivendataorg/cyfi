@@ -1,3 +1,4 @@
+import json
 import tempfile
 from typing import Dict
 
@@ -86,6 +87,10 @@ def train_model(labels: pd.DataFrame, config: TrainConfig, debug: bool = False):
     logger.info(f"Saving model to {model_config.save_dir}")
     model.save(model_config.save_dir)
 
+    ## Save out config
+    with open(f"{model_config.save_dir}/config.json", "w") as fp:
+        json.dump(config.model_dump(), fp)
+
     return model
 
 
@@ -114,7 +119,7 @@ def predict_model(samples: pd.DataFrame, config: PredictConfig, debug: bool = Fa
     features = prepare_features(samples, config.features_config)
 
     ## Load model
-    model_config = config.model_config
+    model_config = config.tree_model_config
     model = CyanoModel.load_model(model_config)
     logger.info(
         f"Loaded model from {model_config.save_dir} with configs {model_config}"
