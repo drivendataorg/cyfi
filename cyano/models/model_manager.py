@@ -14,6 +14,10 @@ from cyano.data.utils import add_unique_identifier
 from cyano.models.cyano_model import CyanoModel
 
 
+def prepare_features():
+
+    
+
 def train_model(labels: pd.DataFrame, config: TrainConfig, debug: bool = False):
     """Train a cyanobacteria prediction model
 
@@ -87,38 +91,41 @@ def predict_model(samples: pd.DataFrame, config: PredictConfig, debug: bool = Fa
         preds_save_path (Path): Path to save the generated predictions
         config (PredictConfig): Prediction configuration
     """
-    config.make_cache_dir()
+    cache_dir = config.features_config.make_cache_dir()
 
     ## Load model and experiment config
-    model = CyanoModel.load_model(config.cyano_model_config)
+    model_config = config.model_config
+    model = CyanoModel.load_model(model_config)
     logger.info(
-        f"Loaded model from {config.cyano_model_config.trained_model_dir} with configs {model.config}"
+        f"Loaded model from {model_config.save_dir} with configs {model_config}"
     )
 
     ## Load data
     samples = add_unique_identifier(samples)
     if debug:
         samples = samples.head(10)
+
     # Save out samples with uids
     samples.to_csv(Path(config.cache_dir) / "predict_samples_uid_mapping.csv", index=True)
     logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
 
     ## Query from feature data sources and save
-    satellite_meta = identify_satellite_data(samples, config)
+    features_config = config.features_config
+    satellite_meta = identify_satellite_data(samples, features_config)
     save_satellite_to = Path(config.cache_dir) / "satellite_metadata_train.csv"
     satellite_meta.to_csv(save_satellite_to, index=False)
     logger.info(
         f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
     )
-    download_satellite_data(satellite_meta, samples, config)
-    if config.climate_features:
-        download_climate_data(samples, config)
-    if config.elevation_features:
-        download_elevation_data(samples, config)
+    download_satellite_data(satellite_meta, samples, features_config)
+    if features_config.climate_features:
+        download_climate_data(samples, features_config)
+    if features_config.elevation_features:
+        download_elevation_data(samples, features_config)
     logger.success(f"Raw source data saved to {config.cache_dir}")
 
     ## Generate features
-    features = generate_features(samples, config)
+    features = generate_features(samples, features_config)
     save_features_to = Path(config.cache_dir) / "features_train.csv"
     features.to_csv(save_features_to, index=True)
     logger.success(
