@@ -21,7 +21,7 @@ class CyanoModel:
             lgb_model (Optional[lgb.Booster]): LightGBM Booster model,
                 if it already exists. Defaults to None.
         """
-        if train_config is not None and self.lgb_model is not None:
+        if train_config is not None and lgb_model is not None:
             warnings.warn(
                 "Both train_config and lgb_model were specified. Train config takes precedence."
             )
