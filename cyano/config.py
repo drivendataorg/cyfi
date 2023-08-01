@@ -17,6 +17,7 @@ class LGBParams(BaseModel):
     bagging_seed: Optional[int] = RANDOM_STATE
     seed: Optional[int] = RANDOM_STATE
 
+
 class FeaturesConfig(BaseModel):
     cache_dir: Optional[str] = None
     pc_collections: Optional[List] = ["sentinel-2-l2a"]
@@ -48,21 +49,25 @@ class FeaturesConfig(BaseModel):
         Path(self.cache_dir).mkdir(exist_ok=True, parents=True)
         return self.cache_dir
 
+
 class ModelConfig(BaseModel):
     params: Optional[LGBParams] = LGBParams()
     num_boost_round: Optional[int] = 1000
     # TODO: make these paths
     save_dir: str = "cyano_model"
 
+
 class TrainConfig(BaseModel):
     num_threads: Optional[int] = 5
     features_config: FeaturesConfig = FeaturesConfig()
     tree_model_config: ModelConfig = ModelConfig()
 
+
 class PredictConfig(BaseModel):
     save_path: str
     features_config: FeaturesConfig
     tree_model_config: ModelConfig
+
 
 # a model has a weights file and config (in form of ModelConfig)
 # TODO: make model save dir an absolute path so we can use it to load

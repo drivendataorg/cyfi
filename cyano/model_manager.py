@@ -121,9 +121,7 @@ def predict_model(samples: pd.DataFrame, config: PredictConfig, debug: bool = Fa
     ## Load model
     model_config = config.tree_model_config
     model = CyanoModel.load_model(model_config)
-    logger.info(
-        f"Loaded model from {model_config.save_dir} with configs {model_config}"
-    )
+    logger.info(f"Loaded model from {model_config.save_dir} with configs {model_config}")
 
     ## Predict and combine with sample info
     preds = model.predict(features)
