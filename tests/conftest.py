@@ -29,7 +29,7 @@ def predict_data(predict_data_path) -> pd.DataFrame:
     return pd.read_csv(predict_data_path)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def train_config(tmp_path_factory):
     return TrainConfig(
         features_config=FeaturesConfig(
@@ -41,7 +41,7 @@ def train_config(tmp_path_factory):
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def predict_config(tmp_path_factory):
     with (ASSETS_DIR / "trained_model" / "config.json").open("r") as f:
         config = json.load(f)
