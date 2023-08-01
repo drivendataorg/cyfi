@@ -1,4 +1,5 @@
 import yaml
+from zipfile import ZipFile
 
 from loguru import logger
 import pandas as pd
@@ -80,24 +81,33 @@ def train_model(labels: pd.DataFrame, config: TrainConfig, debug: bool = False):
     logger.info(f"Training model with LGB params: {model_config}")
     model.train(features, labels)
 
-    ## Save model
+    ## Save model weights
     Path(model_config.save_dir).mkdir(exist_ok=True, parents=True)
-    logger.info(f"Saving model to {model_config.save_dir}")
     model.save(model_config.save_dir)
 
-    ## Save out artifact config
+    ## Save features config associated with weights
     with open(f"{model_config.save_dir}/config.yaml", "w") as fp:
-        yaml.dump(config.model_dump(), fp)
-
-    ## Save out reusable config for prediction
-    with open(f"{model_config.save_dir}/config_sanitized.yaml", "w") as fp:
         yaml.dump(config.sanitize(), fp)
+
+    ## Zip up model config and weights and keep only zip file
+    logger.info(f"Saving model zip to {model_config.save_dir}")
+    with ZipFile(f"{model_config.save_dir}/model.zip", "w") as z:
+        for fp in [
+            f"{model_config.save_dir}/lgb_model.txt",
+            f"{model_config.save_dir}/config.yaml"]:
+            z.write(fp, Path(fp).name)
+
+            Path(fp).unlink()
+
+    ## Save artifact config
+    with open(f"{model_config.save_dir}/config_artifact.yaml", "w") as fp:
+        yaml.dump(config.model_dump(), fp)
 
     return model
 
 
 def predict_model(samples: pd.DataFrame, config: PredictConfig, debug: bool = False):
-    """Load an existing cyanobacteria prediction model from trained_model_dir and generate
+    """Load an existing cyanobacteria prediction model and generate
     severity level predictions for a set of samples.
 
     Args:
@@ -115,6 +125,11 @@ def predict_model(samples: pd.DataFrame, config: PredictConfig, debug: bool = Fa
     # Save out samples with uids
     samples.to_csv(Path(cache_dir) / "predict_samples_uid_mapping.csv", index=True)
     logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
+
+    # ## access predict config from zip
+    # archive = ZipFile(model_zip, 'r')
+    # config = PredictConfig(**archive.read("config_sanitized.yaml"))
+    # model = CyanoModel.load_model(weights=archive["weights"])
 
     ## Query from feature data sources and save
     features = prepare_features(samples, config.features_config)

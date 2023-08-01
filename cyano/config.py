@@ -64,7 +64,7 @@ class TrainConfig(BaseModel):
         """Santize for prediction"""
         data = self.model_dump()
         data["features_config"].pop("cache_dir")
-        data["weights"] = str((Path(data["tree_model_config"]["save_dir"]) / "lgb_model.txt"))
+        data["weights"] = "lgb_model.txt"
         data.pop("tree_model_config")
         return data
 
