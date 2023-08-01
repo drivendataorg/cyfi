@@ -51,6 +51,7 @@ class FeaturesConfig(BaseModel):
 class ModelConfig(BaseModel):
     params: Optional[LGBParams] = LGBParams()
     num_boost_round: Optional[int] = 1000
+    # TODO: make these paths
     save_dir: str = "cyano_model"
 
 class TrainConfig(BaseModel):
@@ -60,7 +61,8 @@ class TrainConfig(BaseModel):
 
 class PredictConfig(BaseModel):
     save_path: str
-    tree_model_config: ModelConfig
     features_config: FeaturesConfig
+    tree_model_config: ModelConfig
 
 # a model has a weights file and config (in form of ModelConfig)
+# TODO: make model save dir an absolute path so we can use it to load
