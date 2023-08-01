@@ -30,7 +30,7 @@ lint:
 	black --check cyano tests
 
 ## Run tests
-test:
+test: lint
 	pytest tests -vv
 
 ## Make assets
