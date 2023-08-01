@@ -20,7 +20,6 @@ def main():
     train_data = pd.read_csv(ASSETS_DIR / "train_data.csv")
 
     # generally use defaults in TrainConfig
-    # TODO: needs code to not re-download if cache exists
     train_config = TrainConfig(
         features_config=FeaturesConfig(cache_dir="/tmp/feature_cache"),
         tree_model_config=ModelConfig(save_dir="tests/assets/trained_model"),
