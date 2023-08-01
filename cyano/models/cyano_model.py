@@ -33,7 +33,7 @@ class CyanoModel:
             CyanoModel
         """
         # Load existing model
-        lgb_model = lgb.Booster(model_file=f"{config.save_path}/lgb_model.txt")
+        lgb_model = lgb.Booster(model_file=f"{config.save_dir}/lgb_model.txt")
 
         # Instantiate class
         return cls(config=config, lgb_model=lgb_model)
@@ -44,12 +44,7 @@ class CyanoModel:
 
         # Save model
         self.lgb_model.save_model(f"{save_dir}/lgb_model.txt")
-
-        # Save config
-        with open(f"{save_dir}/run_config.json", "w") as fp:
-            json.dump(self.config.model_dump(), fp)
-
-        logger.success(f"Model and run config saved to {save_dir}")
+        logger.success(f"Model weights saved to {save_dir}")
 
     def train(self, features: pd.DataFrame, labels: pd.Series):
         """Train a cyanobacteria prediction model
