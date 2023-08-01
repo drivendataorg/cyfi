@@ -5,7 +5,7 @@ import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
 
-from cyano.config import PredictConfig, TrainConfig
+from cyano.config import FeaturesConfig
 
 
 def download_sample_elevation(
@@ -32,14 +32,14 @@ def download_sample_elevation(
     pass
 
 
-def download_elevation_data(sample_list: pd.DataFrame, config: Union[PredictConfig, TrainConfig]):
+def download_elevation_data(sample_list: pd.DataFrame, config: FeaturesConfig):
     """Query Copernicus' DEM elevation database for a list of samples, and
     save out the raw results.
 
     Args:
         sample_list (pd.Dataframe): Dataframe with columns for date,
             longitude, latitude, and uid
-        config (Union[PredictConfig, TrainConfig]): Configuration, including
+        config (FeaturesConfig): Configuration, including
             directory to save raw source data
     """
     logger.info(f"Querying elevation data for {sample_list.shape[0]:,} samples")

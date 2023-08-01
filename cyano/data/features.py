@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
 
-from cyano.config import PredictConfig, TrainConfig
+from cyano.config import FeaturesConfig
 
 # Create a dictionary mapping feature names to feature generator
 # functions, which take a dictionary of band arrays as input
@@ -33,13 +33,13 @@ SATELLITE_FEATURE_CALCULATORS = {
 
 
 def generate_satellite_features(
-    uids: Union[List[str], pd.Index], config: Union[PredictConfig, TrainConfig]
+    uids: Union[List[str], pd.Index], config: FeaturesConfig
 ) -> pd.DataFrame:
     """Generate features from satellite data
 
     Args:
         uids (Union[List[str], pd.Index]): List of unique indices for each sample
-        config (Union[PredictConfig, TrainConfig]): Configuration, including
+        config (FeaturesConfig): Configuration, including
             directory where raw source data is saved
 
     Returns:
@@ -91,13 +91,13 @@ def generate_satellite_features(
 
 
 def generate_climate_features(
-    uids: Union[List[str], pd.Index], config: Union[PredictConfig, TrainConfig]
+    uids: Union[List[str], pd.Index], config: FeaturesConfig
 ) -> pd.DataFrame:
     """Generate features from climate data
 
     Args:
         uids (Union[List[str], pd.Index]): List of unique indices for each sample
-        config (Union[PredictConfig, TrainConfig]): Configuration, including
+        config (FeaturesConfig): Configuration, including
             directory where raw source data is saved
 
     Returns:
@@ -113,13 +113,13 @@ def generate_climate_features(
 
 
 def generate_elevation_features(
-    uids: Union[List[str], pd.Index], config: Union[PredictConfig, TrainConfig]
+    uids: Union[List[str], pd.Index], config: FeaturesConfig
 ) -> pd.DataFrame:
     """Generate features from elevation data
 
     Args:
         uids (Union[List[str], pd.Index]): List of unique indices for each sample
-        config (Union[PredictConfig, TrainConfig]): Configuration, including
+        config (FeaturesConfig): Configuration, including
             directory where raw source data is saved
 
     Returns:
@@ -151,9 +151,7 @@ def generate_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
     pass
 
 
-def generate_features(
-    samples: pd.DataFrame, config: Union[PredictConfig, TrainConfig]
-) -> pd.DataFrame:
+def generate_features(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
     """Generate a dataframe of features for the given set of samples.
     Requires that the raw satellite, climate, and elevation data for
     the given samples are already saved in cache_dir
@@ -161,7 +159,7 @@ def generate_features(
     Args:
         samples (pd.DataFrame): Dataframe where the index is uid and there are
             columns for date, longitude, and latitude
-        config (Union[PredictConfig, TrainConfig]): Configuration, including
+        config (FeaturesConfig): Configuration, including
             directory where raw source data is saved
 
     Returns:

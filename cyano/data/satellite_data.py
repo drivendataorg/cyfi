@@ -11,7 +11,7 @@ from pystac_client import Client, ItemSearch
 import rioxarray
 from tqdm import tqdm
 
-from cyano.config import PredictConfig, TrainConfig
+from cyano.config import FeaturesConfig
 
 # Establish a connection to the STAC API
 catalog = Client.open(
@@ -89,7 +89,7 @@ def get_items_metadata(
     search_results: ItemSearch,
     latitude: float,
     longitude: float,
-    config: Union[PredictConfig, TrainConfig],
+    config: FeaturesConfig,
 ) -> pd.DataFrame:
     """Get item metadata for a list of pystac items returned for a given sample,
     including all information needed to select items for feature generation as
@@ -100,7 +100,7 @@ def get_items_metadata(
             for the given item
         latitude (float): Sample latitude
         longitude (float): Sample longitude
-        config (Union[PredictConfig, TrainConfig]): Experiment configuration
+        config (FeaturesConfig): Experiment configuration
 
     Returns:
         pd.DataFrame: Item metadata
@@ -155,16 +155,14 @@ def select_items(
     return [least_cloudy]
 
 
-def identify_satellite_data(
-    samples: pd.DataFrame, config: Union[PredictConfig, TrainConfig]
-) -> pd.DataFrame:
+def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
     """Identify all pystac items to be used during feature
     generation for a given set of samples
 
     Args:
         samples (pd.DataFrame): Dataframe where the index is uid and
             there are columns for date, longitude, and latitude
-        config (Union[PredictConfig, TrainConfig]): Experiment config
+        config (FeaturesConfig): Featires config
 
     Returns:
         pd.DataFrame: Each row is a unique combination of sample ID
@@ -211,7 +209,7 @@ def identify_satellite_data(
 
 
 def download_satellite_data(
-    satellite_meta: pd.DataFrame, samples: pd.DataFrame, config: Union[PredictConfig, TrainConfig]
+    satellite_meta: pd.DataFrame, samples: pd.DataFrame, config: FeaturesConfig
 ):
     """Download satellite images as one stacked numpy arrays per pystac item
 
@@ -221,7 +219,7 @@ def download_satellite_data(
             generation for each sample
         samples (pd.DataFrame): Dataframe where the index is uid and
             there are columns for date, longitude, and latitude
-        config (Union[PredictConfig, TrainConfig]): Experiment config
+        config (FeaturesConfig): Features config
     """
     # Filter to images selected for feature generation
     selected = satellite_meta[satellite_meta.selected]
