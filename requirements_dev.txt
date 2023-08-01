@@ -1,5 +1,6 @@
 -e .
 
+black
 cloudpathlib[s3]>=0.4.1
 faker
 geopandas
