@@ -10,12 +10,20 @@ ASSETS_DIR = Path(__file__).parent / "assets"
 
 
 @pytest.fixture(scope="session")
-def train_data() -> pd.DataFrame:
-    return pd.read_csv(ASSETS_DIR / "train_data.csv")
+def train_data_path() -> Path:
+    return ASSETS_DIR / "train_data.csv"
 
 @pytest.fixture(scope="session")
-def predict_data() -> pd.DataFrame:
-    return pd.read_csv(ASSETS_DIR / "train_data.csv")[["date", "latitude", "longitude"]]
+def train_data(train_data_path) -> pd.DataFrame:
+    return pd.read_csv(train_data_path)
+
+@pytest.fixture(scope="session")
+def predict_data_path() -> Path:
+    return ASSETS_DIR / "predict_data.csv"
+
+@pytest.fixture(scope="session")
+def predict_data(predict_data_path) -> pd.DataFrame:
+    return pd.read_csv(predict_data_path)
 
 @pytest.fixture(scope="session")
 def train_config(tmp_path_factory):
