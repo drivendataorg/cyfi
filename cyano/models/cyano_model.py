@@ -1,5 +1,4 @@
 ## Define class for ensembled set of models to predict cyanobacteria
-import json
 from typing import Optional
 
 import lightgbm as lgb

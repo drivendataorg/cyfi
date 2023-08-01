@@ -1,12 +1,10 @@
 import json
-import tempfile
-from typing import Dict
 
 from loguru import logger
 import pandas as pd
 from pathlib import Path
 
-from cyano.config import TrainConfig, PredictConfig, ModelConfig
+from cyano.config import TrainConfig, PredictConfig
 from cyano.data.climate_data import download_climate_data
 from cyano.data.elevation_data import download_elevation_data
 from cyano.data.features import generate_features

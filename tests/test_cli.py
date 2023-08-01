@@ -1,6 +1,5 @@
 import json
 
-import numpy as np
 import pandas as pd
 from pathlib import Path
 from typer.testing import CliRunner
@@ -41,7 +40,7 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, predict_config):
     # Run CLI command
     result = runner.invoke(
         app,
-        ["predict", str(predict_data_path), str(config_path)],  
+        ["predict", str(predict_data_path), str(config_path)],
     )
     assert result.exit_code == 0
 
