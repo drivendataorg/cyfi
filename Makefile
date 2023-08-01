@@ -33,9 +33,9 @@ lint:
 test: lint
 	pytest tests -vv
 
-## Make trained_model assets
+## Make trained model and config tests assets
 assets:
-	cyano train tests/assets/train_data.csv tests/assets/train_config.yaml
+	LOGURU_LEVEL=SUCCESS python tests/create_assets.py
 
 #################################################################################
 # Self Documenting Commands                                                     #

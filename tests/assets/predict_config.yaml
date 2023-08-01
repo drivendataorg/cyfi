@@ -1,4 +1,5 @@
 features_config:
+  cache_dir: null
   climate_features: []
   elevation_features: []
   image_feature_meter_window: 500
@@ -19,5 +20,5 @@ features_config:
   - B02
   - B03
   - B04
-weights: tests/assets/trained_model/lgb_model.txt
 preds_path: preds.csv
+weights: tests/assets/trained_model/lgb_model.txt
