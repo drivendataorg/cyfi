@@ -1,4 +1,4 @@
-import json
+import yaml
 
 import pandas as pd
 from pathlib import Path
@@ -22,8 +22,7 @@ def train(
     configuration will be saved to the "trained_model_dir" specified in the config
     """
     with open(config_path, "r") as fp:
-        ## TODO: change to yml
-        config_dict = json.load(fp)
+        config_dict = yaml.safe_load(fp)
         config = TrainConfig(**config_dict)
 
     labels = pd.read_csv(labels_path)
@@ -42,8 +41,7 @@ def predict(
     """Load an existing cyanobacteria prediction model from trained_model_dir and generate
     severity level predictions for a set of samples."""
     with open(config_path, "r") as fp:
-        ## TODO: change to yml
-        config_dict = json.load(fp)
+        config_dict = yaml.safe_load(fp)
         config = PredictConfig(**config_dict)
 
     samples = pd.read_csv(samples_path)

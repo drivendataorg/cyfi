@@ -1,4 +1,4 @@
-import json
+import yaml
 from pathlib import Path
 
 import pandas as pd
@@ -43,8 +43,8 @@ def train_config(tmp_path_factory):
 
 @pytest.fixture
 def predict_config(tmp_path_factory):
-    with (ASSETS_DIR / "trained_model" / "config.json").open("r") as f:
-        config = json.load(f)
+    with (ASSETS_DIR / "trained_model" / "config.yaml").open("r") as f:
+        config = yaml.safe_load(f)
 
     # TODO: probably want a function for this
     config["features_config"]["cache_dir"] = None

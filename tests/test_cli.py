@@ -1,4 +1,4 @@
-import json
+import yaml
 
 import pandas as pd
 from pathlib import Path
@@ -13,9 +13,9 @@ runner = CliRunner()
 
 def test_cli_train(tmp_path, train_data_path, train_config):
     # Write out config to tmp dir
-    config_path = tmp_path / "train_config.json"
+    config_path = tmp_path / "train_config.yaml"
     with open(config_path, "w") as fp:
-        json.dump(train_config.model_dump(), fp)
+        yaml.dump(train_config.model_dump(), fp)
 
     # Run CLI command
     result = runner.invoke(
@@ -25,7 +25,7 @@ def test_cli_train(tmp_path, train_data_path, train_config):
     assert result.exit_code == 0
 
     # Check that experiment config saved out
-    assert (Path(train_config.tree_model_config.save_dir) / "config.json").exists()
+    assert (Path(train_config.tree_model_config.save_dir) / "config.yaml").exists()
 
     # Check that LGB Booster saved out
     assert (Path(train_config.tree_model_config.save_dir) / "lgb_model.txt").exists()
@@ -33,9 +33,9 @@ def test_cli_train(tmp_path, train_data_path, train_config):
 
 def test_cli_predict(tmp_path, predict_data_path, predict_data, predict_config):
     # Write out config to tmp dir
-    config_path = tmp_path / "predict_config.json"
+    config_path = tmp_path / "predict_config.yam;"
     with open(config_path, "w") as fp:
-        json.dump(predict_config.model_dump(), fp)
+        yaml.dump(predict_config.model_dump(), fp)
 
     # Run CLI command
     result = runner.invoke(

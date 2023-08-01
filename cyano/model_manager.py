@@ -1,4 +1,4 @@
-import json
+import yaml
 
 from loguru import logger
 import pandas as pd
@@ -86,8 +86,8 @@ def train_model(labels: pd.DataFrame, config: TrainConfig, debug: bool = False):
     model.save(model_config.save_dir)
 
     ## Save out config
-    with open(f"{model_config.save_dir}/config.json", "w") as fp:
-        json.dump(config.model_dump(), fp)
+    with open(f"{model_config.save_dir}/config.yaml", "w") as fp:
+        yaml.dump(config.model_dump(), fp)
 
     return model
 

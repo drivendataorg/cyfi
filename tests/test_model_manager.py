@@ -1,4 +1,4 @@
-import json
+import yaml
 
 import lightgbm as lgb
 import pandas as pd
@@ -14,10 +14,10 @@ def test_train_model(train_config, train_data):
     assert isinstance(trained_model, CyanoModel)
 
     # Check that experiment config is saved correctly
-    saved_config_path = Path(trained_model.config.save_dir) / "config.json"
+    saved_config_path = Path(trained_model.config.save_dir) / "config.yaml"
     assert saved_config_path.exists()
     with open(saved_config_path, "r") as fp:
-        saved_config = json.load(fp)
+        saved_config = yaml.safe_load(fp)
     assert "features_config" in saved_config.keys()
 
     # Check that LGB Booster is saved correctly
