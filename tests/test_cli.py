@@ -13,8 +13,8 @@ ASSETS_DIR = Path(__file__).parent / "assets"
 runner = CliRunner()
 
 
-def test_cli_train(tmp_path, train_config):
-    # Write out config with model save dir in tmp dir
+def test_cli_train(tmp_path, train_data_path, train_config):
+    # Write out config to tmp dir
     config_path = tmp_path / "train_config.json"
     with open(config_path, "w") as fp:
         json.dump(train_config.model_dump(), fp)
@@ -22,7 +22,7 @@ def test_cli_train(tmp_path, train_config):
     # Run CLI command
     result = runner.invoke(
         app,
-        ["train", str(ASSETS_DIR / "train_data.csv"), str(config_path)],
+        ["train", str(train_data_path), str(config_path)],
     )
     assert result.exit_code == 0
 
@@ -33,30 +33,20 @@ def test_cli_train(tmp_path, train_config):
     assert (Path(train_config.tree_model_config.save_dir) / "lgb_model.txt").exists()
 
 
-# def test_cli_predict(tmp_path_factory, train_data: pd.DataFrame):
-#     tmp_cli_predict_dir = tmp_path_factory.mktemp("test_cli_predict")
+def test_cli_predict(tmp_path, predict_data_path, predict_data, predict_config):
+    # Write out config to tmp dir
+    config_path = tmp_path / "predict_config.json"
+    with open(config_path, "w") as fp:
+        json.dump(predict_config.model_dump(), fp)
 
-#     # Write out config into tmp dir
-#     config = PREDICT_CONFIG.copy()
-#     preds_path = tmp_cli_predict_dir / "preds.csv"
-#     config["preds_save_path"] = str(preds_path)
-#     config_path = tmp_cli_predict_dir / "config.json"
-#     with open(config_path, "w") as fp:
-#         json.dump(config, fp)
+    # Run CLI command
+    result = runner.invoke(
+        app,
+        ["predict", str(predict_data_path), str(config_path)],  
+    )
+    assert result.exit_code == 0
 
-#     # Run cli command
-#     result = runner.invoke(
-#         app,
-#         [
-#             "predict",
-#             str(ASSETS_DIR / "train_data.csv"),
-#             str(config_path),
-#             "--debug",
-#         ],
-#     )
-#     assert result.exit_code == 0
-
-#     # Check that preds saved out
-#     assert preds_path.exists()
-#     preds = pd.read_csv(preds_path)
-#     assert preds.shape[0] == train_data.shape[0]
+    # Check that preds saved out
+    assert Path(predict_config.save_path).exists()
+    preds = pd.read_csv(predict_config.save_path)
+    assert len(preds) == len(predict_data)
