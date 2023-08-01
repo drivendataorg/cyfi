@@ -15,10 +15,7 @@ def train(
     labels_path: Path = typer.Argument(
         exists=True, help="Path to a csv with columns for date, longitude, latitude, and severity"
     ),
-    config_path: Path = typer.Argument(exists=True, help="Path to an experiment configuration"),
-    debug: bool = typer.Option(
-        False, help="Whether to run training on only a small subset of samples"
-    ),
+    config_path: Path = typer.Argument(exists=True, help="Path to a train configuration"),
 ):
     """Train a cyanobacteria prediction model based on the labels in labels_path
     and the config file saved at config_path. The trained model and full experiment
@@ -31,7 +28,7 @@ def train(
 
     labels = pd.read_csv(labels_path)
 
-    train_model(labels, config, debug=debug)
+    train_model(labels, config)
 
 
 @app.command()
@@ -40,10 +37,7 @@ def predict(
         exists=True, help="Path to a csv of samples with columns for date, longitude, and latitude"
     ),
     config_path: Path = typer.Argument(exists=True, help="Path to an experiment configuration"),
-    # preds_save_path: Path = typer.Argument(help="Destination to save predictions csv"),
-    debug: bool = typer.Option(
-        False, help="Whether to generate predictions for only a small subset of samples"
-    ),
+    # preds_path: Path = typer.Argument(help="Destination to save predictions csv"),
 ):
     """Load an existing cyanobacteria prediction model from trained_model_dir and generate
     severity level predictions for a set of samples."""
@@ -54,7 +48,7 @@ def predict(
 
     samples = pd.read_csv(samples_path)
 
-    predict_model(samples, config=config, debug=debug)
+    predict_model(samples, config=config)
 
 
 if __name__ == "__main__":
