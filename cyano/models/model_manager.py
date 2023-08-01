@@ -24,7 +24,7 @@ def prepare_features(samples, features_config):
     logger.info(
         f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
     )
-    
+
     ## Download satellite data
     download_satellite_data(satellite_meta, samples, features_config)
 
@@ -74,13 +74,14 @@ def train_model(labels: pd.DataFrame, config: TrainConfig, debug: bool = False):
     features = prepare_features(samples, config.features_config)
 
     ## Instantiate model
-    model_config =config.tree_model_config
+    model_config = config.tree_model_config
     model = CyanoModel(model_config)
 
-    ## Train model and save
+    ## Train model
     logger.info(f"Training model with LGB params: {model_config}")
     model.train(features, labels)
 
+    ## Save model
     Path(model_config.save_dir).mkdir(exist_ok=True, parents=True)
     logger.info(f"Saving model to {model_config.save_dir}")
     model.save(model_config.save_dir)
@@ -100,31 +101,32 @@ def predict_model(samples: pd.DataFrame, config: PredictConfig, debug: bool = Fa
     """
     cache_dir = config.features_config.make_cache_dir()
 
-    ## Load model and experiment config
-    model_config = config.model_config
-    model = CyanoModel.load_model(model_config)
-    logger.info(
-        f"Loaded model from {model_config.save_dir} with configs {model_config}"
-    )
-
     ## Load data
     samples = add_unique_identifier(samples)
     if debug:
         samples = samples.head(10)
 
     # Save out samples with uids
-    samples.to_csv(Path(config.cache_dir) / "predict_samples_uid_mapping.csv", index=True)
+    samples.to_csv(Path(cache_dir) / "predict_samples_uid_mapping.csv", index=True)
     logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
 
     ## Query from feature data sources and save
     features = prepare_features(samples, config.features_config)
 
+    ## Load model
+    model_config = config.model_config
+    model = CyanoModel.load_model(model_config)
+    logger.info(
+        f"Loaded model from {model_config.save_dir} with configs {model_config}"
+    )
+
     ## Predict and combine with sample info
     preds = model.predict(features)
     samples["predicted_severity"] = preds.loc[samples.index]
 
-    Path(config.preds_save_path).parent.mkdir(exist_ok=True, parents=True)
-    samples.to_csv(config.preds_save_path, index=True)
-    logger.success(f"Predictions saved to {config.preds_save_path}")
+    ## Save out predictions
+    Path(config.save_path).parent.mkdir(exist_ok=True, parents=True)
+    samples.to_csv(config.save_path, index=True)
+    logger.success(f"Predictions saved to {config.save_path}")
 
     return samples
