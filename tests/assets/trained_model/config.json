@@ -1,0 +1,37 @@
+{
+    "num_threads": 5,
+    "features_config": {
+        "cache_dir": "/tmp/tmpj37e3u5d",
+        "pc_collections": [
+            "sentinel-2-l2a"
+        ],
+        "pc_days_search_window": 30,
+        "pc_meters_search_window": 1000,
+        "use_sentinel_bands": [
+            "B02"
+        ],
+        "image_feature_meter_window": 500,
+        "satellite_features": [
+            "B02_mean",
+            "B02_min",
+            "B02_max"
+        ],
+        "climate_features": [],
+        "elevation_features": [],
+        "metadata_features": []
+    },
+    "tree_model_config": {
+        "params": {
+            "application": "regression",
+            "metric": "rmse",
+            "max_depth": -1,
+            "num_leaves": 31,
+            "learning_rate": 0.1,
+            "verbosity": -1,
+            "bagging_seed": 40,
+            "seed": 40
+        },
+        "num_boost_round": 1000,
+        "save_dir": "cyano_model"
+    }
+}
