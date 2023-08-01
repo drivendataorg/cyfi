@@ -61,6 +61,14 @@ class TrainConfig(BaseModel):
     features_config: FeaturesConfig = FeaturesConfig()
     tree_model_config: ModelConfig = ModelConfig()
 
+    def sanitize(self):
+        """Santize for prediction"""
+        data = self.model_dump()
+        data["features_config"].pop("cache_dir")
+        data["weights"] = str((Path(data["tree_model_config"]["save_dir"]) / "lgb_model.txt"))
+        data.pop("tree_model_config")
+        return data
+
 
 class PredictConfig(BaseModel):
     features_config: FeaturesConfig

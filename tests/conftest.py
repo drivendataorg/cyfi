@@ -43,13 +43,7 @@ def train_config(tmp_path_factory):
 
 @pytest.fixture
 def predict_config(tmp_path_factory):
-    with (ASSETS_DIR / "trained_model" / "config.yaml").open("r") as f:
+    with (ASSETS_DIR / "trained_model" / "config_sanitized.yaml").open("r") as f:
         config = yaml.safe_load(f)
 
-    # TODO: probably want a function for this
-    config["features_config"]["cache_dir"] = None
-    return PredictConfig(
-        features_config=config["features_config"],
-        preds_path=str(tmp_path_factory.mktemp("test_predict") / "preds.csv"),
-        weights="tests/assets/trained_model/lgb_model.txt",
-    )
+    return PredictConfig(**config, preds_path=str(tmp_path_factory.mktemp("test_predict") / "preds.csv"),)

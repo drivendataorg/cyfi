@@ -85,9 +85,13 @@ def train_model(labels: pd.DataFrame, config: TrainConfig, debug: bool = False):
     logger.info(f"Saving model to {model_config.save_dir}")
     model.save(model_config.save_dir)
 
-    ## Save out config
+    ## Save out artifact config
     with open(f"{model_config.save_dir}/config.yaml", "w") as fp:
         yaml.dump(config.model_dump(), fp)
+
+    ## Save out reusable config for prediction
+    with open(f"{model_config.save_dir}/config_sanitized.yaml", "w") as fp:
+        yaml.dump(config.sanitize(), fp)
 
     return model
 
