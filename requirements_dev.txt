@@ -1,7 +1,9 @@
 -e .
 
+black
 cloudpathlib[s3]>=0.4.1
 faker
+flake8
 geopandas
 geopy
 lightgbm
@@ -12,6 +14,7 @@ odc-stac
 pandas
 pathlib
 planetary-computer
+pydantic
 pystac
 pystac-client
 pytest

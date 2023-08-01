@@ -3,10 +3,10 @@ version=v4
 num_class=1
 num_tree_per_iteration=1
 label_index=0
-max_feature_idx=2
+max_feature_idx=6
 objective=regression
-feature_names=B02_mean B02_min B02_max
-feature_infos=none none none
+feature_names=B02_mean B02_min B02_max B03_mean B03_min B03_max B04_mean
+feature_infos=none none none none none none none
 tree_sizes=238
 
 Tree=0
@@ -40,7 +40,7 @@ parameters:
 [device_type: cpu]
 [data: ]
 [valid: ]
-[num_iterations: 100000]
+[num_iterations: 1000]
 [learning_rate: 0.1]
 [num_leaves: 31]
 [num_threads: 0]

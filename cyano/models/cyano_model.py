@@ -1,55 +1,57 @@
 ## Define class for ensembled set of models to predict cyanobacteria
-import json
 from typing import Optional
+import warnings
 
 import lightgbm as lgb
 from loguru import logger
 import pandas as pd
 from pathlib import Path
 
-from cyano.config import CyanoModelConfig
+from cyano.config import ModelConfig
 
 
 class CyanoModel:
-    def __init__(self, config: CyanoModelConfig, lgb_model: Optional[lgb.Booster] = None):
+    def __init__(
+        self, train_config: Optional[ModelConfig] = None, lgb_model: Optional[lgb.Booster] = None
+    ):
         """Instantiate ensembled cyanobacteria prediction model
 
         Args:
-            config (CyanoModelConfig): Experiment config
+            train_config (Optional[ModelConfig]): Model config for training
             lgb_model (Optional[lgb.Booster]): LightGBM Booster model,
                 if it already exists. Defaults to None.
         """
-        self.config = config
+        if train_config is not None and lgb_model is not None:
+            warnings.warn(
+                "Both train_config and lgb_model were specified. Train config takes precedence."
+            )
+
+        self.train_config = train_config
         self.lgb_model = lgb_model
 
     @classmethod
-    def load_model(cls, config: CyanoModelConfig) -> "CyanoModel":
+    def load_model(cls, weights: Path) -> "CyanoModel":
         """Load an ensembled model from existing weights
 
         Args:
-            config (CyanoModelConfig): Experiment configuration including trained_model_dir
+            weights (Path): Path to weights file
 
         Returns:
             CyanoModel
         """
         # Load existing model
-        lgb_model = lgb.Booster(model_file=f"{config.trained_model_dir}/lgb_model.txt")
+        lgb_model = lgb.Booster(model_file=weights)
 
         # Instantiate class
-        return cls(config=config, lgb_model=lgb_model)
+        return cls(train_config=None, lgb_model=lgb_model)
 
     def save(self, save_dir: Path):
-        """Save model weights and config to save_dir"""
+        """Save model weights to save_dir"""
         Path(save_dir).mkdir(exist_ok=True, parents=True)
 
         # Save model
         self.lgb_model.save_model(f"{save_dir}/lgb_model.txt")
-
-        # Save config
-        with open(f"{save_dir}/run_config.json", "w") as fp:
-            json.dump(self.config.model_dump(), fp)
-
-        logger.success(f"Model and run config saved to {save_dir}")
+        logger.success(f"Model weights saved to {save_dir}")
 
     def train(self, features: pd.DataFrame, labels: pd.Series):
         """Train a cyanobacteria prediction model
@@ -62,9 +64,9 @@ class CyanoModel:
         """
         lgb_train = lgb.Dataset(features, label=labels.loc[features.index])
         model = lgb.train(
-            self.config.params.model_dump(),
+            self.train_config.params.model_dump(),
             lgb_train,
-            num_boost_round=self.config.num_boost_round,
+            num_boost_round=self.train_config.num_boost_round,
         )
 
         self.lgb_model = model
