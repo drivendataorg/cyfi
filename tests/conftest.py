@@ -46,4 +46,7 @@ def predict_config(tmp_path_factory):
     with (ASSETS_DIR / "trained_model" / "config_sanitized.yaml").open("r") as f:
         config = yaml.safe_load(f)
 
-    return PredictConfig(**config, preds_path=str(tmp_path_factory.mktemp("test_predict") / "preds.csv"),)
+    return PredictConfig(
+        **config,
+        preds_path=str(tmp_path_factory.mktemp("test_predict") / "preds.csv"),
+    )

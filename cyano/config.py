@@ -75,5 +75,6 @@ class PredictConfig(BaseModel):
     weights: str
     preds_path: str
 
+
 # a model has a weights file and config (in form of ModelConfig)
 # TODO: make model save dir an absolute path so we can use it to load

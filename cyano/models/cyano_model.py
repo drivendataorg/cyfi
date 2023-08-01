@@ -22,7 +22,9 @@ class CyanoModel:
                 if it already exists. Defaults to None.
         """
         if train_config is not None and self.lgb_model is not None:
-            warnings.warn("Both train_config and lgb_model were specified. Train config takes precedence.")
+            warnings.warn(
+                "Both train_config and lgb_model were specified. Train config takes precedence."
+            )
 
         self.train_config = train_config
         self.lgb_model = lgb_model
