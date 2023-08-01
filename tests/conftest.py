@@ -43,10 +43,9 @@ def train_config(tmp_path_factory):
 
 @pytest.fixture
 def predict_config(tmp_path_factory):
-    with (ASSETS_DIR / "trained_model" / "config_sanitized.yaml").open("r") as f:
+    # uses model weights in tests/assets/trained_model
+    with (ASSETS_DIR / "predict_config.yaml").open("r") as f:
         config = yaml.safe_load(f)
+        config["preds_path"] = str(tmp_path_factory.mktemp("test_predict") / "preds.csv")
 
-    return PredictConfig(
-        **config,
-        preds_path=str(tmp_path_factory.mktemp("test_predict") / "preds.csv"),
-    )
+    return PredictConfig(**config)
