@@ -5,7 +5,7 @@ from pathlib import Path
 import typer
 
 from cyano.config import TrainConfig, PredictConfig
-from cyano.models.model_manager import train_model, predict_model
+from cyano.model_manager import train_model, predict_model
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
