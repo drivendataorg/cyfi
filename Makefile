@@ -33,7 +33,7 @@ lint:
 test: lint
 	pytest tests -vv
 
-## Make assets
+## Make trained_model assets
 assets:
 	cyano train tests/assets/train_data.csv tests/assets/train_config.yaml
 
