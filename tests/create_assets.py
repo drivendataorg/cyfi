@@ -12,7 +12,7 @@ ASSETS_DIR = Path(__file__).parent / "assets"
 
 def main():
     """Helper script to train a model using the default TrainConfig and then write out
-    the ofllowing test assets:
+    the following test assets:
     - train_config.yaml
     - trained_model directory
     - predict_config.yaml
