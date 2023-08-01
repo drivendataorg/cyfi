@@ -99,7 +99,6 @@ def predict_model(samples: pd.DataFrame, config: PredictConfig, debug: bool = Fa
     Args:
         samples (pd.DataFrame): Dataframe of samples with columns for date,
             longitude, and latitude
-        preds_save_path (Path): Path to save the generated predictions
         config (PredictConfig): Prediction configuration
     """
     cache_dir = config.features_config.make_cache_dir()
@@ -117,17 +116,16 @@ def predict_model(samples: pd.DataFrame, config: PredictConfig, debug: bool = Fa
     features = prepare_features(samples, config.features_config)
 
     ## Load model
-    model_config = config.tree_model_config
-    model = CyanoModel.load_model(model_config)
-    logger.info(f"Loaded model from {model_config.save_dir} with configs {model_config}")
+    model = CyanoModel.load_model(config.weights)
+    logger.info(f"Loaded model from {config.weights}")
 
     ## Predict and combine with sample info
     preds = model.predict(features)
     samples["predicted_severity"] = preds.loc[samples.index]
 
     ## Save out predictions
-    Path(config.save_path).parent.mkdir(exist_ok=True, parents=True)
-    samples.to_csv(config.save_path, index=True)
-    logger.success(f"Predictions saved to {config.save_path}")
+    Path(config.preds_path).parent.mkdir(exist_ok=True, parents=True)
+    samples.to_csv(config.preds_path, index=True)
+    logger.success(f"Predictions saved to {config.preds_path}")
 
     return samples

@@ -48,6 +48,8 @@ def predict_config(tmp_path_factory):
 
     # TODO: probably want a function for this
     config["features_config"]["cache_dir"] = None
-    config["tree_model_config"]["save_dir"] = str(ASSETS_DIR / "trained_model")
-    config["save_path"] = str(tmp_path_factory.mktemp("test_predict") / "preds.csv")
-    return PredictConfig(**config)
+    return PredictConfig(
+        features_config=config["features_config"],
+        preds_path=str(tmp_path_factory.mktemp("test_predict") / "preds.csv"),
+        weights="tests/assets/trained_model/lgb_model.txt",
+    )

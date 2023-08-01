@@ -10,35 +10,37 @@ from cyano.config import ModelConfig
 
 
 class CyanoModel:
-    def __init__(self, config: ModelConfig, lgb_model: Optional[lgb.Booster] = None):
+    def __init__(
+        self, train_config: Optional[ModelConfig] = None, lgb_model: Optional[lgb.Booster] = None
+    ):
         """Instantiate ensembled cyanobacteria prediction model
 
         Args:
-            config (ModelConfig): Model config
+            train_config (ModelConfig): Model config for training
             lgb_model (Optional[lgb.Booster]): LightGBM Booster model,
                 if it already exists. Defaults to None.
         """
-        self.config = config
+        self.train_config = train_config
         self.lgb_model = lgb_model
 
     @classmethod
-    def load_model(cls, config: ModelConfig) -> "CyanoModel":
+    def load_model(cls, weights: Path) -> "CyanoModel":
         """Load an ensembled model from existing weights
 
         Args:
-            config (ModelConfig): Model config
+            weights (Path): Path to weights file
 
         Returns:
             CyanoModel
         """
         # Load existing model
-        lgb_model = lgb.Booster(model_file=f"{config.save_dir}/lgb_model.txt")
+        lgb_model = lgb.Booster(model_file=weights)
 
         # Instantiate class
-        return cls(config=config, lgb_model=lgb_model)
+        return cls(train_config=None, lgb_model=lgb_model)
 
     def save(self, save_dir: Path):
-        """Save model weights and config to save_dir"""
+        """Save model weights to save_dir"""
         Path(save_dir).mkdir(exist_ok=True, parents=True)
 
         # Save model
@@ -56,9 +58,9 @@ class CyanoModel:
         """
         lgb_train = lgb.Dataset(features, label=labels.loc[features.index])
         model = lgb.train(
-            self.config.params.model_dump(),
+            self.train_config.params.model_dump(),
             lgb_train,
-            num_boost_round=self.config.num_boost_round,
+            num_boost_round=self.train_config.num_boost_round,
         )
 
         self.lgb_model = model

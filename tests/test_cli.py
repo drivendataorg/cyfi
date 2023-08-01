@@ -45,6 +45,6 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, predict_config):
     assert result.exit_code == 0
 
     # Check that preds saved out
-    assert Path(predict_config.save_path).exists()
-    preds = pd.read_csv(predict_config.save_path)
+    assert Path(predict_config.preds_path).exists()
+    preds = pd.read_csv(predict_config.preds_path)
     assert len(preds) == len(predict_data)
