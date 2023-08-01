@@ -1,6 +1,5 @@
 import json
 
-import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -26,8 +25,8 @@ def test_cli_train(tmp_path, train_data_path, train_config):
     )
     assert result.exit_code == 0
 
-    # Check that model config saved out
-    assert (Path(train_config.tree_model_config.save_dir) / "run_config.json").exists()
+    # Check that experiment config saved out
+    assert (Path(train_config.tree_model_config.save_dir) / "config.json").exists()
 
     # Check that LGB Booster saved out
     assert (Path(train_config.tree_model_config.save_dir) / "lgb_model.txt").exists()

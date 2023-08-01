@@ -14,12 +14,12 @@ def test_train_model(train_config, train_data):
     trained_model = train_model(train_data, train_config)
     assert type(trained_model) == CyanoModel
 
-    # Check that model config is saved correctly
-    saved_config_path = Path(trained_model.config.save_dir) / "run_config.json"
+    # Check that experiment config is saved correctly
+    saved_config_path = Path(trained_model.config.save_dir) / "config.json"
     assert saved_config_path.exists()
     with open(saved_config_path, "r") as fp:
         saved_config = json.load(fp)
-    assert "save_dir" in saved_config.keys()
+    assert "features_config" in saved_config.keys()
 
     # Check that LGB Booster is saved correctly
     saved_lgb_path = Path(trained_model.config.save_dir) / "lgb_model.txt"
