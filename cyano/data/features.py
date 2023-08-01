@@ -1,5 +1,6 @@
 ## Code to generate features from raw downloaded source data
 from typing import List, Union
+import warnings
 
 from loguru import logger
 import numpy as np
@@ -61,9 +62,7 @@ def generate_satellite_features(
         # change if we have multiple
         item_paths = list(sample_dir.glob("*.npy"))
         if len(item_paths) > 1:
-            raise NotImplementedError(
-                f"{uid} has multiple items, cannot process multiple items per sample"
-            )
+            warnings.warn(f"{uid} has multiple items. Processing multiple items per sample is not supported, selecting first item.")
         stacked_array = np.load(item_paths[0])
 
         # Load stacked array in dictionary form with band names for keys
