@@ -1,5 +1,4 @@
 {
-    "num_threads": 5,
     "features_config": {
         "cache_dir": "/tmp/tmpj37e3u5d",
         "pc_collections": [

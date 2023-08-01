@@ -3,7 +3,6 @@
         "trained_model_dir": "/tmp/model",
         "num_boost_round": 1000
     },
-    "num_threads": 4,
     "cache_dir": "/tmp/features",
     "pc_collections": [
         "sentinel-2-l2a"

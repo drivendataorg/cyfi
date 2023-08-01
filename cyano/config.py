@@ -58,7 +58,6 @@ class ModelConfig(BaseModel):
 
 
 class TrainConfig(BaseModel):
-    num_threads: Optional[int] = 5
     features_config: FeaturesConfig = FeaturesConfig()
     tree_model_config: ModelConfig = ModelConfig()
 
