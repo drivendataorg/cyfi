@@ -45,13 +45,13 @@ class CyanoModel:
         # Instantiate class
         return cls(train_config=None, lgb_model=lgb_model)
 
-    def save(self, save_dir: Path):
-        """Save model weights to save_dir"""
-        Path(save_dir).mkdir(exist_ok=True, parents=True)
+    # def save(self, save_dir: Path):
+    #     """Save model weights to save_dir"""
+    #     Path(save_dir).mkdir(exist_ok=True, parents=True)
 
-        # Save model
-        self.lgb_model.save_model(f"{save_dir}/lgb_model.txt")
-        logger.success(f"Model weights saved to {save_dir}")
+    #     # Save model
+    #     self.lgb_model.save_model(f"{save_dir}/lgb_model.txt")
+    #     logger.success(f"Model weights saved to {save_dir}")
 
     def train(self, features: pd.DataFrame, labels: pd.Series):
         """Train a cyanobacteria prediction model

@@ -81,29 +81,10 @@ def train_model(labels: pd.DataFrame, config: TrainConfig, debug: bool = False):
     logger.info(f"Training model with LGB params: {model_config}")
     model.train(features, labels)
 
-    ## Save model weights
-    Path(model_config.save_dir).mkdir(exist_ok=True, parents=True)
-    model.save(model_config.save_dir)
-
-    ## Save features config associated with weights
-    with open(f"{model_config.save_dir}/config.yaml", "w") as fp:
-        yaml.dump(config.sanitize_features_config(), fp)
-
-    ## Zip up model config and weights and keep only zip file
-    logger.info(f"Saving model zip to {model_config.save_dir}")
-    with ZipFile(f"{model_config.save_dir}/model.zip", "w") as z:
-        for fp in [
-            f"{model_config.save_dir}/lgb_model.txt",
-            f"{model_config.save_dir}/config.yaml",
-        ]:
-            z.write(fp, Path(fp).name)
-
-            Path(fp).unlink()
-
-    ## Save artifact config
-    with open(f"{model_config.save_dir}/config_artifact.yaml", "w") as fp:
-        yaml.dump(config.model_dump(), fp)
-
+    ## Save model
+    config.tree_model_config._model = model
+    config.save_model()
+    
     return model
 
 
