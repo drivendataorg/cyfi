@@ -78,7 +78,7 @@ class TrainConfig(BaseModel):
         Path(model_config.save_dir).mkdir(exist_ok=True, parents=True)
 
         ## Save out model weights
-        model_config._model.lgb_model.save_model(Path(model_config.save_dir) / "lgb_model.txt")
+        model_config._model.save(model_config.save_dir)
 
         ## Save features config associated with weights
         with open(f"{model_config.save_dir}/config.yaml", "w") as fp:
