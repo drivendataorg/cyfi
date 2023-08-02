@@ -147,15 +147,18 @@ class CyanoModelPipeline:
         return cls(features_config=features_config, model=model, cache_dir=cache_dir)
 
     def predict_model(self):
-        preds = self.model.predict(self.features)
-        self.preds = self.samples.copy()
-        self.preds["predicted_severity"] = preds
-        return preds
+        self.preds = pd.Series(
+            data=self.model.predict(self.features),
+            index=self.features.index,
+            name="predicted_severity",
+        )
+        self.output_df = self.samples.join(self.preds)
+        return self.preds
 
     def write_predictions(self, preds_path):
         ## Save out predictions
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)
-        self.samples.to_csv(preds_path, index=True)
+        self.output_df.to_csv(preds_path, index=True)
         logger.success(f"Predictions saved to {preds_path}")
 
     def run_prediction(self, predict_csv, preds_path="preds.csv"):
