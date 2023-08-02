@@ -81,12 +81,9 @@ def train_model(labels: pd.DataFrame, config: TrainConfig, debug: bool = False):
     logger.info(f"Training model with LGB params: {model_config}")
     model.train(features, labels)
 
-    ## Save model
-    config.save_model(model)
-
-    ## Save artifact config
-    with open(f"{model_config.save_dir}/config_artifact.yaml", "w") as fp:
-        yaml.dump(config.model_dump(), fp)
+    ## Save model zipfile and artifact config
+    config.save_model_zip(model=model, save_dir=model_config.save_dir)
+    config.save_artifact_config(save_dir=model_config.save_dir)
 
     return model
 

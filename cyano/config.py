@@ -69,7 +69,7 @@ class TrainConfig(BaseModel):
         data["features_config"].pop("cache_dir")
         return data["features_config"]
 
-    def save_model(self, model):
+    def save_model_zip(self, model, save_dir):
         """Save out zipfile with model weights and features."""
         save_dir = self.tree_model_config.save_dir
         Path(save_dir).mkdir(exist_ok=True, parents=True)
@@ -79,6 +79,11 @@ class TrainConfig(BaseModel):
         with ZipFile(f"{save_dir}/model.zip", "w") as z:
             z.writestr(f"{save_dir}/config.yaml", yaml.dump(self.sanitize_features_config()))
             z.writestr(f"{save_dir}/lgb_model.txt", model.lgb_model.model_to_string())
+
+    def save_artifact_config(self, save_dir):
+        """Save artifact config"""
+        with open(f"{save_dir}/config_artifact.yaml", "w") as fp:
+            yaml.dump(self.model_dump(), fp)
 
 
 class PredictConfig(BaseModel):
