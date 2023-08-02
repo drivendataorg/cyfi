@@ -5,7 +5,7 @@ import yaml
 from zipfile import ZipFile
 
 from loguru import logger
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel
 
 from cyano.settings import RANDOM_STATE
 
@@ -57,7 +57,6 @@ class ModelConfig(BaseModel):
     params: Optional[LGBParams] = LGBParams()
     num_boost_round: Optional[int] = 1000
     save_dir: str = "cyano_model"
-    _model = PrivateAttr()
 
 
 class TrainConfig(BaseModel):
@@ -70,34 +69,28 @@ class TrainConfig(BaseModel):
         data["features_config"].pop("cache_dir")
         return data["features_config"]
 
-    def save_model(self):
-        """Save out zipfile with model weights and features config along with artifact config.
-        """
-        model_config = self.tree_model_config
-
-        Path(model_config.save_dir).mkdir(exist_ok=True, parents=True)
+    def save_model(self, model):
+        """Save out zipfile with model weights and features."""
+        save_dir = self.tree_model_config.save_dir
+        Path(save_dir).mkdir(exist_ok=True, parents=True)
 
         ## Save out model weights
-        model_config._model.save(model_config.save_dir)
+        model.save(save_dir)
 
         ## Save features config associated with weights
-        with open(f"{model_config.save_dir}/config.yaml", "w") as fp:
+        with open(f"{save_dir}/config.yaml", "w") as fp:
             yaml.dump(self.sanitize_features_config(), fp)
 
         ## Zip up model config and weights and keep only zip file
-        logger.info(f"Saving model zip to {model_config.save_dir}")
-        with ZipFile(f"{model_config.save_dir}/model.zip", "w") as z:
+        logger.info(f"Saving model zip to {save_dir}")
+        with ZipFile(f"{save_dir}/model.zip", "w") as z:
             for fp in [
-                f"{model_config.save_dir}/lgb_model.txt",
-                f"{model_config.save_dir}/config.yaml",
+                f"{save_dir}/lgb_model.txt",
+                f"{save_dir}/config.yaml",
             ]:
                 z.write(fp, Path(fp).name)
 
                 Path(fp).unlink()
-
-        ## Save artifact config
-        with open(f"{model_config.save_dir}/config_artifact.yaml", "w") as fp:
-            yaml.dump(self.model_dump(), fp)
 
 
 class PredictConfig(BaseModel):

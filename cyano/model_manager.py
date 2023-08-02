@@ -82,9 +82,12 @@ def train_model(labels: pd.DataFrame, config: TrainConfig, debug: bool = False):
     model.train(features, labels)
 
     ## Save model
-    config.tree_model_config._model = model
-    config.save_model()
-    
+    config.save_model(model)
+
+    ## Save artifact config
+    with open(f"{model_config.save_dir}/config_artifact.yaml", "w") as fp:
+        yaml.dump(config.model_dump(), fp)
+
     return model
 
 
