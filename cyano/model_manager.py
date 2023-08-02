@@ -114,6 +114,7 @@ def predict_model(samples: pd.DataFrame, config: PredictConfig, debug: bool = Fa
     Args:
         samples (pd.DataFrame): Dataframe of samples with columns for date,
             longitude, and latitude
+        config (PredictConfig): Prediction configuration
     """
     archive = ZipFile(config.weights_zipfile, "r")
     features_config = FeaturesConfig(**yaml.safe_load(archive.read("config.yaml")))
