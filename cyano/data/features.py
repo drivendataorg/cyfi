@@ -33,7 +33,7 @@ SATELLITE_FEATURE_CALCULATORS = {
 
 
 def generate_satellite_features(
-    uids: Union[List[str], pd.Index], config: FeaturesConfig
+    uids: Union[List[str], pd.Index], config: FeaturesConfig, cache_dir
 ) -> pd.DataFrame:
     """Generate features from satellite data
 
@@ -51,7 +51,7 @@ def generate_satellite_features(
     # Iterate over samples
     for uid in tqdm(uids):
         satellite_features_dict[uid] = {}
-        sample_dir = Path(config.cache_dir) / f"satellite/{uid}"
+        sample_dir = Path(cache_dir) / f"satellite/{uid}"
         # Skip samples with no imagery
         if not sample_dir.exists():
             continue
@@ -151,7 +151,7 @@ def generate_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
     pass
 
 
-def generate_features(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
+def generate_features(samples: pd.DataFrame, config: FeaturesConfig, cache_dir) -> pd.DataFrame:
     """Generate a dataframe of features for the given set of samples.
     Requires that the raw satellite, climate, and elevation data for
     the given samples are already saved in cache_dir
@@ -168,22 +168,22 @@ def generate_features(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataF
     """
     uids = samples.index
     all_features = []
-    satellite_features = generate_satellite_features(uids, config)
+    satellite_features = generate_satellite_features(uids, config, cache_dir)
     all_features.append(satellite_features.loc[uids])
     logger.info(f"Generated {satellite_features.shape[1]} satellite features")
 
     if config.climate_features:
-        climate_features = generate_climate_features(uids, config)
+        climate_features = generate_climate_features(uids, config, cache_dir)
         all_features.append(climate_features.loc[uids])
         logger.info(f"Generated {satellite_features.shape[0]} climate features")
 
     if config.elevation_features:
-        elevation_features = generate_elevation_features(uids, config)
+        elevation_features = generate_elevation_features(uids, config, cache_dir)
         all_features.append(elevation_features.loc[uids])
         logger.info(f"Generated {satellite_features.shape[0]} elevation features")
 
     if config.metadata_features:
-        metadata_features = generate_metadata_features(samples)
+        metadata_features = generate_metadata_features(samples, cache_dir)
         all_features.append(metadata_features.loc[uids])
         logger.info(f"Generated {satellite_features.shape[0]} metadata features")
 

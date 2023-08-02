@@ -155,7 +155,7 @@ def select_items(
     return [least_cloudy]
 
 
-def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
+def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig, cache_dir) -> pd.DataFrame:
     """Identify all pystac items to be used during feature
     generation for a given set of samples
 
@@ -169,7 +169,7 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
             and pystac item id. The 'selected' column indicates
             which will be used in feature generation
     """
-    save_dir = Path(config.cache_dir) / "satellite"
+    save_dir = Path(cache_dir) / "satellite"
     save_dir.mkdir(exist_ok=True, parents=True)
     logger.info(
         f"Searching {config.pc_collections} within {config.pc_days_search_window} days and {config.pc_meters_search_window} meters"
@@ -209,7 +209,7 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
 
 
 def download_satellite_data(
-    satellite_meta: pd.DataFrame, samples: pd.DataFrame, config: FeaturesConfig
+    satellite_meta: pd.DataFrame, samples: pd.DataFrame, config: FeaturesConfig, cache_dir
 ):
     """Download satellite images as one stacked numpy arrays per pystac item
 
@@ -228,7 +228,7 @@ def download_satellite_data(
     logger.info(f"Downloading bands {config.use_sentinel_bands}")
     for _, download_row in tqdm(selected.iterrows(), total=len(selected)):
         sample_row = samples.loc[download_row.sample_id]
-        sample_dir = Path(config.cache_dir) / f"satellite/{download_row.sample_id}"
+        sample_dir = Path(cache_dir) / f"satellite/{download_row.sample_id}"
         sample_dir.mkdir(exist_ok=True, parents=True)
 
         # Get bounding box for array to save out
