@@ -64,7 +64,7 @@ class TrainConfig(BaseModel):
     tree_model_config: ModelConfig = ModelConfig()
 
     def sanitize_features_config(self):
-        """Sanitize for use for weights"""
+        """Sanitize for use with weights"""
         data = self.model_dump()
         data["features_config"].pop("cache_dir")
         return data["features_config"]
