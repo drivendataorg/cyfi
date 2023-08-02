@@ -74,23 +74,11 @@ class TrainConfig(BaseModel):
         save_dir = self.tree_model_config.save_dir
         Path(save_dir).mkdir(exist_ok=True, parents=True)
 
-        ## Save out model weights
-        model.save(save_dir)
-
-        ## Save features config associated with weights
-        with open(f"{save_dir}/config.yaml", "w") as fp:
-            yaml.dump(self.sanitize_features_config(), fp)
-
-        ## Zip up model config and weights and keep only zip file
+        ## Zip up model config and weights
         logger.info(f"Saving model zip to {save_dir}")
         with ZipFile(f"{save_dir}/model.zip", "w") as z:
-            for fp in [
-                f"{save_dir}/lgb_model.txt",
-                f"{save_dir}/config.yaml",
-            ]:
-                z.write(fp, Path(fp).name)
-
-                Path(fp).unlink()
+            z.writestr(f"{save_dir}/config.yaml", yaml.dump(self.sanitize_features_config()))
+            z.writestr(f"{save_dir}/lgb_model.txt", model.lgb_model.model_to_string())
 
 
 class PredictConfig(BaseModel):

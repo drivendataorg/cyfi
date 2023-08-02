@@ -1,5 +1,5 @@
 features_config:
-  cache_dir: /tmp/tmpgzwrrkeb
+  cache_dir: /tmp/tmpw_mt_3en
   climate_features: []
   elevation_features: []
   image_feature_meter_window: 500
