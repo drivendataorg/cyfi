@@ -1,3 +1,5 @@
+from functools import lru_cache
+from pathlib import Path
 import tempfile
 from typing import Optional
 import yaml
@@ -6,7 +8,6 @@ from zipfile import ZipFile
 import lightgbm as lgb
 from loguru import logger
 import pandas as pd
-from pathlib import Path
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
 from cyano.data.climate_data import download_climate_data
@@ -15,8 +16,6 @@ from cyano.data.features import generate_features
 from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
 from cyano.data.utils import add_unique_identifier
 
-
-## TODO: add lru_cache
 
 class CyanoModelPipeline:
     def __init__(
@@ -36,9 +35,8 @@ class CyanoModelPipeline:
         # make cache dir
         Path(self.cache_dir).mkdir(exist_ok=True, parents=True)
 
-    def prep_train_data(self, data, debug=False):
+    def _prep_train_data(self, data, debug=False):
         """Load labels and save out samples with UIDs"""
-        ## Load labels
         labels = pd.read_csv(data)
         labels = labels[["date", "latitude", "longitude", "severity"]]
         labels = add_unique_identifier(labels)
@@ -54,7 +52,8 @@ class CyanoModelPipeline:
 
         return self.samples, self.labels
 
-    def prepare_features(self):
+    @lru_cache
+    def _prepare_features(self):
         if self.samples is None:
             raise ValueError("No samples found")
 
@@ -89,7 +88,7 @@ class CyanoModelPipeline:
         self.features = features
         return features
 
-    def train_model(self):
+    def _train_model(self):
         lgb_data = lgb.Dataset(self.features, label=self.labels.loc[self.features.index])
 
         ## Train model
@@ -101,21 +100,21 @@ class CyanoModelPipeline:
 
         return self.model
 
-    def to_disk(self, save_path):
-        ## Zip up model config and weights
+    def _to_disk(self, save_path):
         save_dir = Path(save_path).parent
         save_dir.mkdir(exist_ok=True, parents=True)
 
+        ## Zip up model config and weights
         logger.info(f"Saving model to {save_path}")
         with ZipFile(f"{save_path}", "w") as z:
             z.writestr("config.yaml", yaml.dump(self.features_config.model_dump()))
             z.writestr("lgb_model.txt", self.model.model_to_string())
 
     def run_training(self, train_csv, save_path="model.zip", debug=False):
-        self.prep_train_data(train_csv, debug)
-        self.prepare_features()
-        self.train_model()
-        self.to_disk(save_path)
+        self._prep_train_data(train_csv, debug)
+        self._prepare_features()
+        self._train_model()
+        self._to_disk(save_path)
 
     @classmethod
     def from_disk(cls, filepath, cache_dir=None):
@@ -125,7 +124,7 @@ class CyanoModelPipeline:
         model = lgb.Booster(model_file=weights_file)
         return cls(features_config=features_config, model=model, cache_dir=cache_dir)
 
-    def prep_predict_data(self, data, debug=False):
+    def _prep_predict_data(self, data, debug=False):
         samples = pd.read_csv(data)[["date", "latitude", "longitude"]]
 
         samples = add_unique_identifier(samples)
@@ -138,7 +137,7 @@ class CyanoModelPipeline:
 
         self.samples = samples
 
-    def predict_model(self):
+    def _predict_model(self):
         self.preds = pd.Series(
             data=self.model.predict(self.features),
             index=self.features.index,
@@ -147,14 +146,14 @@ class CyanoModelPipeline:
         self.output_df = self.samples.join(self.preds)
         return self.preds
 
-    def write_predictions(self, preds_path):
+    def _write_predictions(self, preds_path):
         ## Save out predictions
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)
         self.output_df.to_csv(preds_path, index=True)
         logger.success(f"Predictions saved to {preds_path}")
 
     def run_prediction(self, predict_csv, preds_path="preds.csv"):
-        self.prep_predict_data(predict_csv)
-        self.prepare_features()
-        self.predict_model()
-        self.write_predictions(preds_path)
+        self._prep_predict_data(predict_csv)
+        self._prepare_features()
+        self._predict_model()
+        self._write_predictions(preds_path)
