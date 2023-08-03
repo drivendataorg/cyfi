@@ -1,0 +1,45 @@
+cache_dir: null
+features_config:
+  climate_features: []
+  elevation_features: []
+  image_feature_meter_window: 500
+  metadata_features: []
+  pc_collections:
+  - sentinel-2-l2a
+  pc_days_search_window: 30
+  pc_meters_search_window: 1000
+  satellite_features:
+  - B02_mean
+  - B02_min
+  - B02_max
+  - B03_mean
+  - B03_min
+  - B03_max
+  - B04_mean
+  use_sentinel_bands:
+  - B02
+  - B03
+  - B04
+model_training_config:
+  num_boost_round: 1000
+  params:
+    application: regression
+    bagging_seed: 40
+    learning_rate: 0.1
+    max_depth: -1
+    metric: rmse
+    num_leaves: 31
+    seed: 40
+    verbosity: -1
+predict_csv: !!python/object/apply:pathlib.PosixPath
+- tests
+- assets
+- predict_data.csv
+save_dir: !!python/object/apply:pathlib.PosixPath
+- tests
+- assets
+- experiment
+train_csv: !!python/object/apply:pathlib.PosixPath
+- tests
+- assets
+- train_data.csv
