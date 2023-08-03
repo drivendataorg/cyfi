@@ -119,8 +119,7 @@ class CyanoModelPipeline:
     def from_disk(cls, filepath, cache_dir=None):
         archive = ZipFile(filepath, "r")
         features_config = FeaturesConfig(**yaml.safe_load(archive.read("config.yaml")))
-        weights_file = archive.extract("lgb_model.txt", "/tmp/weights.txt")
-        model = lgb.Booster(model_file=weights_file)
+        model = lgb.Booster(model_str=archive.read("lgb_model.txt").decode())
         return cls(features_config=features_config, model=model, cache_dir=cache_dir)
 
     def _prep_predict_data(self, data, debug=False):
