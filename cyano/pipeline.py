@@ -91,7 +91,6 @@ class CyanoModelPipeline:
     def _train_model(self):
         lgb_data = lgb.Dataset(self.features, label=self.labels.loc[self.features.index])
 
-        ## Train model
         self.model = lgb.train(
             self.model_training_config.params.model_dump(),
             lgb_data,
@@ -147,7 +146,6 @@ class CyanoModelPipeline:
         return self.preds
 
     def _write_predictions(self, preds_path):
-        ## Save out predictions
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)
         self.output_df.to_csv(preds_path, index=True)
         logger.success(f"Predictions saved to {preds_path}")

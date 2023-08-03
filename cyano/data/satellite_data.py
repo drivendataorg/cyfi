@@ -155,7 +155,9 @@ def select_items(
     return [least_cloudy]
 
 
-def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig, cache_dir) -> pd.DataFrame:
+def identify_satellite_data(
+    samples: pd.DataFrame, config: FeaturesConfig, cache_dir
+) -> pd.DataFrame:
     """Identify all pystac items to be used during feature
     generation for a given set of samples
 

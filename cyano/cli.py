@@ -1,10 +1,9 @@
 import yaml
 
-import pandas as pd
 from pathlib import Path
 import typer
 
-from cyano.experiment import ExperimentConfig, TrainConfig
+from cyano.experiment import ExperimentConfig
 from cyano.pipeline import CyanoModelPipeline
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
@@ -32,7 +31,7 @@ def predict(
         default="preds.csv", help="Destination to save predictions csv"
     ),
 ):
-    """Load an existing cyanobacteria prediction model from and generate
+    """Load an existing cyanobacteria prediction model and generate
     severity level predictions for a set of samples.
     """
     pipeline = CyanoModelPipeline.from_disk(model_zip)
