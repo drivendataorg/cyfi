@@ -1,10 +1,5 @@
-from pathlib import Path
-import tempfile
 from typing import List, Optional
-import yaml
-from zipfile import ZipFile
 
-from loguru import logger
 from pydantic import BaseModel
 
 from cyano.settings import RANDOM_STATE
@@ -22,7 +17,6 @@ class LGBParams(BaseModel):
 
 
 class FeaturesConfig(BaseModel):
-    cache_dir: Optional[str] = None
     pc_collections: Optional[List] = ["sentinel-2-l2a"]
     pc_days_search_window: Optional[int] = 30
     pc_meters_search_window: Optional[int] = 1000
@@ -41,52 +35,7 @@ class FeaturesConfig(BaseModel):
     elevation_features: Optional[List] = []
     metadata_features: Optional[List] = []
 
-    def make_cache_dir(self):
-        """Create cache directory for features.
-        Creates a temp directory if no cache dir is specified.
 
-        Returns the cache_dir location.
-        """
-        if self.cache_dir is None:
-            self.cache_dir = tempfile.TemporaryDirectory().name
-        Path(self.cache_dir).mkdir(exist_ok=True, parents=True)
-        return self.cache_dir
-
-
-class ModelConfig(BaseModel):
+class ModelTrainingConfig(BaseModel):
     params: Optional[LGBParams] = LGBParams()
     num_boost_round: Optional[int] = 1000
-    save_dir: str = "cyano_model"
-
-
-class TrainConfig(BaseModel):
-    features_config: FeaturesConfig = FeaturesConfig()
-    tree_model_config: ModelConfig = ModelConfig()
-
-    def sanitize_features_config(self):
-        """Sanitize for use with weights"""
-        data = self.model_dump()
-        data["features_config"].pop("cache_dir")
-        return data["features_config"]
-
-    def save_model_zip(self, model, save_dir):
-        """Save out zipfile with model weights and features."""
-        save_dir = self.tree_model_config.save_dir
-        Path(save_dir).mkdir(exist_ok=True, parents=True)
-
-        ## Zip up model config and weights
-        logger.info(f"Saving model zip to {save_dir}")
-        with ZipFile(f"{save_dir}/model.zip", "w") as z:
-            z.writestr(f"{save_dir}/config.yaml", yaml.dump(self.sanitize_features_config()))
-            z.writestr(f"{save_dir}/lgb_model.txt", model.lgb_model.model_to_string())
-
-    def save_artifact_config(self, save_dir):
-        """Save artifact config"""
-        with open(f"{save_dir}/config_artifact.yaml", "w") as fp:
-            yaml.dump(self.model_dump(), fp)
-
-
-class PredictConfig(BaseModel):
-    features_cache_dir: Optional[str] = None
-    weights_zipfile: str
-    preds_path: str = "preds.csv"
