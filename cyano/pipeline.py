@@ -16,15 +16,7 @@ from cyano.data.satellite_data import identify_satellite_data, download_satellit
 from cyano.data.utils import add_unique_identifier
 
 
-# def run_experiment(experiment_config):
-#     # create pipeline from experiment config
-#     # train
-#     # use that file to predict
-#     # write out predictions
-#     # write out experiment config / metrics / etc
-#     # write out artifact config
-#     pass
-
+## TODO: add lru_cache
 
 class CyanoModelPipeline:
     def __init__(
@@ -61,19 +53,6 @@ class CyanoModelPipeline:
         self.labels = labels["severity"]
 
         return self.samples, self.labels
-
-    def prep_predict_data(self, data, debug=False):
-        samples = pd.read_csv(data)[["date", "latitude", "longitude"]]
-
-        samples = add_unique_identifier(samples)
-        if debug:
-            samples = samples.head(10)
-
-        # Save out samples with uids
-        samples.to_csv(Path(self.cache_dir) / "predict_samples_uid_mapping.csv", index=True)
-        logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
-
-        self.samples = samples
 
     def prepare_features(self):
         if self.samples is None:
@@ -129,8 +108,8 @@ class CyanoModelPipeline:
 
         logger.info(f"Saving model to {save_path}")
         with ZipFile(f"{save_path}", "w") as z:
-            z.writestr(f"{save_dir}/config.yaml", yaml.dump(self.features_config.model_dump()))
-            z.writestr(f"{save_dir}/lgb_model.txt", self.model.model_to_string())
+            z.writestr("config.yaml", yaml.dump(self.features_config.model_dump()))
+            z.writestr("lgb_model.txt", self.model.model_to_string())
 
     def run_training(self, train_csv, save_path="model.zip", debug=False):
         self.prep_train_data(train_csv, debug)
@@ -141,10 +120,23 @@ class CyanoModelPipeline:
     @classmethod
     def from_disk(cls, filepath, cache_dir=None):
         archive = ZipFile(filepath, "r")
-        features_config = FeaturesConfig(**yaml.safe_load(archive.read("./config.yaml")))
-        weights_file = archive.extract("./lgb_model.txt", "/tmp/weights.txt")
+        features_config = FeaturesConfig(**yaml.safe_load(archive.read("config.yaml")))
+        weights_file = archive.extract("lgb_model.txt", "/tmp/weights.txt")
         model = lgb.Booster(model_file=weights_file)
         return cls(features_config=features_config, model=model, cache_dir=cache_dir)
+
+    def prep_predict_data(self, data, debug=False):
+        samples = pd.read_csv(data)[["date", "latitude", "longitude"]]
+
+        samples = add_unique_identifier(samples)
+        if debug:
+            samples = samples.head(10)
+
+        # Save out samples with uids
+        samples.to_csv(Path(self.cache_dir) / "predict_samples_uid_mapping.csv", index=True)
+        logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
+
+        self.samples = samples
 
     def predict_model(self):
         self.preds = pd.Series(
@@ -166,13 +158,3 @@ class CyanoModelPipeline:
         self.prepare_features()
         self.predict_model()
         self.write_predictions(preds_path)
-
-
-# pipeline = CyanoModelPipeline(TrainConfig())
-# pipeline.run_training("tests/assets/train_data.csv")
-
-# pipeline = CyanoModelPipeline.from_disk("model.zip")
-# pipeline.run_prediction("tests/assets/predict_data.csv")
-
-# pipeline = CyanoModelPipeline(TrainConfig(), cache_dir)
-# # run_experiment(pipeline, data)
