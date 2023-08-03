@@ -1,4 +1,3 @@
-from functools import lru_cache
 from pathlib import Path
 import tempfile
 from typing import Optional
@@ -47,20 +46,14 @@ class CyanoModelPipeline:
         labels.to_csv(Path(self.cache_dir) / "train_samples_uid_mapping.csv", index=True)
         logger.info(f"Loaded {labels.shape[0]:,} samples for training")
 
-        self.samples = labels[["date", "latitude", "longitude"]]
-        self.labels = labels["severity"]
+        self.train_samples = labels[["date", "latitude", "longitude"]]
+        self.train_labels = labels["severity"]
 
-        return self.samples, self.labels
+        return self.train_samples, self.train_labels
 
-    @lru_cache
-    def _prepare_features(self):
-        if self.samples is None:
-            raise ValueError("No samples found")
-
+    def _prepare_features(self, samples):
         ## Identify satellite data
-        satellite_meta = identify_satellite_data(
-            self.samples, self.features_config, self.cache_dir
-        )
+        satellite_meta = identify_satellite_data(samples, self.features_config, self.cache_dir)
         save_satellite_to = Path(self.cache_dir) / "satellite_metadata_train.csv"
         satellite_meta.to_csv(save_satellite_to, index=False)
         logger.info(
@@ -68,28 +61,32 @@ class CyanoModelPipeline:
         )
 
         ## Download satellite data
-        download_satellite_data(satellite_meta, self.samples, self.features_config, self.cache_dir)
+        download_satellite_data(satellite_meta, samples, self.features_config, self.cache_dir)
 
         ## Download non-satellite data
         if self.features_config.climate_features:
-            download_climate_data(self.samples, self.features_config, self.cache_dir)
+            download_climate_data(samples, self.features_config, self.cache_dir)
         if self.features_config.elevation_features:
-            download_elevation_data(self.samples, self.features_config, self.cache_dir)
+            download_elevation_data(samples, self.features_config, self.cache_dir)
         logger.success(f"Raw source data saved to {self.cache_dir}")
 
         ## Generate features
-        features = generate_features(self.samples, self.features_config, self.cache_dir)
+        features = generate_features(samples, self.features_config, self.cache_dir)
         save_features_to = Path(self.cache_dir) / "features_train.csv"
         features.to_csv(save_features_to, index=True)
         logger.success(
             f"{features.shape[1]:,} features for {features.shape[0]:,} samples saved to {save_features_to}"
         )
 
-        self.features = features
         return features
 
+    def _prepare_train_features(self):
+        self.train_features = self._prepare_features(self.train_samples)
+
     def _train_model(self):
-        lgb_data = lgb.Dataset(self.features, label=self.labels.loc[self.features.index])
+        lgb_data = lgb.Dataset(
+            self.train_features, label=self.train_labels.loc[self.train_features.index]
+        )
 
         self.model = lgb.train(
             self.model_training_config.params.model_dump(),
@@ -111,7 +108,7 @@ class CyanoModelPipeline:
 
     def run_training(self, train_csv, save_path="model.zip", debug=False):
         self._prep_train_data(train_csv, debug)
-        self._prepare_features()
+        self._prepare_train_features()
         self._train_model()
         self._to_disk(save_path)
 
@@ -133,15 +130,20 @@ class CyanoModelPipeline:
         samples.to_csv(Path(self.cache_dir) / "predict_samples_uid_mapping.csv", index=True)
         logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
 
-        self.samples = samples
+        self.predict_samples = samples
+        return self.predict_samples
+
+    def _prepare_predict_features(self):
+        self.predict_features = self._prepare_features(self.predict_samples)
 
     def _predict_model(self):
         self.preds = pd.Series(
-            data=self.model.predict(self.features),
-            index=self.features.index,
+            data=self.model.predict(self.predict_features),
+            index=self.predict_features.index,
             name="predicted_severity",
         )
-        self.output_df = self.samples.join(self.preds)
+
+        self.output_df = self.predict_samples.join(self.preds)
         return self.preds
 
     def _write_predictions(self, preds_path):
@@ -151,6 +153,6 @@ class CyanoModelPipeline:
 
     def run_prediction(self, predict_csv, preds_path="preds.csv"):
         self._prep_predict_data(predict_csv)
-        self._prepare_features()
+        self._prepare_predict_features()
         self._predict_model()
         self._write_predictions(preds_path)
