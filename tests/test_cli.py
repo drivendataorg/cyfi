@@ -48,4 +48,5 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data):
     # Check that preds saved out
     assert preds_path.exists()
     preds = pd.read_csv(preds_path)
-    assert len(preds) == len(predict_data)
+    assert preds.predicted_severity.notnull().all()
+    assert (preds.index == predict_data.index).all()
