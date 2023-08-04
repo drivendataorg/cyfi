@@ -1,4 +1,4 @@
-cache_dir: null
+cache_dir: None
 features_config:
   climate_features: []
   elevation_features: []
@@ -31,15 +31,6 @@ model_training_config:
     num_leaves: 31
     seed: 40
     verbosity: -1
-predict_csv: !!python/object/apply:pathlib.PosixPath
-- tests
-- assets
-- predict_data.csv
-save_dir: !!python/object/apply:pathlib.PosixPath
-- tests
-- assets
-- experiment
-train_csv: !!python/object/apply:pathlib.PosixPath
-- tests
-- assets
-- train_data.csv
+predict_csv: tests/assets/predict_data.csv
+save_dir: tests/assets/experiment
+train_csv: tests/assets/train_data.csv

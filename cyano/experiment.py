@@ -1,7 +1,7 @@
 from pathlib import Path
 import yaml
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
 from cyano.pipeline import CyanoModelPipeline
@@ -14,6 +14,10 @@ class ExperimentConfig(BaseModel):
     predict_csv: Path
     cache_dir: Path = None
     save_dir: Path = None
+
+    @field_serializer("train_csv", "predict_csv", "cache_dir", "save_dir")
+    def serialize_path_to_str(self, x, _info):
+        return str(x)
 
     def run_experiment(self):
         pipeline = CyanoModelPipeline(
