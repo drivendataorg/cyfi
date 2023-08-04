@@ -49,8 +49,6 @@ class CyanoModelPipeline:
         self.train_samples = labels[["date", "latitude", "longitude"]]
         self.train_labels = labels["severity"]
 
-        return self.train_samples, self.train_labels
-
     def _prepare_features(self, samples):
         ## Identify satellite data
         satellite_meta = identify_satellite_data(samples, self.features_config, self.cache_dir)
@@ -94,8 +92,6 @@ class CyanoModelPipeline:
             num_boost_round=self.model_training_config.num_boost_round,
         )
 
-        return self.model
-
     def _to_disk(self, save_path):
         save_dir = Path(save_path).parent
         save_dir.mkdir(exist_ok=True, parents=True)
@@ -131,7 +127,6 @@ class CyanoModelPipeline:
         logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
 
         self.predict_samples = samples
-        return self.predict_samples
 
     def _prepare_predict_features(self):
         self.predict_features = self._prepare_features(self.predict_samples)
@@ -144,7 +139,6 @@ class CyanoModelPipeline:
         )
 
         self.output_df = self.predict_samples.join(self.preds)
-        return self.preds
 
     def _write_predictions(self, preds_path):
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)
