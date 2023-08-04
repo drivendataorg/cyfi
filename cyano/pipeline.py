@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import tempfile
 from typing import Optional
@@ -6,6 +7,7 @@ from zipfile import ZipFile
 
 import lightgbm as lgb
 from loguru import logger
+import numpy as np
 import pandas as pd
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
@@ -102,7 +104,7 @@ class CyanoModelPipeline:
             z.writestr("config.yaml", yaml.dump(self.features_config.model_dump()))
             z.writestr("lgb_model.txt", self.model.model_to_string())
 
-    def run_training(self, train_csv, save_path="model.zip", debug=False):
+    def run_training(self, train_csv, save_path, debug=False):
         self._prep_train_data(train_csv, debug)
         self._prepare_train_features()
         self._train_model()
@@ -116,9 +118,10 @@ class CyanoModelPipeline:
         return cls(features_config=features_config, model=model, cache_dir=cache_dir)
 
     def _prep_predict_data(self, data, debug=False):
-        samples = pd.read_csv(data)[["date", "latitude", "longitude"]]
+        df = add_unique_identifier(pd.read_csv(data))
 
-        samples = add_unique_identifier(samples)
+        samples = df[["date", "latitude", "longitude"]]
+
         if debug:
             samples = samples.head(10)
 
@@ -135,8 +138,8 @@ class CyanoModelPipeline:
         self.preds = pd.Series(
             data=self.model.predict(self.predict_features),
             index=self.predict_features.index,
-            name="predicted_severity",
-        )
+            name="severity",
+        ).astype(int)
 
         self.output_df = self.predict_samples.join(self.preds)
 
@@ -145,7 +148,7 @@ class CyanoModelPipeline:
         self.output_df.to_csv(preds_path, index=True)
         logger.success(f"Predictions saved to {preds_path}")
 
-    def run_prediction(self, predict_csv, preds_path="preds.csv"):
+    def run_prediction(self, predict_csv, preds_path):
         self._prep_predict_data(predict_csv)
         self._prepare_predict_features()
         self._predict_model()
