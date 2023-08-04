@@ -1,5 +1,5 @@
 cache_dir: None
-evaluate_csv: null
+evaluate_csv: tests/assets/evaluate_data.csv
 features_config:
   climate_features: []
   elevation_features: []

@@ -1,4 +1,4 @@
-uid,date,latitude,longitude,predicted_severity
+uid,date,latitude,longitude,severity
 e3ebefd90a,2015-06-29,41.424144,-73.206937,2
 a5f6bf49d5,2013-07-25,36.045,-79.0919415955354,2
 f1b9c78338,2017-08-21,35.8845244661109,-78.9539970867146,2

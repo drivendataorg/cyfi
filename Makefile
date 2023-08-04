@@ -35,7 +35,7 @@ test: lint
 
 ## Make assets
 assets:
-	cyano train tests/assets/train_data.csv tests/assets/train_config.yaml
+	cyano experiment tests/assets/experiment_config.yaml
 
 #################################################################################
 # Self Documenting Commands                                                     #
