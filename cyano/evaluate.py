@@ -84,7 +84,9 @@ class EvaluatePreds:
                 .to_dict()
             )
             results["regional_mae"] = (
-                df.groupby("region").apply(lambda x: mean_absolute_error(x.y_true, x.y_pred)).to_dict()
+                df.groupby("region")
+                .apply(lambda x: mean_absolute_error(x.y_true, x.y_pred))
+                .to_dict()
             )
 
         results["classification_report"] = classification_report(

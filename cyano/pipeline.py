@@ -27,7 +27,9 @@ class CyanoModelPipeline:
         self.features_config = features_config
         self.model_training_config = model_training_config
         self.model = model
-        self.cache_dir = Path(tempfile.TemporaryDirectory().name) if cache_dir is None else Path(cache_dir)
+        self.cache_dir = (
+            Path(tempfile.TemporaryDirectory().name) if cache_dir is None else Path(cache_dir)
+        )
         self.samples = None
         self.labels = None
 
