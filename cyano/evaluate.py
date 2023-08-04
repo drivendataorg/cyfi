@@ -55,12 +55,14 @@ class EvaluatePreds:
         if "severity" not in y_true_df.columns:
             raise ValueError("Evaluation data must include a `severity` column to evaluate.")
         
-        self.y_true = add_unique_identifier(y_true_df)["severity"]
+        y_true_df = add_unique_identifier(y_true_df)
+        self.y_true = y_true_df["severity"].rename("y_true")
+        self.metadata = y_true_df.drop(columns=["severity"])
         
         y_pred_df = pd.read_csv(y_pred_csv).set_index("uid")
-        
+
         try:
-            self.y_pred = y_pred_df.loc[self.y_true.index]["severity"]
+            self.y_pred = y_pred_df.loc[self.y_true.index]["severity"].rename("y_pred")
         except:
             raise IndexError(
                 "UIDs for points (lat, lon, date) in evaluation_csv do not align with UIDs in prediction_csv."
@@ -75,8 +77,9 @@ class EvaluatePreds:
         results["overall_mae"] = mean_absolute_error(self.y_true, self.y_pred)
         results["overall_mape"] = mean_absolute_percentage_error(self.y_true, self.y_pred)
 
-        results["regional_rmse"] = dict()
-        results["regional_mae"] = dict()
+        df = pd.concat([self.y_true, self.y_pred, self.metadata], axis=1)
+        results["regional_rmse"] = df.groupby("region").apply(lambda x: mean_squared_error(x.y_true, x.y_pred, squared=False)).to_dict()
+        results["regional_mae"] = df.groupby("region").apply(lambda x: mean_absolute_error(x.y_true, x.y_pred)).to_dict()
 
         results["classification_report"] = classification_report(
                 self.y_true, self.y_pred, labels=np.arange(1, 6), output_dict=True, zero_division=False
@@ -91,7 +94,3 @@ class EvaluatePreds:
 
         crosstab_plot = generate_and_plot_crosstab(self.y_true, self.y_pred)
         crosstab_plot.figure.savefig(self.save_dir / "crosstab.png")
-
-
-    # plot regional RMSE
-    # plot precision and recall by severity level
