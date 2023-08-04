@@ -76,15 +76,16 @@ class EvaluatePreds:
         results["overall_mae"] = mean_absolute_error(self.y_true, self.y_pred)
         results["overall_mape"] = mean_absolute_percentage_error(self.y_true, self.y_pred)
 
-        df = pd.concat([self.y_true, self.y_pred, self.metadata], axis=1)
-        results["regional_rmse"] = (
-            df.groupby("region")
-            .apply(lambda x: mean_squared_error(x.y_true, x.y_pred, squared=False))
-            .to_dict()
-        )
-        results["regional_mae"] = (
-            df.groupby("region").apply(lambda x: mean_absolute_error(x.y_true, x.y_pred)).to_dict()
-        )
+        if "region" in self.metadata.columns:
+            df = pd.concat([self.y_true, self.y_pred, self.metadata], axis=1)
+            results["regional_rmse"] = (
+                df.groupby("region")
+                .apply(lambda x: mean_squared_error(x.y_true, x.y_pred, squared=False))
+                .to_dict()
+            )
+            results["regional_mae"] = (
+                df.groupby("region").apply(lambda x: mean_absolute_error(x.y_true, x.y_pred)).to_dict()
+            )
 
         results["classification_report"] = classification_report(
             self.y_true, self.y_pred, labels=np.arange(1, 6), output_dict=True, zero_division=False
