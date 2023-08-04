@@ -46,19 +46,18 @@ def generate_and_plot_crosstab(y_true, y_pred, normalize=False):
 class EvaluatePreds:
     def __init__(self, y_true_csv, y_pred_csv, save_dir):
         """Instantate EvaluatePreds class. To automatically generate all key visualizations, run
-            cls.calculate_all_and_save() after instantiation.
+        cls.calculate_all_and_save() after instantiation.
         """
 
-            
         y_true_df = pd.read_csv(y_true_csv)
 
         if "severity" not in y_true_df.columns:
             raise ValueError("Evaluation data must include a `severity` column to evaluate.")
-        
+
         y_true_df = add_unique_identifier(y_true_df)
         self.y_true = y_true_df["severity"].rename("y_true")
         self.metadata = y_true_df.drop(columns=["severity"])
-        
+
         y_pred_df = pd.read_csv(y_pred_csv).set_index("uid")
 
         try:
@@ -67,7 +66,7 @@ class EvaluatePreds:
             raise IndexError(
                 "UIDs for points (lat, lon, date) in evaluation_csv do not align with UIDs in prediction_csv."
             )
-        
+
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(exist_ok=True, parents=True)
 
@@ -78,15 +77,21 @@ class EvaluatePreds:
         results["overall_mape"] = mean_absolute_percentage_error(self.y_true, self.y_pred)
 
         df = pd.concat([self.y_true, self.y_pred, self.metadata], axis=1)
-        results["regional_rmse"] = df.groupby("region").apply(lambda x: mean_squared_error(x.y_true, x.y_pred, squared=False)).to_dict()
-        results["regional_mae"] = df.groupby("region").apply(lambda x: mean_absolute_error(x.y_true, x.y_pred)).to_dict()
+        results["regional_rmse"] = (
+            df.groupby("region")
+            .apply(lambda x: mean_squared_error(x.y_true, x.y_pred, squared=False))
+            .to_dict()
+        )
+        results["regional_mae"] = (
+            df.groupby("region").apply(lambda x: mean_absolute_error(x.y_true, x.y_pred)).to_dict()
+        )
 
         results["classification_report"] = classification_report(
-                self.y_true, self.y_pred, labels=np.arange(1, 6), output_dict=True, zero_division=False
+            self.y_true, self.y_pred, labels=np.arange(1, 6), output_dict=True, zero_division=False
         )
 
         return results
-    
+
     def calculate_all_and_save(self):
         results = self.calculate_metrics()
         with (self.save_dir / "results.json").open("w") as f:

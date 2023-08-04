@@ -26,8 +26,14 @@ class ExperimentConfig(BaseModel):
     def run_experiment(self):
         # check indices align for evaluation
         cols = ["latitude", "longitude", "date"]
-        if not (pd.read_csv(self.predict_csv)[cols] == pd.read_csv(self.evaluate_csv)[cols]).all().all():
-            raise ValueError("Points in predict_csv and evaluate_csv must be the same. Check alignment of (lat, lon, date) across csvs.")
+        if (
+            not (pd.read_csv(self.predict_csv)[cols] == pd.read_csv(self.evaluate_csv)[cols])
+            .all()
+            .all()
+        ):
+            raise ValueError(
+                "Points in predict_csv and evaluate_csv must be the same. Check alignment of (lat, lon, date) across csvs."
+            )
 
         pipeline = CyanoModelPipeline(
             features_config=self.features_config,
@@ -47,7 +53,7 @@ class ExperimentConfig(BaseModel):
         EvaluatePreds(
             y_true_csv=self.evaluate_csv,
             y_pred_csv=self.save_dir / "preds.csv",
-            save_dir=self.save_dir / "metrics"
+            save_dir=self.save_dir / "metrics",
         ).calculate_all_and_save()
 
         logger.success(f"Wrote out metrics to {self.save_dir}/metrics")
