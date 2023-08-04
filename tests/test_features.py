@@ -7,11 +7,12 @@ from cyano.data.features import generate_features
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 
-def test_known_features(train_data, train_config):
+def test_known_features(train_data, features_config):
     # Generate features based on saved imagery
-    train_config.features_config.cache_dir = str(ASSETS_DIR / "feature_cache")
     features = generate_features(
-        train_data.set_index("uid").loc[["ofhd", "rszn"]], train_config.features_config
+        train_data.set_index("uid").loc[["ofhd", "rszn"]],
+        features_config,
+        cache_dir=str(ASSETS_DIR / "feature_cache"),
     )
 
     # Check that generated stats match known imagery stats

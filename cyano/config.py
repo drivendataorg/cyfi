@@ -1,5 +1,3 @@
-from pathlib import Path
-import tempfile
 from typing import List, Optional
 
 from pydantic import BaseModel
@@ -19,7 +17,6 @@ class LGBParams(BaseModel):
 
 
 class FeaturesConfig(BaseModel):
-    cache_dir: Optional[str] = None
     pc_collections: Optional[List] = ["sentinel-2-l2a"]
     pc_days_search_window: Optional[int] = 30
     pc_meters_search_window: Optional[int] = 1000
@@ -38,38 +35,7 @@ class FeaturesConfig(BaseModel):
     elevation_features: Optional[List] = []
     metadata_features: Optional[List] = []
 
-    def make_cache_dir(self):
-        """Create cache directory for features.
-        Creates a temp directory if no cache dir is specified.
 
-        Returns the cache_dir location.
-        """
-        if self.cache_dir is None:
-            self.cache_dir = tempfile.TemporaryDirectory().name
-        Path(self.cache_dir).mkdir(exist_ok=True, parents=True)
-        return self.cache_dir
-
-
-class ModelConfig(BaseModel):
+class ModelTrainingConfig(BaseModel):
     params: Optional[LGBParams] = LGBParams()
     num_boost_round: Optional[int] = 1000
-    save_dir: str = "cyano_model"
-
-
-class TrainConfig(BaseModel):
-    features_config: FeaturesConfig = FeaturesConfig()
-    tree_model_config: ModelConfig = ModelConfig()
-
-    def sanitize(self):
-        """Santize for prediction"""
-        data = self.model_dump()
-        data["features_config"].pop("cache_dir")
-        data["weights"] = str((Path(data["tree_model_config"]["save_dir"]) / "lgb_model.txt"))
-        data.pop("tree_model_config")
-        return data
-
-
-class PredictConfig(BaseModel):
-    features_config: FeaturesConfig
-    weights: str
-    preds_path: str

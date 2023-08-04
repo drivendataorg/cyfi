@@ -32,7 +32,7 @@ def download_sample_climate(
     pass
 
 
-def download_climate_data(sample_list: pd.DataFrame, config: FeaturesConfig):
+def download_climate_data(sample_list: pd.DataFrame, config: FeaturesConfig, cache_dir):
     """Query NOAA's HRRR database for a list of samples, and save out
     the raw results.
 
@@ -51,5 +51,5 @@ def download_climate_data(sample_list: pd.DataFrame, config: FeaturesConfig):
             sample.date,
             sample.latitude,
             sample.longitude,
-            save_dir=config.cache_dir,
+            save_dir=cache_dir,
         )

@@ -1,5 +1,5 @@
+cache_dir: None
 features_config:
-  cache_dir: /tmp/tmp9r0chro0
   climate_features: []
   elevation_features: []
   image_feature_meter_window: 500
@@ -20,7 +20,7 @@ features_config:
   - B02
   - B03
   - B04
-tree_model_config:
+model_training_config:
   num_boost_round: 1000
   params:
     application: regression
@@ -31,4 +31,6 @@ tree_model_config:
     num_leaves: 31
     seed: 40
     verbosity: -1
-  save_dir: tests/assets/trained_model
+predict_csv: tests/assets/predict_data.csv
+save_dir: tests/assets/experiment
+train_csv: tests/assets/train_data.csv

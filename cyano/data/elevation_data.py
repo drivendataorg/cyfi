@@ -32,7 +32,7 @@ def download_sample_elevation(
     pass
 
 
-def download_elevation_data(sample_list: pd.DataFrame, config: FeaturesConfig):
+def download_elevation_data(sample_list: pd.DataFrame, config: FeaturesConfig, cache_dir):
     """Query Copernicus' DEM elevation database for a list of samples, and
     save out the raw results.
 
@@ -51,5 +51,5 @@ def download_elevation_data(sample_list: pd.DataFrame, config: FeaturesConfig):
             sample.date,
             sample.latitude,
             sample.longitude,
-            save_dir=config.cache_dir,
+            save_dir=cache_dir,
         )

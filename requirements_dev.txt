@@ -6,6 +6,7 @@ faker
 flake8
 geopandas
 geopy
+jupyter
 lightgbm
 loguru
 matplotlib
