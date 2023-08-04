@@ -62,7 +62,7 @@ class EvaluatePreds:
 
         try:
             self.y_pred = y_pred_df.loc[self.y_true.index]["severity"].rename("y_pred")
-        except:
+        except:  # noqa: E722
             raise IndexError(
                 "UIDs for points (lat, lon, date) in evaluation_csv do not align with UIDs in prediction_csv."
             )

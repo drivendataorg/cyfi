@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 import tempfile
 from typing import Optional
@@ -7,7 +6,6 @@ from zipfile import ZipFile
 
 import lightgbm as lgb
 from loguru import logger
-import numpy as np
 import pandas as pd
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
