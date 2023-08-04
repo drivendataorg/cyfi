@@ -43,8 +43,13 @@ def generate_and_plot_crosstab(y_true, y_pred, normalize=False):
     return ax
 
 
-class Evaluate:
+class EvaluatePreds:
     def __init__(self, y_true_csv, y_pred_csv, save_dir):
+        """Instantate EvaluatePreds class. To automatically generate all key visualizations, run
+            cls.calculate_all_and_save() after instantiation.
+        """
+
+            
         y_true_df = pd.read_csv(y_true_csv)
 
         if "severity" not in y_true_df.columns:
