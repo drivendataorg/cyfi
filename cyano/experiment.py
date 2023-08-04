@@ -19,7 +19,7 @@ class ExperimentConfig(BaseModel):
     cache_dir: Path = None
     save_dir: Path = None
 
-    @field_serializer("train_csv", "predict_csv", "cache_dir", "save_dir")
+    @field_serializer("train_csv", "predict_csv", "evaluate_csv", "cache_dir", "save_dir")
     def serialize_path_to_str(self, x, _info):
         return str(x)
 
