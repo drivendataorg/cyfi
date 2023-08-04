@@ -27,12 +27,12 @@ class CyanoModelPipeline:
         self.features_config = features_config
         self.model_training_config = model_training_config
         self.model = model
-        self.cache_dir = tempfile.TemporaryDirectory().name if cache_dir is None else cache_dir
+        self.cache_dir = Path(tempfile.TemporaryDirectory().name) if cache_dir is None else Path(cache_dir)
         self.samples = None
         self.labels = None
 
         # make cache dir
-        Path(self.cache_dir).mkdir(exist_ok=True, parents=True)
+        self.cache_dir.mkdir(exist_ok=True, parents=True)
 
     def _prep_train_data(self, data, debug=False):
         """Load labels and save out samples with UIDs"""
@@ -43,7 +43,7 @@ class CyanoModelPipeline:
             labels = labels.head(10)
 
         # Save out samples with uids
-        labels.to_csv(Path(self.cache_dir) / "train_samples_uid_mapping.csv", index=True)
+        labels.to_csv(self.cache_dir / "train_samples_uid_mapping.csv", index=True)
         logger.info(f"Loaded {labels.shape[0]:,} samples for training")
 
         self.train_samples = labels[["date", "latitude", "longitude"]]
@@ -52,7 +52,7 @@ class CyanoModelPipeline:
     def _prepare_features(self, samples):
         ## Identify satellite data
         satellite_meta = identify_satellite_data(samples, self.features_config, self.cache_dir)
-        save_satellite_to = Path(self.cache_dir) / "satellite_metadata_train.csv"
+        save_satellite_to = self.cache_dir / "satellite_metadata_train.csv"
         satellite_meta.to_csv(save_satellite_to, index=False)
         logger.info(
             f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
@@ -70,7 +70,7 @@ class CyanoModelPipeline:
 
         ## Generate features
         features = generate_features(samples, self.features_config, self.cache_dir)
-        save_features_to = Path(self.cache_dir) / "features_train.csv"
+        save_features_to = self.cache_dir / "features_train.csv"
         features.to_csv(save_features_to, index=True)
         logger.success(
             f"{features.shape[1]:,} features for {features.shape[0]:,} samples saved to {save_features_to}"
@@ -92,13 +92,13 @@ class CyanoModelPipeline:
             num_boost_round=self.model_training_config.num_boost_round,
         )
 
-    def _to_disk(self, save_path):
+    def _to_disk(self, save_path: Path):
         save_dir = Path(save_path).parent
         save_dir.mkdir(exist_ok=True, parents=True)
 
         ## Zip up model config and weights
         logger.info(f"Saving model to {save_path}")
-        with ZipFile(f"{save_path}", "w") as z:
+        with ZipFile(save_path, "w") as z:
             z.writestr("config.yaml", yaml.dump(self.features_config.model_dump()))
             z.writestr("lgb_model.txt", self.model.model_to_string())
 
@@ -124,7 +124,7 @@ class CyanoModelPipeline:
             samples = samples.head(10)
 
         # Save out samples with uids
-        samples.to_csv(Path(self.cache_dir) / "predict_samples_uid_mapping.csv", index=True)
+        samples.to_csv(self.cache_dir / "predict_samples_uid_mapping.csv", index=True)
         logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
 
         self.predict_samples = samples
