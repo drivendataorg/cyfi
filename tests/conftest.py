@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from cyano.config import FeaturesConfig
+from cyano.data.utils import add_unique_identifier
 
 
 ASSETS_DIR = Path(__file__).parent / "assets"
@@ -16,7 +17,7 @@ def train_data_path() -> Path:
 
 @pytest.fixture(scope="session")
 def train_data(train_data_path) -> pd.DataFrame:
-    return pd.read_csv(train_data_path)
+    return add_unique_identifier(pd.read_csv(train_data_path))
 
 
 @pytest.fixture(scope="session")
