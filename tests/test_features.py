@@ -3,11 +3,13 @@ from pathlib import Path
 import numpy as np
 
 from cyano.data.features import generate_features
+from cyano.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 
 def test_known_features(train_data, features_config):
+    train_data = add_unique_identifier(train_data)
     # Generate features based on saved imagery
     features = generate_features(
         train_data,
