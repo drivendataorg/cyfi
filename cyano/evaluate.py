@@ -98,7 +98,7 @@ class EvaluatePreds:
     def calculate_all_and_save(self):
         results = self.calculate_metrics()
         with (self.save_dir / "results.json").open("w") as f:
-            json.dump(results, f)
+            json.dump(results, f, indent=4)
 
         crosstab_plot = generate_and_plot_crosstab(self.y_true, self.y_pred)
         crosstab_plot.figure.savefig(self.save_dir / "crosstab.png")
