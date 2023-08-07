@@ -14,11 +14,11 @@ def add_unique_identifier(df: pd.DataFrame, id_len: int = 10) -> pd.DataFrame:
         pd.DataFrame: Dataframe with unique identifiers as the index
     """
     df = df.copy()
-    m = hashlib.md5()
     uids = []
 
     # create UID based on lat/lon and date
     for row in df.itertuples():
+        m = hashlib.md5()
         for s in (row.latitude, row.longitude, row.date):
             m.update(str(s).encode())
         uids.append(m.hexdigest()[:id_len])
