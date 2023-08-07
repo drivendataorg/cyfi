@@ -1,4 +1,5 @@
 from datetime import timedelta
+import json
 from typing import List, Union
 
 import geopy.distance as distance
@@ -156,7 +157,7 @@ def select_items(
 
 
 def identify_satellite_data(
-    samples: pd.DataFrame, config: FeaturesConfig, cache_dir
+    samples: pd.DataFrame, config: FeaturesConfig, cache_dir: Path
 ) -> pd.DataFrame:
     """Identify all pystac items to be used during feature
     generation for a given set of samples
@@ -164,7 +165,8 @@ def identify_satellite_data(
     Args:
         samples (pd.DataFrame): Dataframe where the index is uid and
             there are columns for date, longitude, and latitude
-        config (FeaturesConfig): Featires config
+        config (FeaturesConfig): Features config
+        cache_dir (Path): Cache directory
 
     Returns:
         pd.DataFrame: Each row is a unique combination of sample ID
@@ -173,6 +175,17 @@ def identify_satellite_data(
     """
     save_dir = Path(cache_dir) / "satellite"
     save_dir.mkdir(exist_ok=True, parents=True)
+    if config.pc_search_results_dir is not None:
+        logger.info(f"Loading past planetary computer search results")
+        sentinel_meta = pd.read_csv(Path(config.pc_search_results_dir) / "sentinel_metadata.csv")
+        with open(config.pc_search_results_dir / "hash_item_map.json", "r") as fp:
+            hash_item_map = json.load(fp)
+
+        for sample in samples.itertuples():
+            sample_item_ids = hash_item_map[sample.Index]
+
+        # Since we already have full metadata saved elsewhere, only include selected items
+
     logger.info(
         f"Searching {config.pc_collections} within {config.pc_days_search_window} days and {config.pc_meters_search_window} meters"
     )
