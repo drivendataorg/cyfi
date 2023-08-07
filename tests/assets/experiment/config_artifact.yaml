@@ -1,5 +1,4 @@
 cache_dir: None
-evaluate_csv: tests/assets/evaluate_data.csv
 features_config:
   climate_features: []
   elevation_features: []
@@ -32,6 +31,6 @@ model_training_config:
     num_leaves: 31
     seed: 40
     verbosity: -1
-predict_csv: tests/assets/predict_data.csv
+predict_csv: tests/assets/evaluate_data.csv
 save_dir: tests/assets/experiment
 train_csv: tests/assets/train_data.csv
