@@ -34,6 +34,7 @@ class FeaturesConfig(BaseModel):
     climate_features: Optional[List] = []
     elevation_features: Optional[List] = []
     metadata_features: Optional[List] = []
+    pc_search_results_dir: Optional[str] = None
 
 
 class ModelTrainingConfig(BaseModel):
