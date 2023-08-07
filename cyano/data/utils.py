@@ -3,7 +3,7 @@ import hashlib
 import pandas as pd
 
 
-def add_unique_identifier(df: pd.DataFrame, id_len: int = 10) -> pd.DataFrame:
+def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
     """Given a dataframe with the columns []"latitude", "longitude", "date"],
     create a unique identifier for each row and set as the index
 
@@ -21,7 +21,7 @@ def add_unique_identifier(df: pd.DataFrame, id_len: int = 10) -> pd.DataFrame:
         m = hashlib.md5()
         for s in (row.latitude, row.longitude, row.date):
             m.update(str(s).encode())
-        uids.append(m.hexdigest()[:id_len])
+        uids.append(m.hexdigest())
 
     df["uid"] = uids
     return df.set_index("uid")

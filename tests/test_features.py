@@ -19,6 +19,6 @@ def test_known_features(train_data, features_config):
     )
 
     # Check that generated stats match known imagery stats
-    assert np.isclose(features.loc["3a2c48812b", "B02_mean"], 161.532712)
-    assert np.isclose(features.loc["3a2c48812b", "B02_min"], 50)
-    assert np.isclose(features.loc["3a2c48812b", "B02_max"], 1182)
+    assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_mean"], 161.532712)
+    assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_min"], 50)
+    assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_max"], 1182)
