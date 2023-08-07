@@ -2,7 +2,6 @@
 
 black
 cloudpathlib[s3]>=0.4.1
-faker
 flake8
 geopandas
 geopy
@@ -19,6 +18,8 @@ pydantic
 pystac
 pystac-client
 pytest
+scikit-learn
+seaborn
 rioxarray
 tqdm
 typer

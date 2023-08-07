@@ -1,10 +1,12 @@
 from pathlib import Path
 import yaml
 
+from loguru import logger
 from pydantic import BaseModel, field_serializer
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
 from cyano.pipeline import CyanoModelPipeline
+from cyano.evaluate import EvaluatePreds
 
 
 class ExperimentConfig(BaseModel):
@@ -27,9 +29,18 @@ class ExperimentConfig(BaseModel):
         )
         pipeline.run_training(train_csv=self.train_csv, save_path=self.save_dir / "model.zip")
 
+        logger.success(f"Writing out artifact config to {self.save_dir}")
         with open(f"{self.save_dir}/config_artifact.yaml", "w") as fp:
             yaml.dump(self.model_dump(), fp)
 
         pipeline.run_prediction(
             predict_csv=self.predict_csv, preds_path=self.save_dir / "preds.csv"
         )
+
+        EvaluatePreds(
+            y_true_csv=self.predict_csv,
+            y_pred_csv=self.save_dir / "preds.csv",
+            save_dir=self.save_dir / "metrics",
+        ).calculate_all_and_save()
+
+        logger.success(f"Wrote out metrics to {self.save_dir}/metrics")
