@@ -18,6 +18,7 @@ pydantic
 pystac
 pystac-client
 pytest
+pytest-cov
 scikit-learn
 seaborn
 rioxarray
