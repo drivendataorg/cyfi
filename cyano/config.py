@@ -20,8 +20,10 @@ class FeaturesConfig(BaseModel):
     pc_collections: Optional[List] = ["sentinel-2-l2a"]
     pc_days_search_window: Optional[int] = 30
     pc_meters_search_window: Optional[int] = 1000
+    pc_search_results_dir: Optional[str] = None
     use_sentinel_bands: Optional[List] = ["B02", "B03", "B04"]
     image_feature_meter_window: Optional[int] = 500
+    n_sentinel_items: Optional[int] = 1
     satellite_features: Optional[List] = [
         "B02_mean",
         "B02_min",
@@ -34,7 +36,6 @@ class FeaturesConfig(BaseModel):
     climate_features: Optional[List] = []
     elevation_features: Optional[List] = []
     metadata_features: Optional[List] = []
-    pc_search_results_dir: Optional[str] = None
 
 
 class ModelTrainingConfig(BaseModel):
