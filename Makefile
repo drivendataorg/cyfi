@@ -11,6 +11,12 @@ PYTHON_INTERPRETER = python
 # COMMANDS                                                                      #
 #################################################################################
 
+clean:
+	rm -f .coverage
+	rm -f coverage.xml
+	rm -fr htmlcov/
+	rm -fr .pytest_cache
+
 ## Set up python interpreter environment
 create_environment:
 	conda create --name $(PROJECT_NAME) python=$(PYTHON_VERSION) -y
@@ -30,7 +36,7 @@ lint:
 	black --check cyano tests
 
 ## Run tests
-test: lint
+test: clean lint
 	pytest tests -vv
 
 ## Make assets
