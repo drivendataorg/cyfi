@@ -2,6 +2,7 @@ from datetime import timedelta
 import json
 from typing import List, Union
 
+from cloudpathlib import AnyPath
 import geopy.distance as distance
 from loguru import logger
 import numpy as np
@@ -140,20 +141,40 @@ def get_items_metadata(
 
 def select_items(
     items_meta: pd.DataFrame,
-) -> List[str]:
-    """Select which pystac items to include for a given sample
+    date: Union[str, pd.Timestamp],
+    n_items: int = 15,
+    min_day_diff: int = -15,
+    max_day_diff: int = 0,
+):
+    # Calculate days between sample and image
+    items_meta["day_diff"] = (pd.to_datetime(items_meta.datetime) - pd.to_datetime(date)).dt.days
+    # Filter to within 15 days before sampling
+    time_mask = items_meta.day_diff.between(min_day_diff, max_day_diff)
+    selected = (
+        items_meta[time_mask]
+        .sort_values(by=["eo:cloud_cover", "day_diff"], ascending=[True, True])
+        .head(n_items)
+    )
 
-    Args:
-        item_meta (pd.DataFrame): Dataframe with metadata about all possible
-            pystac items to include for the given sample
+    return selected.item_id.tolist()
 
-    Returns:
-        List[str]: List of the pystac items IDs for the selected items
-    """
-    # Select least cloudy item
-    least_cloudy = items_meta.sort_values(by="cloud_cover").iloc[0].item_id
 
-    return [least_cloudy]
+# def select_items(
+#     items_meta: pd.DataFrame,
+# ) -> List[str]:
+#     """Select which pystac items to include for a given sample
+
+#     Args:
+#         item_meta (pd.DataFrame): Dataframe with metadata about all possible
+#             pystac items to include for the given sample
+
+#     Returns:
+#         List[str]: List of the pystac items IDs for the selected items
+#     """
+#     # Select least cloudy item
+#     least_cloudy = items_meta.sort_values(by="cloud_cover").iloc[0].item_id
+
+#     return [least_cloudy]
 
 
 def identify_satellite_data(
@@ -175,6 +196,42 @@ def identify_satellite_data(
     """
     save_dir = Path(cache_dir) / "satellite"
     save_dir.mkdir(exist_ok=True, parents=True)
+
+    ## Filter existing satellite metadata if provided
+    if config.pc_search_results_dir is not None:
+        logger.info(
+            f"Using past planetary computer search results in {config.pc_search_results_dir}"
+        )
+        saved_sentinel_meta = pd.read_csv(
+            AnyPath(config.pc_search_results_dir) / "sentinel_metadata.csv"
+        )
+        logger.info(
+            f"Loaded {saved_sentinel_meta.shape[0]:,} rows of Sentinel metadata. Selecting items"
+        )
+        with open(AnyPath(config.pc_search_results_dir) / "hash_item_map.json", "r") as fp:
+            hash_item_map = json.load(fp)
+
+        satellite_meta = []
+        for sample in tqdm(samples.itertuples(), total=len(samples)):
+            sample_item_ids = hash_item_map[sample.Index]["sentinel_item_ids"]
+            if len(sample_item_ids) == 0:
+                continue
+            items_meta = saved_sentinel_meta[
+                saved_sentinel_meta.item_id.isin(sample_item_ids)
+            ].copy()
+
+            # Select items to use
+            selected_ids = select_items(items_meta, sample.date)
+
+            # Since we already have full metadata saved elsewhere, only save selected items
+            items_meta = items_meta[items_meta.item_id.isin(selected_ids)]
+            items_meta["selected"] = True
+            items_meta["sample_id"] = sample.Index
+
+            satellite_meta.append(items_meta)
+
+        return pd.concat(satellite_meta)
+
     if config.pc_search_results_dir is not None:
         logger.info(f"Loading past planetary computer search results")
         sentinel_meta = pd.read_csv(Path(config.pc_search_results_dir) / "sentinel_metadata.csv")
@@ -253,8 +310,10 @@ def download_satellite_data(
         # Iterate over bands and stack
         band_arrays = []
         for band in config.use_sentinel_bands:
+            # Get unsigned URL so we don't use expired token
+            unsigned_href = download_row[f"{band}_href"].split("?")[0]
             band_array = (
-                rioxarray.open_rasterio(pc.sign(download_row[f"{band}_href"]))
+                rioxarray.open_rasterio(pc.sign(unsigned_href))
                 .rio.clip_box(
                     minx=minx,
                     miny=miny,
