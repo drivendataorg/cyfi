@@ -160,13 +160,6 @@ def generate_candidate_metadata(
     # Load from saved directory if path provided
     if config.pc_search_results_dir is not None:
         pc_results_dir = AnyPath(config.pc_search_results_dir)
-    else:
-        pc_results_dir = AnyPath(cache_dir) / "pc_search_results"
-        pc_results_dir.mkdir(exist_ok=True, parents=True)
-
-    if (pc_results_dir / "sentinel_metadata.csv").exists() and (
-        pc_results_dir / "sample_item_map.json"
-    ).exists():
         sentinel_meta = pd.read_csv(pc_results_dir / "sentinel_metadata.csv")
         logger.info(
             f"Loaded {sentinel_meta.shape[0]:,} rows of Sentinel candidate metadata from {pc_results_dir}"
@@ -209,14 +202,7 @@ def generate_candidate_metadata(
             .first()
             .reset_index(drop=True)
         )
-
-        # Save results
-        logger.info(
-            f"Generated metadata for {sentinel_meta.shape[0]:,} Sentinel item candidates. Saving to {pc_results_dir}"
-        )
-        sentinel_meta.to_csv(pc_results_dir / "sentinel_metadata.csv", index=False)
-        with open(pc_results_dir / "sample_item_map.json", "w+") as fp:
-            json.dump(sample_item_map, fp)
+        logger.info(f"Generated metadata for {sentinel_meta.shape[0]:,} Sentinel item candidates")
 
     return (sentinel_meta, sample_item_map)
 
@@ -274,7 +260,7 @@ def identify_satellite_data(
     )
 
     ## Select which items to use for each sample
-    logger.info(f"Selecting which items to use for feature generation")
+    logger.info("Selecting which items to use for feature generation")
     selected_satellite_meta = []
     for sample in tqdm(samples.itertuples(), total=len(samples)):
         sample_item_ids = sample_item_map[sample.Index]["sentinel_item_ids"]
