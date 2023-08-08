@@ -159,24 +159,6 @@ def select_items(
     return selected.item_id.tolist()
 
 
-# def select_items(
-#     items_meta: pd.DataFrame,
-# ) -> List[str]:
-#     """Select which pystac items to include for a given sample
-
-#     Args:
-#         item_meta (pd.DataFrame): Dataframe with metadata about all possible
-#             pystac items to include for the given sample
-
-#     Returns:
-#         List[str]: List of the pystac items IDs for the selected items
-#     """
-#     # Select least cloudy item
-#     least_cloudy = items_meta.sort_values(by="cloud_cover").iloc[0].item_id
-
-#     return [least_cloudy]
-
-
 def identify_satellite_data(
     samples: pd.DataFrame, config: FeaturesConfig, cache_dir: Path
 ) -> pd.DataFrame:
@@ -232,21 +214,9 @@ def identify_satellite_data(
 
         return pd.concat(satellite_meta)
 
-    if config.pc_search_results_dir is not None:
-        logger.info(f"Loading past planetary computer search results")
-        sentinel_meta = pd.read_csv(Path(config.pc_search_results_dir) / "sentinel_metadata.csv")
-        with open(config.pc_search_results_dir / "hash_item_map.json", "r") as fp:
-            hash_item_map = json.load(fp)
-
-        for sample in samples.itertuples():
-            sample_item_ids = hash_item_map[sample.Index]
-
-        # Since we already have full metadata saved elsewhere, only include selected items
-
     logger.info(
         f"Searching {config.pc_collections} within {config.pc_days_search_window} days and {config.pc_meters_search_window} meters"
     )
-
     satellite_meta = []
     no_results = 0
     for sample in tqdm(samples.itertuples(), total=len(samples)):
@@ -299,33 +269,38 @@ def download_satellite_data(
     # Iterate over all rows (item / sample combos)
     logger.info(f"Downloading bands {config.use_sentinel_bands}")
     for _, download_row in tqdm(selected.iterrows(), total=len(selected)):
-        sample_row = samples.loc[download_row.sample_id]
-        sample_dir = Path(cache_dir) / f"satellite/{download_row.sample_id}"
-        sample_dir.mkdir(exist_ok=True, parents=True)
+        try:
+            sample_row = samples.loc[download_row.sample_id]
+            sample_dir = Path(cache_dir) / f"satellite/{download_row.sample_id}"
+            sample_dir.mkdir(exist_ok=True, parents=True)
 
-        # Get bounding box for array to save out
-        (minx, miny, maxx, maxy) = get_bounding_box(
-            sample_row.latitude, sample_row.longitude, config.image_feature_meter_window
-        )
-        # Iterate over bands and stack
-        band_arrays = []
-        for band in config.use_sentinel_bands:
-            # Get unsigned URL so we don't use expired token
-            unsigned_href = download_row[f"{band}_href"].split("?")[0]
-            band_array = (
-                rioxarray.open_rasterio(pc.sign(unsigned_href))
-                .rio.clip_box(
-                    minx=minx,
-                    miny=miny,
-                    maxx=maxx,
-                    maxy=maxy,
-                    crs="EPSG:4326",
-                )
-                .to_numpy()
+            # Get bounding box for array to save out
+            (minx, miny, maxx, maxy) = get_bounding_box(
+                sample_row.latitude, sample_row.longitude, config.image_feature_meter_window
             )
-            band_arrays.append(band_array)
-        stacked_array = np.vstack(band_arrays)
+            # Iterate over bands and stack
+            band_arrays = []
+            for band in config.use_sentinel_bands:
+                # Get unsigned URL so we don't use expired token
+                unsigned_href = download_row[f"{band}_href"].split("?")[0]
+                band_array = (
+                    rioxarray.open_rasterio(pc.sign(unsigned_href))
+                    .rio.clip_box(
+                        minx=minx,
+                        miny=miny,
+                        maxx=maxx,
+                        maxy=maxy,
+                        crs="EPSG:4326",
+                    )
+                    .to_numpy()
+                )
+                band_arrays.append(band_array)
+            stacked_array = np.vstack(band_arrays)
 
-        # Save stacked array
-        array_save_path = sample_dir / f"{download_row.item_id}.npy"
-        np.save(array_save_path, stacked_array)
+            # Save stacked array
+            array_save_path = sample_dir / f"{download_row.item_id}.npy"
+            np.save(array_save_path, stacked_array)
+        except rioxarray.exceptions.NoDataInBounds:
+            logger.warning(
+                f"Could not download {download_row.item_id} for sample {download_row.sample_id}"
+            )
