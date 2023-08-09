@@ -1,5 +1,6 @@
 from datetime import timedelta
 import json
+import shutil
 from typing import Dict, List, Tuple, Union
 
 from cloudpathlib import AnyPath
@@ -306,40 +307,46 @@ def download_satellite_data(
     # Iterate over all rows (item / sample combos)
     logger.info(f"Downloading bands {config.use_sentinel_bands}")
     no_data_in_bounds_errs = 0
+
     for _, download_row in tqdm(selected.iterrows(), total=len(selected)):
+        sample_row = samples.loc[download_row.sample_id]
+        sample_image_dir = (
+            Path(cache_dir)
+            / f"sentinel_{config.image_feature_meter_window}/{download_row.sample_id}/{download_row.item_id}"
+        )
         try:
-            sample_row = samples.loc[download_row.sample_id]
-            sample_dir = Path(cache_dir) / f"satellite/{download_row.sample_id}"
-            sample_dir.mkdir(exist_ok=True, parents=True)
+            sample_image_dir.mkdir(exist_ok=True, parents=True)
 
             # Get bounding box for array to save out
             (minx, miny, maxx, maxy) = get_bounding_box(
                 sample_row.latitude, sample_row.longitude, config.image_feature_meter_window
             )
-            # Iterate over bands and stack
-            band_arrays = []
+            # Iterate over bands and save
             for band in config.use_sentinel_bands:
-                # Get unsigned URL so we don't use expired token
-                unsigned_href = download_row[f"{band}_href"].split("?")[0]
-                band_array = (
-                    rioxarray.open_rasterio(pc.sign(unsigned_href))
-                    .rio.clip_box(
-                        minx=minx,
-                        miny=miny,
-                        maxx=maxx,
-                        maxy=maxy,
-                        crs="EPSG:4326",
+                # Check if the file already exists
+                array_save_path = sample_image_dir / f"{band}.npy"
+                if not array_save_path.exists():
+                    # Get unsigned URL so we don't use expired token
+                    unsigned_href = download_row[f"{band}_href"].split("?")[0]
+                    band_array = (
+                        rioxarray.open_rasterio(pc.sign(unsigned_href))
+                        .rio.clip_box(
+                            minx=minx,
+                            miny=miny,
+                            maxx=maxx,
+                            maxy=maxy,
+                            crs="EPSG:4326",
+                        )
+                        .to_numpy()
                     )
-                    .to_numpy()
-                )
-                band_arrays.append(band_array)
-            stacked_array = np.vstack(band_arrays)
+                    np.save(array_save_path, band_array)
 
-            # Save stacked array
-            array_save_path = sample_dir / f"{download_row.item_id}.npy"
-            np.save(array_save_path, stacked_array)
         except rioxarray.exceptions.NoDataInBounds:
             no_data_in_bounds_errs += 1
-    logger.warning(
-        f"Could not download {no_data_in_bounds_errs:,} image/sample combinations with no data in bounds"
-    )
+            # Delete item directory if it has already been created
+            if sample_image_dir.exists():
+                shutil.rmtree(sample_image_dir)
+    if no_data_in_bounds_errs > 0:
+        logger.warning(
+            f"Could not download {no_data_in_bounds_errs:,} image/sample combinations with no data in bounds"
+        )
