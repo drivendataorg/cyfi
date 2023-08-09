@@ -53,7 +53,7 @@ class CyanoModelPipeline:
 
     def _prepare_features(self, samples):
         ## Identify satellite data
-        satellite_meta = identify_satellite_data(samples, self.features_config, self.cache_dir)
+        satellite_meta = identify_satellite_data(samples, self.features_config)
         save_satellite_to = self.cache_dir / "satellite_metadata_train.csv"
         satellite_meta.to_csv(save_satellite_to, index=False)
         logger.info(

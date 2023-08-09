@@ -174,7 +174,7 @@ def get_items_metadata(
 
 
 def generate_candidate_metadata(
-    samples: pd.DataFrame, config: FeaturesConfig, cache_dir: Path
+    samples: pd.DataFrame, config: FeaturesConfig
 ) -> Tuple[pd.DataFrame, Dict]:
     """Generate metadata for all of the satellite item candidates
     that could be used to generate features for each sample
@@ -183,7 +183,6 @@ def generate_candidate_metadata(
         samples (pd.DataFrame): Dataframe where the index is uid and
             there are columns for date, longitude, and latitude
         config (FeaturesConfig): Features config
-        cache_dir (Path): Path to the current cache directory
 
     Returns:
         Tuple[pd.DataFrame, Dict]: Tuple of (metadata for all sentinel item
@@ -269,9 +268,7 @@ def select_items(
     return selected.item_id.tolist()
 
 
-def identify_satellite_data(
-    samples: pd.DataFrame, config: FeaturesConfig, cache_dir: Path
-) -> pd.DataFrame:
+def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
     """Identify all pystac items to be used during feature
     generation for a given set of samples
 
@@ -279,7 +276,6 @@ def identify_satellite_data(
         samples (pd.DataFrame): Dataframe where the index is uid and
             there are columns for date, longitude, and latitude
         config (FeaturesConfig): Features config
-        cache_dir (Path): Path to the current cache directory
 
     Returns:
         pd.DataFrame: Each row is a unique combination of sample ID
@@ -287,9 +283,7 @@ def identify_satellite_data(
             which will be used in feature generation
     """
     ## Get all candidate item metadata
-    candidate_sentinel_meta, sample_item_map = generate_candidate_metadata(
-        samples, config, cache_dir
-    )
+    candidate_sentinel_meta, sample_item_map = generate_candidate_metadata(samples, config)
 
     ## Select which items to use for each sample
     logger.info("Selecting which items to use for feature generation")
