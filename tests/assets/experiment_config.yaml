@@ -1,3 +1,5 @@
 train_csv: tests/assets/train_data.csv
 predict_csv: tests/assets/evaluate_data.csv
 save_dir: tests/assets/experiment/
+features_config:
+  use_past_pc_results: False
