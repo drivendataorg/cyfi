@@ -16,19 +16,20 @@ class ExperimentConfig(BaseModel):
     predict_csv: Path
     cache_dir: Path = None
     save_dir: Path = None
+    debug: bool = False
 
     @field_serializer("train_csv", "predict_csv", "cache_dir", "save_dir")
     def serialize_path_to_str(self, x, _info):
         return str(x)
 
-    def run_experiment(self, debug: bool = False):
+    def run_experiment(self):
         pipeline = CyanoModelPipeline(
             features_config=self.features_config,
             model_training_config=self.model_training_config,
             cache_dir=self.cache_dir,
         )
         pipeline.run_training(
-            train_csv=self.train_csv, save_path=self.save_dir / "model.zip", debug=debug
+            train_csv=self.train_csv, save_path=self.save_dir / "model.zip", debug=self.debug
         )
 
         logger.success(f"Writing out artifact config to {self.save_dir}")
@@ -36,10 +37,10 @@ class ExperimentConfig(BaseModel):
             yaml.dump(self.model_dump(), fp)
 
         pipeline.run_prediction(
-            predict_csv=self.predict_csv, preds_path=self.save_dir / "preds.csv", debug=debug
+            predict_csv=self.predict_csv, preds_path=self.save_dir / "preds.csv", debug=self.debug
         )
 
-        if debug:
+        if self.debug:
             logger.info("Evaluation is not run in debug mode")
         else:
             EvaluatePreds(
