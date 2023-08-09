@@ -20,6 +20,11 @@ def train_data(train_data_path) -> pd.DataFrame:
 
 
 @pytest.fixture(scope="session")
+def satellite_meta() -> pd.DataFrame:
+    return pd.read_csv(ASSETS_DIR / "satellite_metadata.csv")
+
+
+@pytest.fixture(scope="session")
 def experiment_config_path() -> Path:
     return ASSETS_DIR / "experiment_config.yaml"
 

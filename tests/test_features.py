@@ -3,8 +3,8 @@ from pathlib import Path
 import numpy as np
 
 from cyano.data.features import generate_features
+from cyano.data.satellite_data import download_satellite_data
 from cyano.data.utils import add_unique_identifier
-from cyano.pipeline import CyanoModelPipeline
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
@@ -25,17 +25,14 @@ def test_known_features(train_data, features_config):
     assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_max"], 1182)
 
 
-def test_download_satellite_data(tmp_path, train_data_path, features_config):
-    # Download satellite imagery
+def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_config):
+    # Download imagery
     features_config.use_sentinel_bands = ["B02", "B03"]
-    pipeline = CyanoModelPipeline(features_config=features_config, cache_dir=tmp_path)
-    pipeline._prep_train_data(train_data_path)
-    pipeline._prepare_train_features()
+    train_data = add_unique_identifier(train_data)
+    download_satellite_data(satellite_meta, train_data, features_config, tmp_path)
 
     # Sentinel image cache directory exists
-    sentinel_dir = (
-        pipeline.cache_dir / f"sentinel_{pipeline.features_config.image_feature_meter_window}"
-    )
+    sentinel_dir = tmp_path / f"sentinel_{features_config.image_feature_meter_window}"
     assert sentinel_dir.exists()
     assert len(list(sentinel_dir.rglob("*.npy"))) > 0
 
@@ -43,10 +40,10 @@ def test_download_satellite_data(tmp_path, train_data_path, features_config):
     for sample_dir in sentinel_dir.iterdir():
         # Correct number of items per sample
         sample_item_dirs = list(sample_dir.iterdir())
-        assert len(sample_item_dirs) == pipeline.features_config.n_sentinel_items
+        assert len(sample_item_dirs) == features_config.n_sentinel_items
 
         # Correct bands for each item
         for sample_item_dir in sample_item_dirs:
             assert set([pth.stem for pth in sample_item_dir.iterdir()]) == set(
-                pipeline.features_config.use_sentinel_bands
+                features_config.use_sentinel_bands
             )
