@@ -190,9 +190,14 @@ def generate_candidate_metadata(
             pystac item IDs)
     """
     logger.info("Generating metadata for all satellite item candidates")
-    # Load from saved directory if path provided
-    if config.pc_search_results_dir is not None:
-        pc_results_dir = AnyPath(config.pc_search_results_dir)
+
+    if config.use_past_pc_results:
+        # Load from saved directory with search results for all competition data
+        # Remove for final package
+        pc_results_dir = (
+            AnyPath("s3://drivendata-competition-nasa-cyanobacteria")
+            / "data/interim/full_pc_search"
+        )
         sentinel_meta = pd.read_csv(pc_results_dir / "sentinel_metadata.csv")
         logger.info(
             f"Loaded {sentinel_meta.shape[0]:,} rows of Sentinel candidate metadata from {pc_results_dir}"
