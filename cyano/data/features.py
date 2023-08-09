@@ -51,7 +51,7 @@ def generate_satellite_features(
     # Iterate over samples
     for uid in tqdm(uids):
         satellite_features_dict[uid] = {}
-        sample_dir = Path(cache_dir) / f"satellite/{uid}"
+        sample_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}/{uid}"
         # Skip samples with no imagery
         if not sample_dir.exists():
             continue
@@ -59,18 +59,24 @@ def generate_satellite_features(
         # Load stacked array for each image
         # Right now we only have one item per sample, process will need to
         # change if we have multiple
-        item_paths = list(sample_dir.glob("*.npy"))
-        if len(item_paths) > 1:
+        item_dirs = list(sample_dir.iterdir())
+        if len(item_dirs) == 0:
+            continue
+        elif len(item_dirs) > 1:
             raise NotImplementedError(
                 f"{uid} has multiple items, cannot process multiple items per sample"
             )
-        stacked_array = np.load(item_paths[0])
 
-        # Load stacked array in dictionary form with band names for keys
+        item_dir = item_dirs[0]
+        # Load band arrays in dictionary form with band names for keys
         band_arrays = {}
         # If we want to mask image data with water boundaries in some way, add here
-        for idx, band in enumerate(config.use_sentinel_bands):
-            band_arrays[band] = stacked_array[idx]
+        for band in config.use_sentinel_bands:
+            if not (item_dir / f"{band}.npy").exists():
+                raise FileNotFoundError(
+                    f"Band {band} is missing from pystac item directory {item_dir}"
+                )
+            band_arrays[band] = np.load(item_dir / f"{band}.npy")
 
         # Iterate over features to generate
         for feature in config.satellite_features:
