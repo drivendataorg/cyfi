@@ -148,8 +148,8 @@ class CyanoModelPipeline:
         self.output_df.to_csv(preds_path, index=True)
         logger.success(f"Predictions saved to {preds_path}")
 
-    def run_prediction(self, predict_csv, preds_path):
-        self._prep_predict_data(predict_csv)
+    def run_prediction(self, predict_csv, preds_path, debug=False):
+        self._prep_predict_data(predict_csv, debug)
         self._prepare_predict_features()
         self._predict_model()
         self._write_predictions(preds_path)
