@@ -88,6 +88,28 @@ def search_planetary_computer(
     return search_results
 
 
+def bbox_from_geometry(geometry: Dict) -> Dict:
+    """For pystac items that don't have the bbox attribute, get the
+    bbox from the geometry
+
+    Args:
+        geometry (Dict): A dictionary of geometry from item.geometry
+
+    Returns:
+        Dict: Dictionary with keys for min_long, max_long, min_lat,
+            and max_lat
+    """
+    lons = [coord_pair[0] for coord_pair in geometry["coordinates"][0]]
+    lats = [coord_pair[1] for coord_pair in geometry["coordinates"][0]]
+
+    return {
+        "min_long": min(lons),
+        "max_long": max(lons),
+        "min_lat": min(lats),
+        "max_lat": max(lats),
+    }
+
+
 def get_items_metadata(
     search_results: ItemSearch,
     latitude: float,
@@ -114,11 +136,22 @@ def get_items_metadata(
         item_meta = {
             "item_id": item.id,
             "datetime": item.datetime.strftime("%Y-%m-%d"),
-            "min_long": item.bbox[0],
-            "max_long": item.bbox[2],
-            "min_lat": item.bbox[1],
-            "max_lat": item.bbox[3],
+            "platform": item.properties["platform"],
         }
+        # Add item bounding box
+        if "bbox" in item.to_dict():
+            item_meta.update(
+                {
+                    "min_long": item.bbox[0],
+                    "max_long": item.bbox[2],
+                    "min_lat": item.bbox[1],
+                    "max_lat": item.bbox[3],
+                }
+            )
+        elif "geometry" in item.to_dict():
+            bbox_dict = bbox_from_geometry(item.geometry)
+            item_meta.update(bbox_dict)
+
         if "eo:cloud_cover" in item.properties:
             item_meta.update({"eo:cloud_cover": item.properties["eo:cloud_cover"]})
         # Add links to download each band needed for features
@@ -168,42 +201,40 @@ def generate_candidate_metadata(
         with open(pc_results_dir / "sample_item_map.json", "r") as fp:
             sample_item_map = json.load(fp)
 
+        return (sentinel_meta, sample_item_map)
+
     # Otherwise, search the planetary computer
-    else:
-        logger.info(
-            f"Searching {config.pc_collections} within {config.pc_days_search_window} days and {config.pc_meters_search_window} meters"
+    logger.info(
+        f"Searching {config.pc_collections} within {config.pc_days_search_window} days and {config.pc_meters_search_window} meters"
+    )
+    sentinel_meta = []
+    sample_item_map = {}
+    for sample in tqdm(samples.itertuples(), total=len(samples)):
+        # Search planetary computer
+        search_results = search_planetary_computer(
+            sample.date,
+            sample.latitude,
+            sample.longitude,
+            collections=config.pc_collections,
+            days_search_window=config.pc_days_search_window,
+            meters_search_window=config.pc_meters_search_window,
         )
-        sentinel_meta = []
-        sample_item_map = {}
-        for sample in tqdm(samples.itertuples(), total=len(samples)):
-            # Search planetary computer
-            search_results = search_planetary_computer(
-                sample.date,
-                sample.latitude,
-                sample.longitude,
-                collections=config.pc_collections,
-                days_search_window=config.pc_days_search_window,
-                meters_search_window=config.pc_meters_search_window,
-            )
 
-            # Get satelite metadata
-            sample_items_meta = get_items_metadata(
-                search_results, sample.latitude, sample.longitude, config
-            )
-
-            sample_item_map[sample.Index] = {
-                "sentinel_item_ids": sample_items_meta.item_id.tolist()
-                if len(sample_items_meta) > 0
-                else []
-            }
-            sentinel_meta.append(sample_items_meta)
-        sentinel_meta = (
-            pd.concat(sentinel_meta)
-            .groupby("item_id", as_index=False)
-            .first()
-            .reset_index(drop=True)
+        # Get satelite metadata
+        sample_items_meta = get_items_metadata(
+            search_results, sample.latitude, sample.longitude, config
         )
-        logger.info(f"Generated metadata for {sentinel_meta.shape[0]:,} Sentinel item candidates")
+
+        sample_item_map[sample.Index] = {
+            "sentinel_item_ids": sample_items_meta.item_id.tolist()
+            if len(sample_items_meta) > 0
+            else []
+        }
+        sentinel_meta.append(sample_items_meta)
+    sentinel_meta = (
+        pd.concat(sentinel_meta).groupby("item_id", as_index=False).first().reset_index(drop=True)
+    )
+    logger.info(f"Generated metadata for {sentinel_meta.shape[0]:,} Sentinel item candidates")
 
     return (sentinel_meta, sample_item_map)
 

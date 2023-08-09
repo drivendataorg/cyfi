@@ -56,7 +56,7 @@ def generate_satellite_features(
         if not sample_dir.exists():
             continue
 
-        # Load stacked array for each image
+        # Load band arrays for each image
         # Right now we only have one item per sample, process will need to
         # change if we have multiple
         item_dirs = list(sample_dir.iterdir())
@@ -68,7 +68,7 @@ def generate_satellite_features(
             )
 
         item_dir = item_dirs[0]
-        # Load band arrays in dictionary form with band names for keys
+        # Load band arrays into a dictionary with band names for keys
         band_arrays = {}
         # If we want to mask image data with water boundaries in some way, add here
         for band in config.use_sentinel_bands:
