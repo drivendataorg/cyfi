@@ -71,12 +71,19 @@ def generate_satellite_features(
         # Load band arrays into a dictionary with band names for keys
         band_arrays = {}
         # If we want to mask image data with water boundaries in some way, add here
+        array_paths = list(item_dir.glob("*.npy"))
+        # Skip if no bands are present
+        if len(array_paths) == 0:
+            continue
+        expected_array_shape = np.load(array_paths[0]).shape
         for band in config.use_sentinel_bands:
-            if not (item_dir / f"{band}.npy").exists():
-                raise FileNotFoundError(
-                    f"Band {band} is missing from pystac item directory {item_dir}"
+            if (item_dir / f"{band}.npy").exists():
+                band_arrays[band] = np.load(item_dir / f"{band}.npy")
+            else:
+                logger.warning(
+                    f"Band {band} is missing from pystac item directory {item_dir}. Loading array of zeros"
                 )
-            band_arrays[band] = np.load(item_dir / f"{band}.npy")
+                band_arrays[band] = np.zeros(expected_array_shape)
 
         # Iterate over features to generate
         for feature in config.satellite_features:
