@@ -3,7 +3,7 @@ import yaml
 from pathlib import Path
 import typer
 
-from cyano.experiment import ExperimentConfig
+from cyano.experiment.experiment import ExperimentConfig
 from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
 
