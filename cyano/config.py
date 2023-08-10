@@ -22,6 +22,7 @@ class FeaturesConfig(BaseModel):
     pc_meters_search_window: Optional[int] = 1000
     use_sentinel_bands: Optional[List] = ["B02", "B03", "B04"]
     image_feature_meter_window: Optional[int] = 500
+    n_sentinel_items: Optional[int] = 1
     satellite_features: Optional[List] = [
         "B02_mean",
         "B02_min",

@@ -53,7 +53,7 @@ class CyanoModelPipeline:
 
     def _prepare_features(self, samples):
         ## Identify satellite data
-        satellite_meta = identify_satellite_data(samples, self.features_config, self.cache_dir)
+        satellite_meta = identify_satellite_data(samples, self.features_config)
         save_satellite_to = self.cache_dir / "satellite_metadata_train.csv"
         satellite_meta.to_csv(save_satellite_to, index=False)
         logger.info(
@@ -148,8 +148,8 @@ class CyanoModelPipeline:
         self.output_df.to_csv(preds_path, index=True)
         logger.success(f"Predictions saved to {preds_path}")
 
-    def run_prediction(self, predict_csv, preds_path):
-        self._prep_predict_data(predict_csv)
+    def run_prediction(self, predict_csv, preds_path, debug=False):
+        self._prep_predict_data(predict_csv, debug)
         self._prepare_predict_features()
         self._predict_model()
         self._write_predictions(preds_path)
