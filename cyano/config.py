@@ -35,7 +35,6 @@ class FeaturesConfig(BaseModel):
     climate_features: Optional[List] = []
     elevation_features: Optional[List] = []
     metadata_features: Optional[List] = []
-    use_past_pc_results: bool = True
 
 
 class ModelTrainingConfig(BaseModel):

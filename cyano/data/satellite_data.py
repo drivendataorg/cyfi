@@ -191,7 +191,7 @@ def generate_candidate_metadata(
     """
     logger.info("Generating metadata for all satellite item candidates")
 
-    if config.use_past_pc_results:
+    if len(samples) > 20:
         # Load from saved directory with search results for all competition data
         # Remove for final package
         pc_results_dir = (
