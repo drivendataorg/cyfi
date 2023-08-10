@@ -1,24 +1,19 @@
 from pathlib import Path
 import yaml
 
-from cloudpathlib import AnyPath
 from loguru import logger
-from pydantic import BaseModel, field_serializer, AfterValidator
-from typing_extensions import Annotated
+from pydantic import BaseModel, field_serializer
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
 from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
 
 
-AnyPathType = Annotated[Path, AfterValidator(lambda x: AnyPath(x))]
-
-
 class ExperimentConfig(BaseModel):
     features_config: FeaturesConfig = FeaturesConfig()
     model_training_config: ModelTrainingConfig = ModelTrainingConfig()
-    train_csv: AnyPathType
-    predict_csv: AnyPathType
+    train_csv: Path
+    predict_csv: Path
     cache_dir: Path = None
     save_dir: Path = Path.cwd()
 
