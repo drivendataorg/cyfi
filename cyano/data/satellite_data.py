@@ -305,7 +305,6 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
 
         # Save out the selected items
         sample_items_meta = sample_items_meta[sample_items_meta.item_id.isin(selected_ids)]
-        sample_items_meta["selected"] = True
         sample_items_meta["sample_id"] = sample.Index
 
         selected_satellite_meta.append(sample_items_meta)
@@ -325,20 +324,17 @@ def download_satellite_data(
 
     Args:
         satellite_meta (pd.DataFrame): Dataframe of satellite metadata
-            indicating which pystac item(s) will be used in feature
-            generation for each sample
+            for all pystac items that have been selected for us in
+            feature generation
         samples (pd.DataFrame): Dataframe where the index is uid and
             there are columns for date, longitude, and latitude
         config (FeaturesConfig): Features config
     """
-    # Filter to images selected for feature generation
-    selected = satellite_meta[satellite_meta.selected]
-
     # Iterate over all rows (item / sample combos)
     logger.info(f"Downloading bands {config.use_sentinel_bands}")
     no_data_in_bounds_errs = 0
 
-    for _, download_row in tqdm(selected.iterrows(), total=len(selected)):
+    for _, download_row in tqdm(satellite_meta.iterrows(), total=len(satellite_meta)):
         sample_row = samples.loc[download_row.sample_id]
         sample_image_dir = (
             Path(cache_dir)
