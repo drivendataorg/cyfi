@@ -318,7 +318,10 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
 
 
 def download_satellite_data(
-    satellite_meta: pd.DataFrame, samples: pd.DataFrame, config: FeaturesConfig, cache_dir
+    satellite_meta: pd.DataFrame,
+    samples: pd.DataFrame,
+    config: FeaturesConfig,
+    cache_dir: Union[str, Path],
 ):
     """Download satellite images as one stacked numpy arrays per pystac item
 
@@ -329,20 +332,18 @@ def download_satellite_data(
         samples (pd.DataFrame): Dataframe where the index is uid and
             there are columns for date, longitude, and latitude
         config (FeaturesConfig): Features config
+        cache_dir (Union[str, Path]): Cache directory to save raw imagery
     """
     # Iterate over all rows (item / sample combos)
     logger.info(f"Downloading bands {config.use_sentinel_bands}")
     no_data_in_bounds_errs = 0
 
+    imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"
     for _, download_row in tqdm(satellite_meta.iterrows(), total=len(satellite_meta)):
         sample_row = samples.loc[download_row.sample_id]
-        sample_image_dir = (
-            Path(cache_dir)
-            / f"sentinel_{config.image_feature_meter_window}/{download_row.sample_id}/{download_row.item_id}"
-        )
+        sample_image_dir = imagery_dir / f"{download_row.sample_id}/{download_row.item_id}"
+        sample_image_dir.mkdir(exist_ok=True, parents=True)
         try:
-            sample_image_dir.mkdir(exist_ok=True, parents=True)
-
             # Get bounding box for array to save out
             (minx, miny, maxx, maxy) = get_bounding_box(
                 sample_row.latitude, sample_row.longitude, config.image_feature_meter_window
@@ -376,3 +377,12 @@ def download_satellite_data(
         logger.warning(
             f"Could not download {no_data_in_bounds_errs:,} image/sample combinations with no data in bounds"
         )
+
+    # Check that for every item directory, each required band is present
+    item_dirs = [pth for pth in imagery_dir.rglob("*/*") if pth.is_dir()]
+    for item_dir in item_dirs:
+        missing = np.setdiff1d(config.use_sentinel_bands, [p.stem for p in item_dir.iterdir()])
+        if len(missing) > 0:
+            raise FileNotFoundError(
+                f"Required band(s) {missing} are missing from pystac item directory: {item_dir}"
+            )
