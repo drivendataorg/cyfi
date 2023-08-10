@@ -33,67 +33,86 @@ SATELLITE_FEATURE_CALCULATORS = {
 
 
 def generate_satellite_features(
-    uids: Union[List[str], pd.Index], config: FeaturesConfig, cache_dir
+    satellite_meta: pd.DataFrame,
+    config: FeaturesConfig,
+    cache_dir: Union[str, Path],
 ) -> pd.DataFrame:
     """Generate features from satellite data
 
     Args:
-        uids (Union[List[str], pd.Index]): List of unique indices for each sample
+        satellite_meta (pd.DataFrame): Dataframe of satellite metadata
+            for all pystac items that have been selected for use in
+            feature generation
         config (FeaturesConfig): Configuration, including
             directory where raw source data is saved
+        cache_dir (Union[str, Path]): Cache directory where raw imagery
+            is saved
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is one column
-            for each satellite feature
+            for each satellite feature. There will only be rows for samples
+            with satellite imagery
     """
-    logger.info(f"Generating features for {len(uids):,} samples")
-    satellite_features_dict = {}
-    # Iterate over samples
-    for uid in tqdm(uids):
-        satellite_features_dict[uid] = {}
-        sample_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}/{uid}"
-        # Skip samples with no imagery
-        if not sample_dir.exists():
+    logger.info(
+        f"Generating satellite features for {len(satellite_meta):,} sample/item combos, {satellite_meta.sample_id.nunique():,} samples"
+    )
+    # satellite_features_dict = {}
+    satellite_features = []
+
+    # Calculate satellite metadata features
+    if "month" in config.satellite_meta_features:
+        satellite_meta["month"] = pd.to_datetime(satellite_meta.datetime).dt.month
+
+    # Iterate over selected sample / item combinations
+    for row in tqdm(satellite_meta.itertuples(), total=len(satellite_meta)):
+        sample_item_dir = (
+            Path(cache_dir)
+            / f"sentinel_{config.image_feature_meter_window}/{row.sample_id}/{row.item_id}"
+        )
+        # Skip combos we were not able to download
+        if not sample_item_dir.exists():
             continue
 
-        # Load band arrays for each image
-        # Right now we only have one item per sample, process will need to
-        # change if we have multiple
-        item_dirs = list(sample_dir.iterdir())
-        if len(item_dirs) == 0:
-            continue
-        elif len(item_dirs) > 1:
-            raise NotImplementedError(
-                f"{uid} has multiple items, cannot process multiple items per sample"
-            )
-
-        item_dir = item_dirs[0]
         # Load band arrays into a dictionary with band names for keys
         band_arrays = {}
         # If we want to mask image data with water boundaries in some way, add here
         for band in config.use_sentinel_bands:
-            if not (item_dir / f"{band}.npy").exists():
+            if not (sample_item_dir / f"{band}.npy").exists():
                 raise FileNotFoundError(
-                    f"Band {band} is missing from pystac item directory {item_dir}"
+                    f"Band {band} is missing from pystac item directory {sample_item_dir}"
                 )
-            band_arrays[band] = np.load(item_dir / f"{band}.npy")
+            band_arrays[band] = np.load(sample_item_dir / f"{band}.npy")
 
         # Iterate over features to generate
-        for feature in config.satellite_features:
-            satellite_features_dict[uid][feature] = SATELLITE_FEATURE_CALCULATORS[feature](
-                band_arrays
-            )
+        sample_item_features = {"sample_id": row.sample_id, "item_id": row.item_id}
+        for feature in config.satellite_image_features:
+            sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
+        satellite_features.append(pd.Series(sample_item_features))
 
-    satellite_features = pd.DataFrame(satellite_features_dict).T[config.satellite_features]
+    satellite_features = pd.concat(satellite_features, axis=1).T
 
-    # For now, fill missing values with the average over all samples
+    # For now, fill missing imagery values with the average over all samples
     logger.info(
         f"Filling missing satellite values for {satellite_features.isna().any(axis=1).sum()} samples"
     )
-    for col in satellite_features:
+    for col in config.satellite_image_features:
         satellite_features[col] = satellite_features[col].fillna(satellite_features[col].mean())
 
-    return satellite_features
+    # Add in satellite meta features
+    satellite_features = satellite_features.merge(
+        satellite_meta[["item_id", "sample_id"] + config.satellite_meta_features],
+        how="left",
+        on=["item_id", "sample_id"],
+        validate="1:1",
+    )
+
+    # Check that each row is a unique item / sample combo
+    if satellite_features[["sample_id", "item_id"]].duplicated().any():
+        raise ValueError(
+            "There are repeat sample / item combinations in the satellite features dataframe"
+        )
+
+    return satellite_features.set_index("sample_id").drop(columns=["item_id"])
 
 
 def generate_climate_features(
@@ -107,8 +126,9 @@ def generate_climate_features(
             directory where raw source data is saved
 
     Returns:
-        pd.DataFrame: Dataframe where the index is uid and there is
-            one columns for each climate feature
+        pd.DataFrame: Dataframe where the index is uid. There is
+            one columns for each climate feature and one row
+            for each sample
     """
     # Load files
     # - filter to those containing '_climate' in the name or other pattern
@@ -129,8 +149,9 @@ def generate_elevation_features(
             directory where raw source data is saved
 
     Returns:
-        pd.DataFrame: Dataframe where the index is uid and there is
-            one columns for each elevation feature
+        pd.DataFrame: Dataframe where the index is uid. There is
+            one columns for each elevation feature and one row
+            for each sample
     """
     # Load files
     # - filter to those containing '_elevation' in the name or other pattern
@@ -140,24 +161,35 @@ def generate_elevation_features(
     pass
 
 
-def generate_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
+def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
     """Generate features from sample metadata
 
     Args:
-        df (pd.DataFrame): Dataframe where the index is uid and there are
+        samples (pd.DataFrame): Dataframe where the index is uid and there are
             columns for date, longitude, and latitude
+        config (FeaturesConfig): Feature configuration
 
     Returns:
-        pd.DataFrame: Dataframe where the index is uid and there is
-            one columns for each metadata-based feature
+        pd.DataFrame: Dataframe where the index is uid. There is
+            one columns for each metadata feature and one row
+            for each sample
     """
     # Pull in any external information needed (eg land use by state)
 
     # Generate features for each sample
-    pass
+    metadata_features = samples.copy()
+    if "rounded_longitude" in config.metadata_features:
+        metadata_features["rounded_longitude"] = (metadata_features.longitude / 10).round(0)
+
+    return metadata_features[config.metadata_features]
 
 
-def generate_features(samples: pd.DataFrame, config: FeaturesConfig, cache_dir) -> pd.DataFrame:
+def generate_features(
+    samples: pd.DataFrame,
+    satellite_meta: pd.DataFrame,
+    config: FeaturesConfig,
+    cache_dir: Union[str, Path],
+) -> pd.DataFrame:
     """Generate a dataframe of features for the given set of samples.
     Requires that the raw satellite, climate, and elevation data for
     the given samples are already saved in cache_dir
@@ -165,37 +197,59 @@ def generate_features(samples: pd.DataFrame, config: FeaturesConfig, cache_dir) 
     Args:
         samples (pd.DataFrame): Dataframe where the index is uid and there are
             columns for date, longitude, and latitude
-        config (FeaturesConfig): Configuration, including
-            directory where raw source data is saved
+        satellite_meta (pd.DataFrame): Dataframe of satellite metadata
+            for all pystac items that have been selected for use in
+            feature generation
+        config (FeaturesConfig): Feature configuration
+        cache_dir (Union[str, Path]): Cache directory where raw imagery
+            is saved
 
     Returns:
         pd.DataFrame: Dataframe where the index is uid and there is one
             column for each feature
     """
-    uids = samples.index
-    all_features = []
-    satellite_features = generate_satellite_features(uids, config, cache_dir)
-    all_features.append(satellite_features.loc[uids])
-    logger.info(f"Generated {satellite_features.shape[1]} satellite features")
+    # Generate satellite features
+    # May be >1 row per sample, only includes samples with imagery
+    satellite_features = generate_satellite_features(satellite_meta, config, cache_dir)
+    logger.info(
+        f"Generated {satellite_features.shape[1]} satellite features. {satellite_features.index.nunique():,} samples, {satellite_features.shape[0]:,} item / sample combinations."
+    )
 
+    # Generate non-satellite features. Each has only one row per sample
+    uids = samples.index
+    non_satellite_features = []
     if config.climate_features:
         climate_features = generate_climate_features(uids, config, cache_dir)
-        all_features.append(climate_features.loc[uids])
+        non_satellite_features.append(climate_features.loc[uids])
         logger.info(f"Generated {satellite_features.shape[0]} climate features")
 
     if config.elevation_features:
         elevation_features = generate_elevation_features(uids, config, cache_dir)
-        all_features.append(elevation_features.loc[uids])
+        non_satellite_features.append(elevation_features.loc[uids])
         logger.info(f"Generated {satellite_features.shape[0]} elevation features")
 
     if config.metadata_features:
-        metadata_features = generate_metadata_features(samples, cache_dir)
-        all_features.append(metadata_features.loc[uids])
-        logger.info(f"Generated {satellite_features.shape[0]} metadata features")
+        metadata_features = generate_metadata_features(samples, config)
+        non_satellite_features.append(metadata_features.loc[uids])
 
-    features = pd.concat(
-        all_features,
-        axis=1,
+        logger.info(f"Generated {satellite_features.shape[0]} metadata features")
+    non_satellite_features = pd.concat(non_satellite_features, axis=1)
+
+    # Merge satellite and non-satellite features
+    features = non_satellite_features.merge(
+        satellite_features, how="outer", left_index=True, right_index=True, validate="1:m"
+    )
+    if set(features.index.unique()) != set(samples.index.unique()):
+        raise ValueError(
+            "The list of samples in the features dataframe does not match the original list of samples"
+        )
+
+    all_feature_cols = (
+        config.satellite_image_features
+        + config.satellite_meta_features
+        + config.climate_features
+        + config.elevation_features
+        + config.metadata_features
     )
 
-    return features
+    return features[all_feature_cols]

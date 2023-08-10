@@ -71,7 +71,7 @@ class CyanoModelPipeline:
         logger.success(f"Raw source data saved to {self.cache_dir}")
 
         ## Generate features
-        features = generate_features(samples, self.features_config, self.cache_dir)
+        features = generate_features(samples, satellite_meta, self.features_config, self.cache_dir)
         save_features_to = self.cache_dir / "features_train.csv"
         features.to_csv(save_features_to, index=True)
         logger.success(
@@ -135,11 +135,18 @@ class CyanoModelPipeline:
         self.predict_features = self._prepare_features(self.predict_samples)
 
     def _predict_model(self):
-        self.preds = pd.Series(
+        preds = pd.Series(
             data=self.model.predict(self.predict_features),
             index=self.predict_features.index,
             name="severity",
-        ).astype(int)
+        )
+        # Group by uid if multiple predictions per uid
+        if not preds.index.is_unique:
+            logger.info(
+                f"Grouping {preds.shape[0]:,} predictions by {preds.index.nunique():,} unique sample IDs"
+            )
+            preds = preds.groupby(preds.index).mean()
+        self.preds = preds.round().astype(int)
 
         self.output_df = self.predict_samples.join(self.preds)
 

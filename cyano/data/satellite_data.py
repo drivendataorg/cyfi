@@ -260,14 +260,17 @@ def select_items(
         List[str]: List of the pystac items IDs for the selected items
     """
     # Calculate days between sample and image
-    items_meta["day_diff"] = (pd.to_datetime(date) - pd.to_datetime(items_meta.datetime)).dt.days
+    items_meta["days_before_sample"] = (
+        pd.to_datetime(date) - pd.to_datetime(items_meta.datetime)
+    ).dt.days
     # Filter by time frame
-    items_meta = items_meta[items_meta.day_diff.between(0, config.pc_days_search_window)].copy()
+    items_meta = items_meta[
+        items_meta.days_before_sample.between(0, config.pc_days_search_window)
+    ].copy()
 
     # Sort and select
-    items_meta["day_diff"] = np.abs(items_meta.day_diff)
     selected = items_meta.sort_values(
-        by=["eo:cloud_cover", "day_diff"], ascending=[True, True]
+        by=["eo:cloud_cover", "days_before_sample"], ascending=[True, True]
     ).head(config.n_sentinel_items)
 
     return selected.item_id.tolist()
@@ -327,7 +330,7 @@ def download_satellite_data(
 
     Args:
         satellite_meta (pd.DataFrame): Dataframe of satellite metadata
-            for all pystac items that have been selected for us in
+            for all pystac items that have been selected for use in
             feature generation
         samples (pd.DataFrame): Dataframe where the index is uid and
             there are columns for date, longitude, and latitude

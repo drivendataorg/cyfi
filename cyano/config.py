@@ -23,7 +23,7 @@ class FeaturesConfig(BaseModel):
     use_sentinel_bands: Optional[List] = ["B02", "B03", "B04"]
     image_feature_meter_window: Optional[int] = 500
     n_sentinel_items: Optional[int] = 1
-    satellite_features: Optional[List] = [
+    satellite_image_features: Optional[List] = [
         "B02_mean",
         "B02_min",
         "B02_max",
@@ -32,9 +32,10 @@ class FeaturesConfig(BaseModel):
         "B03_max",
         "B04_mean",
     ]
+    satellite_meta_features: Optional[List] = []
     climate_features: Optional[List] = []
     elevation_features: Optional[List] = []
-    metadata_features: Optional[List] = []
+    metadata_features: Optional[List] = ["rounded_longitude"]
 
 
 class ModelTrainingConfig(BaseModel):
