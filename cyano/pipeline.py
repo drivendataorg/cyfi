@@ -75,7 +75,7 @@ class CyanoModelPipeline:
         save_features_to = self.cache_dir / "features_train.csv"
         features.to_csv(save_features_to, index=True)
         logger.success(
-            f"{features.shape[1]:,} features for {features.shape[0]:,} samples saved to {save_features_to}"
+            f"{features.shape[1]:,} features for {features.index.nunique():,} samples (of {samples.shape[0]:,}) saved to {save_features_to}"
         )
 
         return features
