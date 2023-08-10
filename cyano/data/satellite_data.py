@@ -377,12 +377,3 @@ def download_satellite_data(
         logger.warning(
             f"Could not download {no_data_in_bounds_errs:,} image/sample combinations with no data in bounds"
         )
-
-    # Check that for every item directory, each required band is present
-    item_dirs = [pth for pth in imagery_dir.rglob("*/*") if pth.is_dir()]
-    for item_dir in item_dirs:
-        missing = np.setdiff1d(config.use_sentinel_bands, [p.stem for p in item_dir.iterdir()])
-        if len(missing) > 0:
-            raise FileNotFoundError(
-                f"Required band(s) {missing} are missing from pystac item directory: {item_dir}"
-            )
