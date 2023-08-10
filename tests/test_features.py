@@ -28,7 +28,7 @@ def test_known_features(train_data, features_config):
 def test_generate_candidate_metadata(train_data, features_config):
     train_data = add_unique_identifier(train_data)
 
-    (candidate_meta, sample_item_map) = generate_candidate_metadata(train_data, features_config)
+    candidate_meta, sample_item_map = generate_candidate_metadata(train_data, features_config)
 
     # Check that item map has the correct samples and matches known values
     assert len(sample_item_map) == len(train_data)
