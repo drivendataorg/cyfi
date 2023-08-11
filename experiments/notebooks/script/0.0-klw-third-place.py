@@ -10,14 +10,17 @@ get_ipython().run_line_magic('autoreload', '2')
 
 import yaml
 
+from cloudpathlib import AnyPath
+
 from cyano.config import FeaturesConfig, ModelTrainingConfig
 from cyano.experiment import ExperimentConfig
 from cyano.settings import REPO_ROOT
 
 
 DATA_DIR = REPO_ROOT.parent / "data/experiments"
+S3_DATA_DIR = AnyPath("s3://drivendata-competition-nasa-cyanobacteria") / "experiments"
 
-SPLITS_DIR = DATA_DIR / "splits"
+SPLITS_DIR = S3_DATA_DIR / "splits"
 LOCAL_CACHE_DIR = DATA_DIR / "cache"
 EXPERIMENT_SAVE_DIR = DATA_DIR / "rerun_third"
 EXPERIMENT_SAVE_DIR.mkdir(exist_ok=True, parents=True)
