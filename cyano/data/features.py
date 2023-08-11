@@ -102,7 +102,7 @@ def generate_satellite_features(
             is saved
 
     Returns:
-        pd.DataFrame: Dataframe where the index is uid and there is one column
+        pd.DataFrame: Dataframe where the index is sample ID and there is one column
             for each satellite feature. There will only be rows for samples
             with satellite imagery
     """
@@ -162,17 +162,17 @@ def generate_satellite_features(
 
 
 def generate_climate_features(
-    uids: Union[List[str], pd.Index], config: FeaturesConfig
+    sample_ids: Union[List[str], pd.Index], config: FeaturesConfig
 ) -> pd.DataFrame:
     """Generate features from climate data
 
     Args:
-        uids (Union[List[str], pd.Index]): List of unique indices for each sample
+        sample_ids (Union[List[str], pd.Index]): List of unique indices for each sample
         config (FeaturesConfig): Configuration, including
             directory where raw source data is saved
 
     Returns:
-        pd.DataFrame: Dataframe where the index is uid. There is
+        pd.DataFrame: Dataframe where the index is sample_id. There is
             one columns for each climate feature and one row
             for each sample
     """
@@ -185,17 +185,17 @@ def generate_climate_features(
 
 
 def generate_elevation_features(
-    uids: Union[List[str], pd.Index], config: FeaturesConfig
+    sample_ids: Union[List[str], pd.Index], config: FeaturesConfig
 ) -> pd.DataFrame:
     """Generate features from elevation data
 
     Args:
-        uids (Union[List[str], pd.Index]): List of unique indices for each sample
+        sample_ids (Union[List[str], pd.Index]): List of unique indices for each sample
         config (FeaturesConfig): Configuration, including
             directory where raw source data is saved
 
     Returns:
-        pd.DataFrame: Dataframe where the index is uid. There is
+        pd.DataFrame: Dataframe where the index is sample_id. There is
             one columns for each elevation feature and one row
             for each sample
     """
@@ -211,12 +211,12 @@ def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) ->
     """Generate features from sample metadata
 
     Args:
-        samples (pd.DataFrame): Dataframe where the index is uid and there are
+        samples (pd.DataFrame): Dataframe where the index is sample_id and there are
             columns for date, longitude, and latitude
         config (FeaturesConfig): Feature configuration
 
     Returns:
-        pd.DataFrame: Dataframe where the index is uid. There is
+        pd.DataFrame: Dataframe where the index is sample_id. There is
             one columns for each metadata feature and one row
             for each sample
     """
@@ -241,7 +241,7 @@ def generate_features(
     the given samples are already saved in cache_dir
 
     Args:
-        samples (pd.DataFrame): Dataframe where the index is uid and there are
+        samples (pd.DataFrame): Dataframe where the index is sample_id and there are
             columns for date, longitude, and latitude
         satellite_meta (pd.DataFrame): Dataframe of satellite metadata
             for all pystac items that have been selected for use in
@@ -251,7 +251,7 @@ def generate_features(
             is saved
 
     Returns:
-        pd.DataFrame: Dataframe where the index is uid and there is one
+        pd.DataFrame: Dataframe where the index is sample_id and there is one
             column for each feature. Each row is a unique combination of
             sample and pystac item. Only samples that have valid satellite
             imagery are included in the features
@@ -262,25 +262,25 @@ def generate_features(
     logger.info(
         f"Generated {satellite_features.shape[1]} satellite features. {satellite_features.index.nunique():,} samples, {satellite_features.shape[0]:,} item / sample combinations."
     )
-    feature_uids = satellite_features.index
+    feature_sample_ids = satellite_features.index
 
     # Generate non-satellite features. Each has only one row per sample
     # Only include samples for which we have satellite features
-    unique_feature_uids = satellite_features.index.unique
+    unique_feature_ids = satellite_features.index.unique
     non_satellite_features = []
     if config.climate_features:
-        climate_features = generate_climate_features(unique_feature_uids, config, cache_dir)
-        non_satellite_features.append(climate_features.loc[feature_uids])
+        climate_features = generate_climate_features(unique_feature_ids, config, cache_dir)
+        non_satellite_features.append(climate_features.loc[feature_sample_ids])
         logger.info(f"Generated {satellite_features.shape[0]} climate features")
 
     if config.elevation_features:
-        elevation_features = generate_elevation_features(unique_feature_uids, config, cache_dir)
-        non_satellite_features.append(elevation_features.loc[feature_uids])
+        elevation_features = generate_elevation_features(unique_feature_ids, config, cache_dir)
+        non_satellite_features.append(elevation_features.loc[feature_sample_ids])
         logger.info(f"Generated {satellite_features.shape[0]} elevation features")
 
     if config.metadata_features:
         metadata_features = generate_metadata_features(samples, config)
-        non_satellite_features.append(metadata_features.loc[feature_uids])
+        non_satellite_features.append(metadata_features.loc[feature_sample_ids])
 
         logger.info(f"Generated {satellite_features.shape[0]} metadata features")
     non_satellite_features = pd.concat(non_satellite_features, axis=1)

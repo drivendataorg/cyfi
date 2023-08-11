@@ -180,13 +180,13 @@ def generate_candidate_metadata(
     that could be used to generate features for each sample
 
     Args:
-        samples (pd.DataFrame): Dataframe where the index is uid and
+        samples (pd.DataFrame): Dataframe where the index is unique_feature_id and
             there are columns for date, longitude, and latitude
         config (FeaturesConfig): Features config
 
     Returns:
         Tuple[pd.DataFrame, Dict]: Tuple of (metadata for all sentinel item
-            candidates, dictionary mapping sample UIDs to the relevant
+            candidates, dictionary mapping sample IDs to the relevant
             pystac item IDs)
     """
     logger.info("Generating metadata for all satellite item candidates")
@@ -281,7 +281,7 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
     generation for a given set of samples
 
     Args:
-        samples (pd.DataFrame): Dataframe where the index is uid and
+        samples (pd.DataFrame): Dataframe where the index is sample_id and
             there are columns for date, longitude, and latitude
         config (FeaturesConfig): Features config
 
@@ -332,7 +332,7 @@ def download_satellite_data(
         satellite_meta (pd.DataFrame): Dataframe of satellite metadata
             for all pystac items that have been selected for use in
             feature generation
-        samples (pd.DataFrame): Dataframe where the index is uid and
+        samples (pd.DataFrame): Dataframe where the index is sample_id and
             there are columns for date, longitude, and latitude
         config (FeaturesConfig): Features config
         cache_dir (Union[str, Path]): Cache directory to save raw imagery
