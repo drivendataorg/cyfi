@@ -41,3 +41,4 @@ class FeaturesConfig(BaseModel):
 class ModelTrainingConfig(BaseModel):
     params: Optional[LGBParams] = LGBParams()
     num_boost_round: Optional[int] = 1000
+    early_stopping_rounds: Optional[int] = 100
