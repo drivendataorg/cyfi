@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Union
 import yaml
 
 from loguru import logger
@@ -12,8 +13,8 @@ from cyano.evaluate import EvaluatePreds
 class ExperimentConfig(BaseModel):
     features_config: FeaturesConfig = FeaturesConfig()
     model_training_config: ModelTrainingConfig = ModelTrainingConfig()
-    train_csv: Path
-    predict_csv: Path
+    train_csv: Union[str, Path]
+    predict_csv: Union[str, Path]
     cache_dir: Path = None
     save_dir: Path = Path.cwd()
     debug: bool = False

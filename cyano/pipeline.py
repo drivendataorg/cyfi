@@ -4,6 +4,7 @@ from typing import Optional
 import yaml
 from zipfile import ZipFile
 
+from cloudpathlib import AnyPath
 import lightgbm as lgb
 from loguru import logger
 import pandas as pd
@@ -36,10 +37,10 @@ class CyanoModelPipeline:
         # make cache dir
         self.cache_dir.mkdir(exist_ok=True, parents=True)
 
-    def _prep_train_data(self, data, debug=False):
+    def _prep_train_data(self, data, debug: bool = False):
         """Load labels and save out samples with UIDs"""
-        labels = pd.read_csv(data)
-        # labels = labels[["date", "latitude", "longitude", "severity"]]
+        labels = pd.read_csv(AnyPath(data))
+        labels = labels[["date", "latitude", "longitude", "severity"]]
         labels = add_unique_identifier(labels)
         if debug:
             labels = labels.head(10)
@@ -48,7 +49,7 @@ class CyanoModelPipeline:
         labels.to_csv(self.cache_dir / "train_samples_uid_mapping.csv", index=True)
         logger.info(f"Loaded {labels.shape[0]:,} samples for training")
 
-        self.train_samples = labels  # [["date", "latitude", "longitude"]]
+        self.train_samples = labels[["date", "latitude", "longitude"]]
         self.train_labels = labels["severity"]
 
     def _prepare_features(self, samples):
@@ -117,8 +118,9 @@ class CyanoModelPipeline:
         model = lgb.Booster(model_str=archive.read("lgb_model.txt").decode())
         return cls(features_config=features_config, model=model, cache_dir=cache_dir)
 
-    def _prep_predict_data(self, data, debug=False):
-        df = add_unique_identifier(pd.read_csv(data))
+    def _prep_predict_data(self, data, debug: bool = False):
+        df = pd.read_csv(AnyPath(data))
+        df = add_unique_identifier(df)
 
         samples = df[["date", "latitude", "longitude"]]
 
