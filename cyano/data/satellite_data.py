@@ -1,4 +1,5 @@
 from datetime import timedelta
+import functools
 import json
 import shutil
 from typing import Dict, List, Tuple, Union
@@ -13,6 +14,7 @@ import planetary_computer as pc
 from pystac_client import Client, ItemSearch
 import rioxarray
 from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
 
 from cyano.config import FeaturesConfig
 
@@ -320,6 +322,74 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
     return selected_satellite_meta
 
 
+def download_row(
+    iterrow: Tuple[int, pd.Series],
+    samples: pd.DataFrame,
+    imagery_dir: Path,
+    config: FeaturesConfig,
+):
+    """Download image arrays for one row of satellite metadata containing a
+    unique combination of sample ID and item ID
+
+    Args:
+        iterrow (Tuple[int, pd.Series]): One item in the generator produced
+            by satellite_meta.iterrows(), where satellite_meta is a dataframe
+            of satellite metadata for all pystac items that have been
+            selected for use in feature generation
+        samples (pd.DataFrame): Dataframe where the index is sample_id and
+            there are columns for date, longitude, and latitude
+        imagery_dir (Path): Image cache directory for a specific satellite
+            source and bounding box size
+        config (FeaturesConfig): Features config
+
+    Returns:
+        int: 0 if executed successfully, 1 if a NoDataInBounds error was raised
+    """
+    _, row = iterrow
+
+    sample_row = samples.loc[row.sample_id]
+    sample_image_dir = imagery_dir / f"{row.sample_id}/{row.item_id}"
+    sample_image_dir.mkdir(exist_ok=True, parents=True)
+
+    try:
+        # Get bounding box for array to save out
+        (minx, miny, maxx, maxy) = get_bounding_box(
+            sample_row.latitude,
+            sample_row.longitude,
+            config.image_feature_meter_window,
+        )
+
+        # Iterate over bands and save
+        for band in config.use_sentinel_bands:
+            # Check if the file already exists
+            array_save_path = sample_image_dir / f"{band}.npy"
+            if not array_save_path.exists():
+                # Get unsigned URL so we don't use expired token
+                unsigned_href = row[f"{band}_href"].split("?")[0]
+                band_array = (
+                    rioxarray.open_rasterio(pc.sign(unsigned_href))
+                    .rio.clip_box(
+                        minx=minx,
+                        miny=miny,
+                        maxx=maxx,
+                        maxy=maxy,
+                        crs="EPSG:4326",
+                    )
+                    .to_numpy()
+                )
+                np.save(array_save_path, band_array)
+
+        return 0
+
+    except rioxarray.exceptions.NoDataInBounds:
+        # Delete item directory if it has already been created
+        # logger.warning(f"Could down download a required band for {row.item_id}")
+        if sample_image_dir.exists():
+            shutil.rmtree(sample_image_dir)
+
+        return 1
+
+
 def download_satellite_data(
     satellite_meta: pd.DataFrame,
     samples: pd.DataFrame,
@@ -337,46 +407,18 @@ def download_satellite_data(
         config (FeaturesConfig): Features config
         cache_dir (Union[str, Path]): Cache directory to save raw imagery
     """
-    # Iterate over all rows (item / sample combos)
-    logger.info(f"Downloading bands {config.use_sentinel_bands}")
-    no_data_in_bounds_errs = 0
+    logger.info(f"Downloading bands {config.use_sentinel_bands} with {config.num_threads} threads")
 
     imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"
-    for _, download_row in tqdm(satellite_meta.iterrows(), total=len(satellite_meta)):
-        sample_row = samples.loc[download_row.sample_id]
-        sample_image_dir = imagery_dir / f"{download_row.sample_id}/{download_row.item_id}"
-        sample_image_dir.mkdir(exist_ok=True, parents=True)
-        try:
-            # Get bounding box for array to save out
-            (minx, miny, maxx, maxy) = get_bounding_box(
-                sample_row.latitude, sample_row.longitude, config.image_feature_meter_window
-            )
-            # Iterate over bands and save
-            for band in config.use_sentinel_bands:
-                # Check if the file already exists
-                array_save_path = sample_image_dir / f"{band}.npy"
-                if not array_save_path.exists():
-                    # Get unsigned URL so we don't use expired token
-                    unsigned_href = download_row[f"{band}_href"].split("?")[0]
-                    band_array = (
-                        rioxarray.open_rasterio(pc.sign(unsigned_href))
-                        .rio.clip_box(
-                            minx=minx,
-                            miny=miny,
-                            maxx=maxx,
-                            maxy=maxy,
-                            crs="EPSG:4326",
-                        )
-                        .to_numpy()
-                    )
-                    np.save(array_save_path, band_array)
-
-        except rioxarray.exceptions.NoDataInBounds:
-            no_data_in_bounds_errs += 1
-            # Delete item directory if it has already been created
-            if sample_image_dir.exists():
-                shutil.rmtree(sample_image_dir)
-    if no_data_in_bounds_errs > 0:
+    # Iterate over all rows (item / sample combos)
+    no_data_in_bounds_errs = process_map(
+        functools.partial(download_row, samples=samples, imagery_dir=imagery_dir, config=config),
+        satellite_meta.iterrows(),
+        max_workers=config.num_threads,
+        chunksize=1,
+        total=len(satellite_meta),
+    )
+    if sum(no_data_in_bounds_errs) > 0:
         logger.warning(
-            f"Could not download {no_data_in_bounds_errs:,} image/sample combinations with no data in bounds"
+            f"Could not download {sum(no_data_in_bounds_errs):,} image/sample combinations with no data in bounds"
         )
