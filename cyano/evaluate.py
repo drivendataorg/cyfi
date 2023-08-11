@@ -2,9 +2,10 @@ import json
 from pathlib import Path
 
 import pandas as pd
-import seaborn as sns
+import lightgbm as lgb
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 from sklearn.metrics import (
     classification_report,
     mean_absolute_error,
@@ -34,7 +35,7 @@ def generate_and_plot_crosstab(y_true, y_pred, normalize=False):
         to_plot = to_plot / to_plot.sum()
         fmt = ".0%"
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
 
     sns.heatmap(to_plot, cmap="Blues", annot=True, fmt=fmt, cbar=False, ax=ax)
 
@@ -44,10 +45,11 @@ def generate_and_plot_crosstab(y_true, y_pred, normalize=False):
 
 
 class EvaluatePreds:
-    def __init__(self, y_true_csv, y_pred_csv, save_dir):
+    def __init__(self, y_true_csv: Path, y_pred_csv: Path, save_dir: Path, model: lgb.Booster):
         """Instantate EvaluatePreds class. To automatically generate all key visualizations, run
         cls.calculate_all_and_save() after instantiation.
         """
+        self.model = model
 
         y_true_df = pd.read_csv(y_true_csv)
 
@@ -95,10 +97,24 @@ class EvaluatePreds:
 
         return results
 
+    def calculate_feature_importance(self):
+        feature_importances = pd.DataFrame(
+            {
+                "feature": self.model.feature_name(),
+                "importance_gain": self.model.feature_importance(importance_type="gain"),
+                "importance_split": self.model.feature_importance(importance_type="split"),
+            }
+        ).sort_values(by="importance_gain", ascending=False)
+
+        return feature_importances
+
     def calculate_all_and_save(self):
         results = self.calculate_metrics()
         with (self.save_dir / "results.json").open("w") as f:
             json.dump(results, f, indent=4)
+
+        feature_importance = self.calculate_feature_importance()
+        feature_importance.to_csv(self.save_dir / "feature_importance.csv", index=False)
 
         crosstab_plot = generate_and_plot_crosstab(self.y_true, self.y_pred)
         crosstab_plot.figure.savefig(self.save_dir / "crosstab.png")
