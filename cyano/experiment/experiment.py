@@ -15,7 +15,7 @@ class ExperimentConfig(BaseModel):
     train_csv: Path
     predict_csv: Path
     cache_dir: Path = None
-    save_dir: Path = None
+    save_dir: Path = Path.cwd()
     debug: bool = False
 
     @field_serializer("train_csv", "predict_csv", "cache_dir", "save_dir")
@@ -32,9 +32,9 @@ class ExperimentConfig(BaseModel):
             train_csv=self.train_csv, save_path=self.save_dir / "model.zip", debug=self.debug
         )
 
-        logger.success(f"Writing out artifact config to {self.save_dir}")
-        with open(f"{self.save_dir}/config_artifact.yaml", "w") as fp:
+        with (self.save_dir / "config_artifact.yaml").open("w") as fp:
             yaml.dump(self.model_dump(), fp)
+        logger.success(f"Wrote out artifact config to {self.save_dir}")
 
         pipeline.run_prediction(
             predict_csv=self.predict_csv, preds_path=self.save_dir / "preds.csv", debug=self.debug
