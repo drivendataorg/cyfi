@@ -182,7 +182,7 @@ def generate_candidate_metadata(
     that could be used to generate features for each sample
 
     Args:
-        samples (pd.DataFrame): Dataframe where the index is unique_feature_id and
+        samples (pd.DataFrame): Dataframe where the index is sample ID and
             there are columns for date, longitude, and latitude
         config (FeaturesConfig): Features config
 
@@ -383,7 +383,6 @@ def download_row(
 
     except rioxarray.exceptions.NoDataInBounds:
         # Delete item directory if it has already been created
-        # logger.warning(f"Could down download a required band for {row.item_id}")
         if sample_image_dir.exists():
             shutil.rmtree(sample_image_dir)
 

@@ -109,7 +109,6 @@ def generate_satellite_features(
     logger.info(
         f"Generating satellite features for {len(satellite_meta):,} sample/item combos, {satellite_meta.sample_id.nunique():,} samples"
     )
-    # satellite_features_dict = {}
     satellite_features = []
 
     # Calculate satellite metadata features
