@@ -68,6 +68,7 @@ features_config = FeaturesConfig(
     satellite_image_features=sat_image_fts,
     satellite_meta_features=["month", "days_before_sample"],
     metadata_features=["rounded_longitude"],
+    num_threads=8,
 )
 
 
@@ -85,8 +86,8 @@ model_config = ModelTrainingConfig(
 
 experiment_config = ExperimentConfig(
     features_config=features_config,
-    train_csv=SPLITS_DIR / "competition/train.csv",
-    predict_csv=SPLITS_DIR / "competition/test.csv",
+    train_csv=str(SPLITS_DIR / "competition/train.csv"),
+    predict_csv=str(SPLITS_DIR / "competition/test.csv"),
     cache_dir=LOCAL_CACHE_DIR,
     save_dir=EXPERIMENT_SAVE_DIR,
 )
@@ -98,6 +99,9 @@ with (EXPERIMENT_SAVE_DIR / "experiment_config.yaml").open("w") as fp:
 # ## Run experiment
 
 experiment_config.run_experiment()
+
+
+
 
 
 
