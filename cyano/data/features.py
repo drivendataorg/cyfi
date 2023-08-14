@@ -128,18 +128,18 @@ def generate_satellite_features(
             Path(cache_dir)
             / f"sentinel_{config.image_feature_meter_window}/{row.sample_id}/{row.item_id}"
         )
-        # Skip combos we were not able to download or that don't have an SCL band
-        scl_band_path = sample_item_dir / "SCL.npy"
-        if not scl_band_path.exists():
+        # Skip combos we were not able to download
+        if not sample_item_dir.exists():
             continue
-        scl_array = np.load(scl_band_path)
-        # Skip if there is no water
-        if (scl_array == 6).sum() == 0:
-            logger.info(
-                f"Skipping because image is {(scl_array == 6).mean().round(2) * 100}% water"
-            )
-            continue
-        logger.info(f"Bbox is {(scl_array == 6).mean().round(2) * 100}% water")
+        # Filter by water pixels from SCL band
+        if config.scl_filter:
+            scl_band_path = sample_item_dir / "SCL.npy"
+            if not scl_band_path.exists():
+                continue
+            scl_array = np.load(scl_band_path)
+            # Skip if there is no water
+            if (scl_array == 6).sum() == 0:
+                continue
 
         # Load band arrays into a dictionary with band names for keys
         band_arrays = {}
@@ -151,9 +151,12 @@ def generate_satellite_features(
                 )
             # Rescale SCL band based on image size
             band_arr = np.load(sample_item_dir / f"{band}.npy")
-            scaled_scl = cv2.resize(scl_array[0], (band_arr.shape[2], band_arr.shape[1]))
-            # Filter array to water area
-            band_arrays[band] = band_arr[0][scaled_scl == 6]
+            if config.scl_filter:
+                scaled_scl = cv2.resize(scl_array[0], (band_arr.shape[2], band_arr.shape[1]))
+                # Filter array to water area
+                band_arrays[band] = band_arr[0][scaled_scl == 6]
+            else:
+                band_arrays[band] = band_arr
 
         # Iterate over features to generate
         sample_item_features = {"sample_id": row.sample_id, "item_id": row.item_id}
