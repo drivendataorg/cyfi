@@ -36,7 +36,6 @@ class FeaturesConfig(BaseModel):
     climate_features: Optional[List] = []
     elevation_features: Optional[List] = []
     metadata_features: Optional[List] = ["rounded_longitude"]
-    num_threads: Optional[int] = 4
 
 
 class ModelTrainingConfig(BaseModel):

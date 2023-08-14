@@ -18,6 +18,7 @@ class ExperimentConfig(BaseModel):
     cache_dir: Path = None
     save_dir: Path = Path.cwd()
     debug: bool = False
+    num_processes: int = 4
 
     # Avoid conflict with pydantic protected namespace
     model_config = ConfigDict(protected_namespaces=())
@@ -31,6 +32,7 @@ class ExperimentConfig(BaseModel):
             features_config=self.features_config,
             model_training_config=self.model_training_config,
             cache_dir=self.cache_dir,
+            num_processes=self.num_processes,
         )
         pipeline.run_training(
             train_csv=self.train_csv, save_path=self.save_dir / "model.zip", debug=self.debug

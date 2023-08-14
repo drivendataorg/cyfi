@@ -24,6 +24,7 @@ class CyanoModelPipeline:
         model_training_config: Optional[ModelTrainingConfig] = None,
         cache_dir: Optional[Path] = None,
         model: Optional[lgb.Booster] = None,
+        num_processes: Optional[int] = 4,
     ):
         self.features_config = features_config
         self.model_training_config = model_training_config
@@ -33,6 +34,7 @@ class CyanoModelPipeline:
         )
         self.samples = None
         self.labels = None
+        self.num_processes = num_processes
 
         # make cache dir
         self.cache_dir.mkdir(exist_ok=True, parents=True)
@@ -62,7 +64,9 @@ class CyanoModelPipeline:
         )
 
         ## Download satellite data
-        download_satellite_data(satellite_meta, samples, self.features_config, self.cache_dir)
+        download_satellite_data(
+            satellite_meta, samples, self.features_config, self.cache_dir, self.num_processes
+        )
 
         ## Download non-satellite data
         if self.features_config.climate_features:
