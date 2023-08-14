@@ -156,8 +156,9 @@ def get_items_metadata(
             bbox_dict = bbox_from_geometry(item.geometry)
             item_meta.update(bbox_dict)
 
-        if "eo:cloud_cover" in item.properties:
-            item_meta.update({"eo:cloud_cover": item.properties["eo:cloud_cover"]})
+        for optional_item_property in ["eo:cloud_cover", "s2:nodata_pixel_percentage"]:
+            if optional_item_property in item.properties:
+                item_meta.update({optional_item_property: item.properties[optional_item_property]})
         # Add links to download each band needed for features
         for band in config.use_sentinel_bands:
             item_meta.update({f"{band}_href": item.assets[band].href})
@@ -272,10 +273,15 @@ def select_items(
         items_meta.days_before_sample.between(0, config.pc_days_search_window)
     ].copy()
 
+    # Filter to low cloud cloud, low no data percent
+    items_meta = items_meta[
+        (items_meta["eo:cloud_cover"] <= 20) & (items_meta["s2:nodata_pixel_percentage"] <= 1)
+    ].copy()
+
     # Sort and select
-    selected = items_meta.sort_values(
-        by=["eo:cloud_cover", "days_before_sample"], ascending=[True, True]
-    ).head(config.n_sentinel_items)
+    selected = items_meta.sort_values(by="days_before_sample", ascending=True).head(
+        config.n_sentinel_items
+    )
 
     return selected.item_id.tolist()
 
