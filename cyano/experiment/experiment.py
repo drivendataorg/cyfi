@@ -3,7 +3,7 @@ from typing import Union
 import yaml
 
 from loguru import logger
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
 from cyano.pipeline import CyanoModelPipeline
@@ -18,6 +18,9 @@ class ExperimentConfig(BaseModel):
     cache_dir: Path = None
     save_dir: Path = Path.cwd()
     debug: bool = False
+
+    # Avoid conflict with pydantic protected namespace
+    model_config = ConfigDict(protected_namespaces=())
 
     @field_serializer("train_csv", "predict_csv", "cache_dir", "save_dir")
     def serialize_path_to_str(self, x, _info):
