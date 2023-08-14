@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from cloudpathlib import AnyPath
 import pandas as pd
 import lightgbm as lgb
 import matplotlib.pyplot as plt
@@ -51,7 +52,7 @@ class EvaluatePreds:
         """
         self.model = model
 
-        y_true_df = pd.read_csv(y_true_csv)
+        y_true_df = pd.read_csv(AnyPath(y_true_csv))
 
         if "severity" not in y_true_df.columns:
             raise ValueError("Evaluation data must include a `severity` column to evaluate.")
