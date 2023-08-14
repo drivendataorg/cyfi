@@ -430,5 +430,5 @@ def download_satellite_data(
         with open(log_path, "r") as fp:
             lines = fp.readlines()
         logger.warning(
-            f"Encountered errors for {len(lines)} sample/item combinations. For details see {log_path}"
+            f"Encountered errors for {len(lines):,} sample/item combinations. For details see {log_path}"
         )

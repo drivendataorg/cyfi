@@ -103,8 +103,9 @@ def generate_satellite_features(
 
     Returns:
         pd.DataFrame: Dataframe where the index is sample ID and there is one column
-            for each satellite feature. There will only be rows for samples
-            with satellite imagery
+            for each satellite feature. There will only be rows for samples with
+            satellite imagery. Each row is a unique combination of sample ID and
+            item ID
     """
     logger.info(
         f"Generating satellite features for {len(satellite_meta):,} sample/item combos, {satellite_meta.sample_id.nunique():,} samples"
@@ -215,9 +216,8 @@ def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) ->
         config (FeaturesConfig): Feature configuration
 
     Returns:
-        pd.DataFrame: Dataframe where the index is sample_id. There is
-            one columns for each metadata feature and one row
-            for each sample
+        pd.DataFrame: Dataframe where the index is sample_id. There is one column
+            for each metadata feature and one row for each sample
     """
     # Pull in any external information needed (eg land use by state)
 
