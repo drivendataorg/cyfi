@@ -270,18 +270,18 @@ def generate_features(
     if config.climate_features:
         climate_features = generate_climate_features(unique_feature_ids, config, cache_dir)
         non_satellite_features.append(climate_features.loc[feature_sample_ids])
-        logger.info(f"Generated {satellite_features.shape[0]} climate features")
+        logger.info(f"Generated {climate_features.shape[0]} climate features")
 
     if config.elevation_features:
         elevation_features = generate_elevation_features(unique_feature_ids, config, cache_dir)
         non_satellite_features.append(elevation_features.loc[feature_sample_ids])
-        logger.info(f"Generated {satellite_features.shape[0]} elevation features")
+        logger.info(f"Generated {elevation_features.shape[0]} elevation features")
 
     if config.metadata_features:
         metadata_features = generate_metadata_features(samples, config)
         non_satellite_features.append(metadata_features.loc[feature_sample_ids])
 
-        logger.info(f"Generated {satellite_features.shape[0]} metadata features")
+        logger.info(f"Generated {metadata_features.shape[0]} metadata features")
     non_satellite_features = pd.concat(non_satellite_features, axis=1)
 
     # Merge satellite and non-satellite features
