@@ -1,5 +1,5 @@
 cache_dir: experiments/cache
-debug: true
+debug: false
 features_config:
   climate_features: []
   elevation_features: []
@@ -30,6 +30,7 @@ features_config:
   - B03
   - B04
   - SCL
+  scl_filter: false
 model_training_config:
   num_boost_round: 1000
   params:

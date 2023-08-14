@@ -1,5 +1,5 @@
 cache_dir: experiments/cache
-debug: true
+debug: false
 features_config:
   climate_features: []
   elevation_features: []
@@ -30,6 +30,7 @@ features_config:
   - B03
   - B04
   - SCL
+  scl_filter: true
 model_training_config:
   num_boost_round: 1000
   params:
@@ -42,5 +43,5 @@ model_training_config:
     seed: 40
     verbosity: -1
 predict_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/test.csv
-save_dir: experiments/results/first_sentinel_only
+save_dir: experiments/results/first_sentinel_only_scl_filter
 train_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/train.csv
