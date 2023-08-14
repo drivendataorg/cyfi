@@ -86,6 +86,9 @@ class EvaluatePreds:
                 .apply(lambda x: mean_squared_error(x.y_true, x.y_pred, squared=False))
                 .to_dict()
             )
+            results["region_averaged_rmse"] = np.mean(
+                [val for val in results["regional_rmse"].values()]
+            )
             results["regional_mae"] = (
                 df.groupby("region")
                 .apply(lambda x: mean_absolute_error(x.y_true, x.y_pred))
