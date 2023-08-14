@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from cyano.settings import RANDOM_STATE
 
@@ -42,3 +42,6 @@ class FeaturesConfig(BaseModel):
 class ModelTrainingConfig(BaseModel):
     params: Optional[LGBParams] = LGBParams()
     num_boost_round: Optional[int] = 1000
+
+    # Avoid conflict with pydantic protected namespace
+    model_config = ConfigDict(protected_namespaces=())
