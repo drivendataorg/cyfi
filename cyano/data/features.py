@@ -1,6 +1,7 @@
 ## Code to generate features from raw downloaded source data
 from typing import List, Union
 
+import cv2
 from loguru import logger
 import numpy as np
 import pandas as pd
@@ -20,8 +21,11 @@ SATELLITE_FEATURE_CALCULATORS = {
     / (x["B08"].mean() + x["B06"].mean() + 1),
     "NDVI_B07": lambda x: (x["B08"].mean() - x["B07"].mean())
     / (x["B08"].mean() + x["B07"].mean() + 1),
-    "blue_red_ratio": lambda x: x["B02"].mean() / x["B04"].mean(),
-    "blue_green_ratio": lambda x: x["B02"].mean() / x["B03"].mean(),
+    "green_red_ratio": lambda x: x["B03"].mean() / (x["B04"].mean() + 1),
+    "green_blue_ratio": lambda x: x["B03"].mean() / (x["B02"].mean() + 1),
+    "red_blue_ratio": lambda x: x["B04"].mean() / (x["B02"].mean() + 1),
+    "green95th_blue_ratio": lambda x: np.percentile(x["B03"], 95) / (x["B02"].mean() + 1),
+    "green5th_blue_ratio": lambda x: np.percentile(x["B03"], 5) / (x["B02"].mean() + 1),
     "AOT_mean": lambda x: x["AOT"].mean(),
     "AOT_min": lambda x: x["AOT"].min(),
     "AOT_max": lambda x: x["AOT"].max(),
@@ -38,6 +42,8 @@ SATELLITE_FEATURE_CALCULATORS = {
     "B03_min": lambda x: x["B03"].min(),
     "B03_max": lambda x: x["B03"].max(),
     "B03_range": lambda x: x["B03"].max() - x["B03"].min(),
+    "B03_95th": lambda x: np.percentile(x["B03"], 95),
+    "B03_5th": lambda x: np.percentile(x["B03"], 5),
     "B04_mean": lambda x: x["B04"].mean(),
     "B04_min": lambda x: x["B04"].min(),
     "B04_max": lambda x: x["B04"].max(),
@@ -122,9 +128,18 @@ def generate_satellite_features(
             Path(cache_dir)
             / f"sentinel_{config.image_feature_meter_window}/{row.sample_id}/{row.item_id}"
         )
-        # Skip combos we were not able to download
-        if not sample_item_dir.exists():
+        # Skip combos we were not able to download or that don't have an SCL band
+        scl_band_path = sample_item_dir / "SCL.npy"
+        if not scl_band_path.exists():
             continue
+        scl_array = np.load(scl_band_path)
+        # Skip if there is no water
+        if (scl_array == 6).sum() == 0:
+            logger.info(
+                f"Skipping because image is {(scl_array == 6).mean().round(2) * 100}% water"
+            )
+            continue
+        logger.info(f"Bbox is {(scl_array == 6).mean().round(2) * 100}% water")
 
         # Load band arrays into a dictionary with band names for keys
         band_arrays = {}
@@ -134,7 +149,11 @@ def generate_satellite_features(
                 raise FileNotFoundError(
                     f"Band {band} is missing from pystac item directory {sample_item_dir}"
                 )
-            band_arrays[band] = np.load(sample_item_dir / f"{band}.npy")
+            # Rescale SCL band based on image size
+            band_arr = np.load(sample_item_dir / f"{band}.npy")
+            scaled_scl = cv2.resize(scl_array[0], (band_arr.shape[2], band_arr.shape[1]))
+            # Filter array to water area
+            band_arrays[band] = band_arr[0][scaled_scl == 6]
 
         # Iterate over features to generate
         sample_item_features = {"sample_id": row.sample_id, "item_id": row.item_id}
