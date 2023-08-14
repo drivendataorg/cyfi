@@ -5,7 +5,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from cyano.cli import app
-from cyano.experiment import ExperimentConfig
+from cyano.experiment.experiment import ExperimentConfig
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
