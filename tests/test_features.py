@@ -58,7 +58,7 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
     # Download imagery
     features_config.use_sentinel_bands = ["B02", "B03"]
     train_data = add_unique_identifier(train_data)
-    download_satellite_data(satellite_meta, train_data, features_config, tmp_path)
+    download_satellite_data(satellite_meta, train_data, features_config, tmp_path, num_processes=4)
 
     # Sentinel image cache directory exists
     sentinel_dir = tmp_path / f"sentinel_{features_config.image_feature_meter_window}"
