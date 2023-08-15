@@ -29,7 +29,6 @@ features_config:
   - B02
   - B03
   - B04
-  - SCL
   scl_filter: false
 model_training_config:
   num_boost_round: 1000
