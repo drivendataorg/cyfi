@@ -3,12 +3,14 @@ from typing import Union
 import yaml
 
 from cloudpathlib import AnyPath
+import git
 from loguru import logger
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
 from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
+from cyano.settings import REPO_ROOT
 
 
 class ExperimentConfig(BaseModel):
@@ -43,8 +45,12 @@ class ExperimentConfig(BaseModel):
             train_csv=self.train_csv, save_path=self.save_dir / "model.zip", debug=self.debug
         )
 
+        # Get last commit hash to save in artifact
+        repo = git.Repo(REPO_ROOT.parent)
+        config_artifact = self.model_dump()
+        config_artifact["last_commit_hash"] = repo.head.commit.hexsha
         with (self.save_dir / "config_artifact.yaml").open("w") as fp:
-            yaml.dump(self.model_dump(), fp)
+            yaml.dump(config_artifact, fp)
         logger.success(f"Wrote out artifact config to {self.save_dir}")
 
         pipeline.run_prediction(
