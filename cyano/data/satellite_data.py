@@ -329,7 +329,6 @@ def download_row(
     samples: pd.DataFrame,
     imagery_dir: Path,
     config: FeaturesConfig,
-    log_path: Path,
 ):
     """Download image arrays for one row of satellite metadata containing a
     unique combination of sample ID and item ID
@@ -344,7 +343,6 @@ def download_row(
         imagery_dir (Path): Image cache directory for a specific satellite
             source and bounding box size
         config (FeaturesConfig): Features config
-        log_path (Path): Path to a text file to log errors
     """
     _, row = iterrow
 
@@ -385,8 +383,7 @@ def download_row(
         if sample_image_dir.exists():
             shutil.rmtree(sample_image_dir)
 
-        with open(log_path, "a") as fp:
-            fp.write(f"{sample_image_dir.parts[-2]}/{sample_image_dir.parts[-1]}: {type(e)} {e}\n")
+        return f"{sample_image_dir.parts[-2]}/{sample_image_dir.parts[-1]}: {type(e)} {e}"
 
 
 def download_satellite_data(
@@ -412,28 +409,19 @@ def download_satellite_data(
     logger.info(f"Downloading bands {config.use_sentinel_bands} with {NUM_PROCESSES} processes")
 
     imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"
-    log_path = (
-        Path(cache_dir)
-        / f"download_logs_{imagery_dir.name}_{datetime.today().strftime('%Y-%m-%d-%H-%M')}.txt"
-    )
     # Iterate over all rows (item / sample combos)
-    _ = process_map(
+    exception_logs = process_map(
         functools.partial(
             download_row,
             samples=samples,
             imagery_dir=imagery_dir,
             config=config,
-            log_path=log_path,
         ),
         satellite_meta.iterrows(),
         max_workers=NUM_PROCESSES,
         chunksize=1,
         total=len(satellite_meta),
     )
-
-    if log_path.exists():
-        with open(log_path, "r") as fp:
-            lines = fp.readlines()
-        logger.warning(
-            f"Encountered errors for {len(lines):,} sample/item combinations. For details see {log_path}"
-        )
+    exceptions = "\n".join([e for e in exception_logs if e])
+    if len(exceptions) > 0:
+        logger.warning(f"Exceptions raised during download:\n{exceptions}")
