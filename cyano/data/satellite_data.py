@@ -273,10 +273,8 @@ def select_items(
         items_meta.days_before_sample.between(0, config.pc_days_search_window)
     ].copy()
 
-    # Filter to low cloud cloud, low no data percent
-    items_meta = items_meta[
-        (items_meta["eo:cloud_cover"] <= 20) & (items_meta["s2:nodata_pixel_percentage"] <= 1)
-    ].copy()
+    # Filter to low cloud percent
+    items_meta = items_meta[items_meta["eo:cloud_cover"] < 5].copy()
 
     # Sort and select
     selected = items_meta.sort_values(by="days_before_sample", ascending=True).head(
@@ -356,16 +354,16 @@ def download_row(
     sample_image_dir = imagery_dir / f"{row.sample_id}/{row.item_id}"
     sample_image_dir.mkdir(exist_ok=True, parents=True)
 
-    try:
-        # Get bounding box for array to save out
-        (minx, miny, maxx, maxy) = get_bounding_box(
-            sample_row.latitude,
-            sample_row.longitude,
-            config.image_feature_meter_window,
-        )
+    # Get bounding box for array to save out
+    (minx, miny, maxx, maxy) = get_bounding_box(
+        sample_row.latitude,
+        sample_row.longitude,
+        config.image_feature_meter_window,
+    )
 
-        # Iterate over bands and save
-        for band in config.use_sentinel_bands:
+    # Iterate over bands and save
+    for band in config.use_sentinel_bands:
+        try:
             # Check if the file already exists
             array_save_path = sample_image_dir / f"{band}.npy"
             if not array_save_path.exists():
@@ -384,10 +382,15 @@ def download_row(
                 )
                 np.save(array_save_path, band_array)
 
-    except Exception as e:
-        # Delete item directory if it has already been created
-        if sample_image_dir.exists():
-            shutil.rmtree(sample_image_dir)
+        except Exception as e:
+            # Delete item directory if it has already been created
+            if sample_image_dir.exists():
+                shutil.rmtree(sample_image_dir)
+
+            with open(log_path, "a") as fp:
+                fp.write(
+                    f"{sample_image_dir.parts[-2]}/{sample_image_dir.parts[-1]}: {type(e)} {e}\n"
+                )
 
         return f"{sample_image_dir.parts[-2]}/{sample_image_dir.parts[-1]}: {type(e)} {e}"
 

@@ -26,6 +26,7 @@ SATELLITE_FEATURE_CALCULATORS = {
     "red_blue_ratio": lambda x: x["B04"].mean() / (x["B02"].mean() + 1),
     "green95th_blue_ratio": lambda x: np.percentile(x["B03"], 95) / (x["B02"].mean() + 1),
     "green5th_blue_ratio": lambda x: np.percentile(x["B03"], 5) / (x["B02"].mean() + 1),
+    "prop_water": lambda x: (x["SCL"] == 6).mean(),
     "AOT_mean": lambda x: x["AOT"].mean(),
     "AOT_min": lambda x: x["AOT"].min(),
     "AOT_max": lambda x: x["AOT"].max(),
@@ -151,7 +152,7 @@ def generate_satellite_features(
                 )
             # Rescale SCL band based on image size
             band_arr = np.load(sample_item_dir / f"{band}.npy")
-            if config.scl_filter:
+            if config.scl_filter and (band != "SCL"):
                 scaled_scl = cv2.resize(scl_array[0], (band_arr.shape[2], band_arr.shape[1]))
                 # Filter array to water area
                 band_arrays[band] = band_arr[0][scaled_scl == 6]
