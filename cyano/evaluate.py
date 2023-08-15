@@ -45,6 +45,42 @@ def generate_and_plot_crosstab(y_true, y_pred, normalize=False):
     return ax
 
 
+def generate_actual_density_boxplot(y_true_df, y_pred):
+    df = pd.concat(
+        [
+            y_true_df.density_cells_per_ml,
+            y_pred.loc[y_true_df.index],
+        ],
+        axis=1,
+    )
+
+    _, ax = plt.subplots()
+
+    sns.boxplot(
+        data=df,
+        y="density_cells_per_ml",
+        x="y_pred",
+        ax=ax,
+        order=list(range(1, 6)),
+        showfliers=False,
+    )
+    ax.set_xlabel("Predicted severity")
+    ax.set_ylabel("Actual density (cells/mL)")
+
+    return ax
+
+
+def generate_regional_barplot(regional_rmse):
+    to_plot = pd.DataFrame({"regional_rmse": regional_rmse}).sort_values("regional_rmse")
+
+    _, ax = plt.subplots()
+    sns.barplot(to_plot.T, ax=ax)
+    ax.set_xlabel("Region")
+    ax.set_ylabel("RMSE")
+
+    return ax
+
+
 class EvaluatePreds:
     def __init__(self, y_true_csv: Path, y_pred_csv: Path, save_dir: Path, model: lgb.Booster):
         """Instantate EvaluatePreds class. To automatically generate all key visualizations, run
@@ -58,6 +94,7 @@ class EvaluatePreds:
             raise ValueError("Evaluation data must include a `severity` column to evaluate.")
 
         y_true_df = add_unique_identifier(y_true_df)
+        self.y_true_df = y_true_df
         self.y_true = y_true_df["severity"].rename("y_true")
         self.metadata = y_true_df.drop(columns=["severity"])
 
@@ -122,3 +159,10 @@ class EvaluatePreds:
 
         crosstab_plot = generate_and_plot_crosstab(self.y_true, self.y_pred)
         crosstab_plot.figure.savefig(self.save_dir / "crosstab.png")
+
+        actual_density_boxplot = generate_actual_density_boxplot(self.y_true_df, self.y_pred)
+        actual_density_boxplot.figure.savefig(self.save_dir / "actual_density_boxplot.png")
+
+        if "regional_rmse" in results:
+            regional_barplot = generate_regional_barplot(results["regional_rmse"])
+            regional_barplot.figure.savefig(self.save_dir / "regional_rmse.png")
