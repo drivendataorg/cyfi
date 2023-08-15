@@ -1,5 +1,6 @@
 import yaml
 
+from cloudpathlib import AnyPath
 from pathlib import Path
 import typer
 
@@ -35,6 +36,8 @@ def predict(
     """Load an existing cyanobacteria prediction model and generate
     severity level predictions for a set of samples.
     """
+    samples_path = AnyPath(samples_path)
+
     pipeline = CyanoModelPipeline.from_disk(model_zip)
     pipeline.run_prediction(samples_path, output_path)
 
@@ -53,6 +56,9 @@ def evaluate(
         default=Path.cwd() / "metrics", help="Folder in which to save out metrics and plots."
     ),
 ):
+    y_pred_csv = AnyPath(y_pred_csv)
+    y_true_csv = AnyPath(y_true_csv)
+
     EvaluatePreds(
         y_pred_csv=y_pred_csv, y_true_csv=y_true_csv, save_dir=save_dir
     ).calculate_all_and_save()

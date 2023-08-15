@@ -2,8 +2,9 @@ from pathlib import Path
 from typing import Union
 import yaml
 
+from cloudpathlib import AnyPath
 from loguru import logger
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
 from cyano.pipeline import CyanoModelPipeline
@@ -19,6 +20,10 @@ class ExperimentConfig(BaseModel):
     save_dir: Path = Path.cwd()
     debug: bool = False
     num_processes: int = 4
+
+    @field_validator("train_csv", "predict_csv")
+    def convert_filepaths(cls, path_field):
+        return AnyPath(path_field)
 
     # Avoid conflict with pydantic protected namespace
     model_config = ConfigDict(protected_namespaces=())

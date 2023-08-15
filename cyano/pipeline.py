@@ -4,7 +4,6 @@ from typing import Optional
 import yaml
 from zipfile import ZipFile
 
-from cloudpathlib import AnyPath
 import lightgbm as lgb
 from loguru import logger
 import pandas as pd
@@ -41,7 +40,7 @@ class CyanoModelPipeline:
 
     def _prep_train_data(self, data, debug: bool = False):
         """Load labels and save out samples with UIDs"""
-        labels = pd.read_csv(AnyPath(data))
+        labels = pd.read_csv(data)
         labels = labels[["date", "latitude", "longitude", "severity"]]
         labels = add_unique_identifier(labels)
         if debug:
@@ -79,8 +78,9 @@ class CyanoModelPipeline:
         features = generate_features(samples, satellite_meta, self.features_config, self.cache_dir)
         save_features_to = self.cache_dir / "features_train.csv"
         features.to_csv(save_features_to, index=True)
+        pct_with_features = features.index.nunique() / samples.shape[0]
         logger.success(
-            f"{features.shape[1]:,} features for {features.index.nunique():,} samples (of {samples.shape[0]:,}) saved to {save_features_to}"
+            f"{features.shape[1]:,} features for {features.index.nunique():,} samples ({pct_with_features:.0%}) saved to {save_features_to}"
         )
 
         return features
@@ -123,7 +123,7 @@ class CyanoModelPipeline:
         return cls(features_config=features_config, model=model, cache_dir=cache_dir)
 
     def _prep_predict_data(self, data, debug: bool = False):
-        df = pd.read_csv(AnyPath(data))
+        df = pd.read_csv(data)
         df = add_unique_identifier(df)
 
         samples = df[["date", "latitude", "longitude"]]
