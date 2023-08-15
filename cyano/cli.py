@@ -3,6 +3,7 @@ from zipfile import ZipFile
 
 from cloudpathlib import AnyPath
 import lightgbm as lgb
+from loguru import logger
 from pathlib import Path
 import typer
 
@@ -22,6 +23,7 @@ def experiment(
         config_dict = yaml.safe_load(fp)
         config = ExperimentConfig(**config_dict)
 
+    logger.add(config.save_dir / "experiment.log")
     config.run_experiment()
 
 
