@@ -162,12 +162,7 @@ def generate_satellite_features(
         # Iterate over features to generate
         sample_item_features = {"sample_id": row.sample_id, "item_id": row.item_id}
         for feature in config.satellite_image_features:
-            try:
-                sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
-            except:
-                import pdb
-
-                pdb.set_trace()
+            sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
         satellite_features.append(pd.Series(sample_item_features))
 
     satellite_features = pd.concat(satellite_features, axis=1).T

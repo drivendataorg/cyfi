@@ -384,9 +384,6 @@ def download_row(
         if sample_image_dir.exists():
             shutil.rmtree(sample_image_dir)
 
-        with open(log_path, "a") as fp:
-            fp.write(f"{sample_image_dir.parts[-2]}/{sample_image_dir.parts[-1]}: {type(e)} {e}\n")
-
         return f"{sample_image_dir.parts[-2]}/{sample_image_dir.parts[-1]}: {type(e)} {e}"
 
 
