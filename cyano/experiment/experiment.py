@@ -21,6 +21,7 @@ class ExperimentConfig(BaseModel):
     cache_dir: Path = None
     save_dir: Path = Path.cwd()
     last_commit_hash: str = None
+    filter_train_by_water_distance: bool = False
     debug: bool = False
 
     @field_validator("train_csv", "predict_csv")
@@ -41,7 +42,10 @@ class ExperimentConfig(BaseModel):
             cache_dir=self.cache_dir,
         )
         pipeline.run_training(
-            train_csv=self.train_csv, save_path=self.save_dir / "model.zip", debug=self.debug
+            train_csv=self.train_csv,
+            save_path=self.save_dir / "model.zip",
+            filter_by_water_distance=self.filter_train_by_water_distance,
+            debug=self.debug,
         )
 
         # Get last commit hash to save in artifact
