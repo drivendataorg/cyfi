@@ -22,6 +22,7 @@ class ExperimentConfig(BaseModel):
     save_dir: Path = Path.cwd()
     last_commit_hash: str = None
     filter_train_by_water_distance: bool = False
+    target_col: str = "severity"
     debug: bool = False
 
     @field_validator("train_csv", "predict_csv")
@@ -40,6 +41,7 @@ class ExperimentConfig(BaseModel):
             features_config=self.features_config,
             model_training_config=self.model_training_config,
             cache_dir=self.cache_dir,
+            target_col=self.target_col,
         )
         pipeline.run_training(
             train_csv=self.train_csv,

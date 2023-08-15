@@ -14,6 +14,7 @@ from cyano.data.elevation_data import download_elevation_data
 from cyano.data.features import generate_features
 from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
 from cyano.data.utils import add_unique_identifier, water_distance_filter
+from cyano.settings import SEVERITY_LEFT_EDGES
 
 
 class CyanoModelPipeline:
@@ -23,6 +24,7 @@ class CyanoModelPipeline:
         model_training_config: Optional[ModelTrainingConfig] = None,
         cache_dir: Optional[Path] = None,
         model: Optional[lgb.Booster] = None,
+        target_col: Optional[str] = "severity",
     ):
         self.features_config = features_config
         self.model_training_config = model_training_config
@@ -32,6 +34,7 @@ class CyanoModelPipeline:
         )
         self.samples = None
         self.labels = None
+        self.target_col = target_col
 
         # make cache dir
         self.cache_dir.mkdir(exist_ok=True, parents=True)
@@ -39,7 +42,7 @@ class CyanoModelPipeline:
     def _prep_train_data(self, data, filter_by_water_distance: bool, debug: bool):
         """Load labels and save out samples with UIDs"""
         labels = pd.read_csv(data)
-        labels = labels[["date", "latitude", "longitude", "severity"]]
+        labels = labels[["date", "latitude", "longitude", self.target_col]]
         labels = add_unique_identifier(labels)
         if debug:
             labels = labels.head(10)
@@ -53,7 +56,7 @@ class CyanoModelPipeline:
         logger.info(f"Loaded {labels.shape[0]:,} samples for training")
 
         self.train_samples = labels[["date", "latitude", "longitude"]]
-        self.train_labels = labels["severity"]
+        self.train_labels = labels[self.target_col]
 
     def _prepare_features(self, samples):
         ## Identify satellite data
@@ -155,16 +158,29 @@ class CyanoModelPipeline:
                 f"Grouping {preds.shape[0]:,} predictions by {preds.index.nunique():,} unique sample IDs"
             )
             preds = preds.groupby(preds.index).mean()
-        self.preds = preds.round().astype(int)
+        self.preds = preds  # .round().astype(int)
 
         self.output_df = self.predict_samples.join(self.preds)
         # For any missing samples, predict the average predicted severity
         logger.info(
             f"Predicting the mean for {self.output_df.severity.isna().sum():,} samples with no imagery"
         )
-        self.output_df["severity"] = self.output_df.severity.fillna(preds.mean().round()).astype(
-            int
+        self.output_df["severity"] = (
+            self.output_df.severity.fillna(preds.mean()).round().astype(int)
         )
+
+        # If predicting exact density, calculate severity bin
+        if self.target_col == "density_cells_per_ml":
+            self.output_df["density"] = self.output_df.severity.copy()
+            self.output_df["severity"] = pd.cut(
+                self.output_df["density"],
+                SEVERITY_LEFT_EDGES + [SEVERITY_LEFT_EDGES[-1] * 2],
+                include_lowest=True,
+                right=False,
+                labels=range(1, 6),
+            )
+            self.output_df.loc[self.output_df.density >= SEVERITY_LEFT_EDGES[-1], "severity"] = 5
+            self.output_df.drop(columns=["density"], inplace=True)
 
     def _write_predictions(self, preds_path):
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)
