@@ -20,6 +20,7 @@ class ExperimentConfig(BaseModel):
     predict_csv: Union[str, Path]
     cache_dir: Path = None
     save_dir: Path = Path.cwd()
+    last_commit_hash: str = None
     debug: bool = False
 
     @field_validator("train_csv", "predict_csv")
@@ -45,10 +46,9 @@ class ExperimentConfig(BaseModel):
 
         # Get last commit hash to save in artifact
         repo = git.Repo(REPO_ROOT.parent)
-        config_artifact = self.model_dump()
-        config_artifact["last_commit_hash"] = repo.head.commit.hexsha
+        self.last_commit_hash = repo.head.commit.hexsha
         with (self.save_dir / "config_artifact.yaml").open("w") as fp:
-            yaml.dump(config_artifact, fp)
+            yaml.dump(self.model_dump(), fp)
         logger.success(f"Wrote out artifact config to {self.save_dir}")
 
         pipeline.run_prediction(
