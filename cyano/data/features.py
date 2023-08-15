@@ -137,8 +137,8 @@ def generate_satellite_features(
             if not scl_band_path.exists():
                 continue
             scl_array = np.load(scl_band_path)
-            # Skip if there is no water
-            if (scl_array == 6).sum() == 0:
+            # Skip if there is not enough water
+            if (scl_array == 6).mean() < 0.01:
                 continue
 
         # Load band arrays into a dictionary with band names for keys
@@ -161,7 +161,12 @@ def generate_satellite_features(
         # Iterate over features to generate
         sample_item_features = {"sample_id": row.sample_id, "item_id": row.item_id}
         for feature in config.satellite_image_features:
-            sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
+            try:
+                sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
+            except:
+                import pdb
+
+                pdb.set_trace()
         satellite_features.append(pd.Series(sample_item_features))
 
     satellite_features = pd.concat(satellite_features, axis=1).T
