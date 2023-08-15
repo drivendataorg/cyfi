@@ -38,7 +38,7 @@ def download_climate_data(sample_list: pd.DataFrame, config: FeaturesConfig, cac
 
     Args:
         sample_list (pd.Dataframe): Dataframe with columns for date,
-            longitude, latitude, and uid
+            longitude, latitude, and sample_id
         config (FeaturesConfig): Configuration, including
             directory to save raw source data
     """

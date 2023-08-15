@@ -1,4 +1,7 @@
+import os
+
 from datetime import timedelta
+import functools
 import json
 import shutil
 from typing import Dict, List, Tuple, Union
@@ -13,6 +16,7 @@ import planetary_computer as pc
 from pystac_client import Client, ItemSearch
 import rioxarray
 from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
 
 from cyano.config import FeaturesConfig
 
@@ -180,13 +184,13 @@ def generate_candidate_metadata(
     that could be used to generate features for each sample
 
     Args:
-        samples (pd.DataFrame): Dataframe where the index is uid and
+        samples (pd.DataFrame): Dataframe where the index is sample ID and
             there are columns for date, longitude, and latitude
         config (FeaturesConfig): Features config
 
     Returns:
         Tuple[pd.DataFrame, Dict]: Tuple of (metadata for all sentinel item
-            candidates, dictionary mapping sample UIDs to the relevant
+            candidates, dictionary mapping sample IDs to the relevant
             pystac item IDs)
     """
     logger.info("Generating metadata for all satellite item candidates")
@@ -260,14 +264,17 @@ def select_items(
         List[str]: List of the pystac items IDs for the selected items
     """
     # Calculate days between sample and image
-    items_meta["day_diff"] = (pd.to_datetime(date) - pd.to_datetime(items_meta.datetime)).dt.days
+    items_meta["days_before_sample"] = (
+        pd.to_datetime(date) - pd.to_datetime(items_meta.datetime)
+    ).dt.days
     # Filter by time frame
-    items_meta = items_meta[items_meta.day_diff.between(0, config.pc_days_search_window)].copy()
+    items_meta = items_meta[
+        items_meta.days_before_sample.between(0, config.pc_days_search_window)
+    ].copy()
 
     # Sort and select
-    items_meta["day_diff"] = np.abs(items_meta.day_diff)
     selected = items_meta.sort_values(
-        by=["eo:cloud_cover", "day_diff"], ascending=[True, True]
+        by=["eo:cloud_cover", "days_before_sample"], ascending=[True, True]
     ).head(config.n_sentinel_items)
 
     return selected.item_id.tolist()
@@ -278,7 +285,7 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
     generation for a given set of samples
 
     Args:
-        samples (pd.DataFrame): Dataframe where the index is uid and
+        samples (pd.DataFrame): Dataframe where the index is sample_id and
             there are columns for date, longitude, and latitude
         config (FeaturesConfig): Features config
 
@@ -317,6 +324,68 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
     return selected_satellite_meta
 
 
+def download_row(
+    iterrow: Tuple[int, pd.Series],
+    samples: pd.DataFrame,
+    imagery_dir: Path,
+    config: FeaturesConfig,
+):
+    """Download image arrays for one row of satellite metadata containing a
+    unique combination of sample ID and item ID
+
+    Args:
+        iterrow (Tuple[int, pd.Series]): One item in the generator produced
+            by satellite_meta.iterrows(), where satellite_meta is a dataframe
+            of satellite metadata for all pystac items that have been
+            selected for use in feature generation
+        samples (pd.DataFrame): Dataframe where the index is sample_id and
+            there are columns for date, longitude, and latitude
+        imagery_dir (Path): Image cache directory for a specific satellite
+            source and bounding box size
+        config (FeaturesConfig): Features config
+    """
+    _, row = iterrow
+
+    sample_row = samples.loc[row.sample_id]
+    sample_image_dir = imagery_dir / f"{row.sample_id}/{row.item_id}"
+    sample_image_dir.mkdir(exist_ok=True, parents=True)
+
+    try:
+        # Get bounding box for array to save out
+        (minx, miny, maxx, maxy) = get_bounding_box(
+            sample_row.latitude,
+            sample_row.longitude,
+            config.image_feature_meter_window,
+        )
+
+        # Iterate over bands and save
+        for band in config.use_sentinel_bands:
+            # Check if the file already exists
+            array_save_path = sample_image_dir / f"{band}.npy"
+            if not array_save_path.exists():
+                # Get unsigned URL so we don't use expired token
+                unsigned_href = row[f"{band}_href"].split("?")[0]
+                band_array = (
+                    rioxarray.open_rasterio(pc.sign(unsigned_href))
+                    .rio.clip_box(
+                        minx=minx,
+                        miny=miny,
+                        maxx=maxx,
+                        maxy=maxy,
+                        crs="EPSG:4326",
+                    )
+                    .to_numpy()
+                )
+                np.save(array_save_path, band_array)
+
+    except Exception as e:
+        # Delete item directory if it has already been created
+        if sample_image_dir.exists():
+            shutil.rmtree(sample_image_dir)
+
+        return f"{sample_image_dir.parts[-2]}/{sample_image_dir.parts[-1]}: {type(e)} {e}"
+
+
 def download_satellite_data(
     satellite_meta: pd.DataFrame,
     samples: pd.DataFrame,
@@ -327,53 +396,32 @@ def download_satellite_data(
 
     Args:
         satellite_meta (pd.DataFrame): Dataframe of satellite metadata
-            for all pystac items that have been selected for us in
+            for all pystac items that have been selected for use in
             feature generation
-        samples (pd.DataFrame): Dataframe where the index is uid and
+        samples (pd.DataFrame): Dataframe where the index is sample_id and
             there are columns for date, longitude, and latitude
         config (FeaturesConfig): Features config
         cache_dir (Union[str, Path]): Cache directory to save raw imagery
     """
-    # Iterate over all rows (item / sample combos)
-    logger.info(f"Downloading bands {config.use_sentinel_bands}")
-    no_data_in_bounds_errs = 0
+    # Determine the number of processes to use when parallelizing
+    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
+
+    logger.info(f"Downloading bands {config.use_sentinel_bands} with {NUM_PROCESSES} processes")
 
     imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"
-    for _, download_row in tqdm(satellite_meta.iterrows(), total=len(satellite_meta)):
-        sample_row = samples.loc[download_row.sample_id]
-        sample_image_dir = imagery_dir / f"{download_row.sample_id}/{download_row.item_id}"
-        sample_image_dir.mkdir(exist_ok=True, parents=True)
-        try:
-            # Get bounding box for array to save out
-            (minx, miny, maxx, maxy) = get_bounding_box(
-                sample_row.latitude, sample_row.longitude, config.image_feature_meter_window
-            )
-            # Iterate over bands and save
-            for band in config.use_sentinel_bands:
-                # Check if the file already exists
-                array_save_path = sample_image_dir / f"{band}.npy"
-                if not array_save_path.exists():
-                    # Get unsigned URL so we don't use expired token
-                    unsigned_href = download_row[f"{band}_href"].split("?")[0]
-                    band_array = (
-                        rioxarray.open_rasterio(pc.sign(unsigned_href))
-                        .rio.clip_box(
-                            minx=minx,
-                            miny=miny,
-                            maxx=maxx,
-                            maxy=maxy,
-                            crs="EPSG:4326",
-                        )
-                        .to_numpy()
-                    )
-                    np.save(array_save_path, band_array)
-
-        except rioxarray.exceptions.NoDataInBounds:
-            no_data_in_bounds_errs += 1
-            # Delete item directory if it has already been created
-            if sample_image_dir.exists():
-                shutil.rmtree(sample_image_dir)
-    if no_data_in_bounds_errs > 0:
-        logger.warning(
-            f"Could not download {no_data_in_bounds_errs:,} image/sample combinations with no data in bounds"
-        )
+    # Iterate over all rows (item / sample combos)
+    exception_logs = process_map(
+        functools.partial(
+            download_row,
+            samples=samples,
+            imagery_dir=imagery_dir,
+            config=config,
+        ),
+        satellite_meta.iterrows(),
+        max_workers=NUM_PROCESSES,
+        chunksize=1,
+        total=len(satellite_meta),
+    )
+    exceptions = "\n".join([e for e in exception_logs if e])
+    if len(exceptions) > 0:
+        logger.warning(f"Exceptions raised during download:\n{exceptions}")

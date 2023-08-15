@@ -23,5 +23,5 @@ def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
             m.update(str(s).encode())
         uids.append(m.hexdigest())
 
-    df["uid"] = uids
-    return df.set_index("uid")
+    df["sample_id"] = uids
+    return df.set_index("sample_id")

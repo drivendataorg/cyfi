@@ -36,7 +36,7 @@ class CyanoModelPipeline:
         # make cache dir
         self.cache_dir.mkdir(exist_ok=True, parents=True)
 
-    def _prep_train_data(self, data, debug=False):
+    def _prep_train_data(self, data, debug: bool = False):
         """Load labels and save out samples with UIDs"""
         labels = pd.read_csv(data)
         labels = labels[["date", "latitude", "longitude", "severity"]]
@@ -71,11 +71,12 @@ class CyanoModelPipeline:
         logger.success(f"Raw source data saved to {self.cache_dir}")
 
         ## Generate features
-        features = generate_features(samples, self.features_config, self.cache_dir)
+        features = generate_features(samples, satellite_meta, self.features_config, self.cache_dir)
         save_features_to = self.cache_dir / "features_train.csv"
         features.to_csv(save_features_to, index=True)
+        pct_with_features = features.index.nunique() / samples.shape[0]
         logger.success(
-            f"{features.shape[1]:,} features for {features.shape[0]:,} samples saved to {save_features_to}"
+            f"{features.shape[1]:,} features for {features.index.nunique():,} samples ({pct_with_features:.0%}) saved to {save_features_to}"
         )
 
         return features
@@ -117,8 +118,9 @@ class CyanoModelPipeline:
         model = lgb.Booster(model_str=archive.read("lgb_model.txt").decode())
         return cls(features_config=features_config, model=model, cache_dir=cache_dir)
 
-    def _prep_predict_data(self, data, debug=False):
-        df = add_unique_identifier(pd.read_csv(data))
+    def _prep_predict_data(self, data, debug: bool = False):
+        df = pd.read_csv(data)
+        df = add_unique_identifier(df)
 
         samples = df[["date", "latitude", "longitude"]]
 
@@ -135,13 +137,28 @@ class CyanoModelPipeline:
         self.predict_features = self._prepare_features(self.predict_samples)
 
     def _predict_model(self):
-        self.preds = pd.Series(
+        preds = pd.Series(
             data=self.model.predict(self.predict_features),
             index=self.predict_features.index,
             name="severity",
-        ).astype(int)
+        )
+
+        # Group by sample id if multiple predictions per id
+        if not preds.index.is_unique:
+            logger.info(
+                f"Grouping {preds.shape[0]:,} predictions by {preds.index.nunique():,} unique sample IDs"
+            )
+            preds = preds.groupby(preds.index).mean()
+        self.preds = preds.round().astype(int)
 
         self.output_df = self.predict_samples.join(self.preds)
+        # For any missing samples, predict the average predicted severity
+        logger.info(
+            f"Predicting the mean for {self.output_df.severity.isna().sum():,} samples with no imagery"
+        )
+        self.output_df["severity"] = self.output_df.severity.fillna(preds.mean().round()).astype(
+            int
+        )
 
     def _write_predictions(self, preds_path):
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)

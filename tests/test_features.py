@@ -9,20 +9,21 @@ from cyano.data.utils import add_unique_identifier
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 
-def test_known_features(train_data, features_config):
+def test_known_features(train_data, features_config, satellite_meta):
     train_data = add_unique_identifier(train_data)
 
     # Generate features based on saved imagery
     features = generate_features(
         train_data,
+        satellite_meta,
         features_config,
         cache_dir=str(ASSETS_DIR / "feature_cache"),
     )
 
     # Check that generated stats match known imagery stats
-    assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_mean"], 161.532712)
-    assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_min"], 50)
-    assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_max"], 1182)
+    assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_mean"], 402.2583)
+    assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_min"], 309)
+    assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_max"], 1296)
 
 
 def test_generate_candidate_metadata(train_data, features_config):

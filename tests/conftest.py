@@ -44,5 +44,5 @@ def features_config():
     return FeaturesConfig(
         use_sentinel_bands=["B02"],
         image_feature_meter_window=500,
-        satellite_features=["B02_mean", "B02_min", "B02_max"],
+        satellite_image_features=["B02_mean", "B02_min", "B02_max"],
     )

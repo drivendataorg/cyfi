@@ -38,7 +38,7 @@ def download_elevation_data(sample_list: pd.DataFrame, config: FeaturesConfig, c
 
     Args:
         sample_list (pd.Dataframe): Dataframe with columns for date,
-            longitude, latitude, and uid
+            longitude, latitude, and sample_id
         config (FeaturesConfig): Configuration, including
             directory to save raw source data
     """
