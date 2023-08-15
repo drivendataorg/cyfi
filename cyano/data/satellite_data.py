@@ -361,9 +361,9 @@ def download_row(
         config.image_feature_meter_window,
     )
 
-    # Iterate over bands and save
-    for band in config.use_sentinel_bands:
-        try:
+    try:
+        # Iterate over bands and save
+        for band in config.use_sentinel_bands:
             # Check if the file already exists
             array_save_path = sample_image_dir / f"{band}.npy"
             if not array_save_path.exists():
@@ -382,15 +382,13 @@ def download_row(
                 )
                 np.save(array_save_path, band_array)
 
-        except Exception as e:
-            # Delete item directory if it has already been created
-            if sample_image_dir.exists():
-                shutil.rmtree(sample_image_dir)
+    except Exception as e:
+        # Delete item directory if it has already been created
+        if sample_image_dir.exists():
+            shutil.rmtree(sample_image_dir)
 
-            with open(log_path, "a") as fp:
-                fp.write(
-                    f"{sample_image_dir.parts[-2]}/{sample_image_dir.parts[-1]}: {type(e)} {e}\n"
-                )
+        with open(log_path, "a") as fp:
+            fp.write(f"{sample_image_dir.parts[-2]}/{sample_image_dir.parts[-1]}: {type(e)} {e}\n")
 
         return f"{sample_image_dir.parts[-2]}/{sample_image_dir.parts[-1]}: {type(e)} {e}"
 
