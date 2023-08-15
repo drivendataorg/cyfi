@@ -42,5 +42,5 @@ class ModelTrainingConfig(BaseModel):
     params: Optional[LGBParams] = LGBParams()
     num_boost_round: Optional[int] = 1000
 
-    # Avoid conflict with pydantic protected namespace
+    # Silence warning for conflict with pydantic protected namespace
     model_config = ConfigDict(protected_namespaces=())
