@@ -2,6 +2,7 @@ import yaml
 from zipfile import ZipFile
 
 from cloudpathlib import AnyPath
+from dotenv import load_dotenv, find_dotenv
 import lightgbm as lgb
 from loguru import logger
 from pathlib import Path
@@ -12,6 +13,8 @@ from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
+
+load_dotenv(find_dotenv())
 
 
 @app.command()

@@ -1,3 +1,5 @@
+import os
+
 from datetime import datetime, timedelta
 import functools
 import json
@@ -392,7 +394,6 @@ def download_satellite_data(
     samples: pd.DataFrame,
     config: FeaturesConfig,
     cache_dir: Union[str, Path],
-    num_processes: int,
 ):
     """Download satellite images as one stacked numpy arrays per pystac item
 
@@ -405,7 +406,10 @@ def download_satellite_data(
         config (FeaturesConfig): Features config
         cache_dir (Union[str, Path]): Cache directory to save raw imagery
     """
-    logger.info(f"Downloading bands {config.use_sentinel_bands} with {num_processes} processes")
+    # Determine the number of processes to use when parallelizing
+    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
+
+    logger.info(f"Downloading bands {config.use_sentinel_bands} with {NUM_PROCESSES} processes")
 
     imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"
     log_path = (
@@ -422,7 +426,7 @@ def download_satellite_data(
             log_path=log_path,
         ),
         satellite_meta.iterrows(),
-        max_workers=num_processes,
+        max_workers=NUM_PROCESSES,
         chunksize=1,
         total=len(satellite_meta),
     )
