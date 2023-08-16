@@ -1,0 +1,40 @@
+cache_dir: experiments/cache
+debug: false
+features_config:
+  climate_features: []
+  elevation_features: []
+  image_feature_meter_window: 200
+  metadata_features:
+  - rounded_longitude
+  n_sentinel_items: 1
+  pc_collections:
+  - sentinel-2-l2a
+  pc_days_search_window: 30
+  pc_meters_search_window: 50000
+  satellite_image_features:
+  - B02_mean
+  - B03_mean
+  - B04_mean
+  - prop_water
+  satellite_meta_features:
+  - month
+  use_sentinel_bands:
+  - B02
+  - B03
+  - B04
+  - SCL
+  scl_filter: true
+model_training_config:
+  num_boost_round: 70
+  params:
+    application: regression
+    bagging_seed: 40
+    learning_rate: 0.1
+    max_depth: 2
+    metric: rmse
+    num_leaves: 31
+    seed: 40
+    verbosity: -1
+predict_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/test.csv
+save_dir: experiments/results/second_sentinel_only_scl_filter
+train_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/train.csv

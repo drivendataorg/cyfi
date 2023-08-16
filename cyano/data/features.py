@@ -1,6 +1,7 @@
 ## Code to generate features from raw downloaded source data
 from typing import List, Union
 
+import cv2
 from loguru import logger
 import numpy as np
 import pandas as pd
@@ -20,8 +21,12 @@ SATELLITE_FEATURE_CALCULATORS = {
     / (x["B08"].mean() + x["B06"].mean() + 1),
     "NDVI_B07": lambda x: (x["B08"].mean() - x["B07"].mean())
     / (x["B08"].mean() + x["B07"].mean() + 1),
-    "blue_red_ratio": lambda x: x["B02"].mean() / x["B04"].mean(),
-    "blue_green_ratio": lambda x: x["B02"].mean() / x["B03"].mean(),
+    "green_red_ratio": lambda x: x["B03"].mean() / (x["B04"].mean() + 1),
+    "green_blue_ratio": lambda x: x["B03"].mean() / (x["B02"].mean() + 1),
+    "red_blue_ratio": lambda x: x["B04"].mean() / (x["B02"].mean() + 1),
+    "green95th_blue_ratio": lambda x: np.percentile(x["B03"], 95) / (x["B02"].mean() + 1),
+    "green5th_blue_ratio": lambda x: np.percentile(x["B03"], 5) / (x["B02"].mean() + 1),
+    "prop_water": lambda x: (x["SCL"] == 6).mean(),
     "AOT_mean": lambda x: x["AOT"].mean(),
     "AOT_min": lambda x: x["AOT"].min(),
     "AOT_max": lambda x: x["AOT"].max(),
@@ -38,6 +43,8 @@ SATELLITE_FEATURE_CALCULATORS = {
     "B03_min": lambda x: x["B03"].min(),
     "B03_max": lambda x: x["B03"].max(),
     "B03_range": lambda x: x["B03"].max() - x["B03"].min(),
+    "B03_95th": lambda x: np.percentile(x["B03"], 95),
+    "B03_5th": lambda x: np.percentile(x["B03"], 5),
     "B04_mean": lambda x: x["B04"].mean(),
     "B04_min": lambda x: x["B04"].min(),
     "B04_max": lambda x: x["B04"].max(),
@@ -125,6 +132,15 @@ def generate_satellite_features(
         # Skip combos we were not able to download
         if not sample_item_dir.exists():
             continue
+        # Filter by water pixels from SCL band
+        if config.scl_filter:
+            scl_band_path = sample_item_dir / "SCL.npy"
+            if not scl_band_path.exists():
+                continue
+            scl_array = np.load(scl_band_path)
+            # Skip if there is not enough water
+            if (scl_array == 6).mean() < 0.01:
+                continue
 
         # Load band arrays into a dictionary with band names for keys
         band_arrays = {}
@@ -134,7 +150,14 @@ def generate_satellite_features(
                 raise FileNotFoundError(
                     f"Band {band} is missing from pystac item directory {sample_item_dir}"
                 )
-            band_arrays[band] = np.load(sample_item_dir / f"{band}.npy")
+            # Rescale SCL band based on image size
+            band_arr = np.load(sample_item_dir / f"{band}.npy")
+            if config.scl_filter and (band != "SCL"):
+                scaled_scl = cv2.resize(scl_array[0], (band_arr.shape[2], band_arr.shape[1]))
+                # Filter array to water area
+                band_arrays[band] = band_arr[0][scaled_scl == 6]
+            else:
+                band_arrays[band] = band_arr
 
         # Iterate over features to generate
         sample_item_features = {"sample_id": row.sample_id, "item_id": row.item_id}

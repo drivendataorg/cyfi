@@ -1,3 +1,4 @@
+import sys
 import yaml
 from zipfile import ZipFile
 
@@ -16,6 +17,10 @@ app = typer.Typer(pretty_exceptions_show_locals=False)
 
 load_dotenv(find_dotenv())
 
+# Set logger to only log info or higher
+logger.remove()
+logger.add(sys.stderr, level="INFO")
+
 
 @app.command()
 def experiment(
@@ -26,7 +31,7 @@ def experiment(
         config_dict = yaml.safe_load(fp)
         config = ExperimentConfig(**config_dict)
 
-    logger.add(config.save_dir / "experiment.log")
+    logger.add(config.save_dir / "experiment.log", level="DEBUG")
     config.run_experiment()
 
 

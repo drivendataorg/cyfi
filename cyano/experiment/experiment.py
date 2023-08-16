@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 import yaml
 
 from cloudpathlib import AnyPath
@@ -21,7 +21,32 @@ class ExperimentConfig(BaseModel):
     cache_dir: Path = None
     save_dir: Path = Path.cwd()
     last_commit_hash: str = None
+    filter_train_by_water_distance: Optional[int] = None
+    target_col: str = "severity"
     debug: bool = False
+    """Configuration containing parameters to be used for an end-to-end experiment
+
+    Args:
+        features_config (FeaturesConfig, optional): Features configuration. Defaults to
+            FeaturesConfig().
+        model_training_config (ModelTrainingConfig, optional): Model training configuration.
+            Defaults to ModelTrainingConfig().
+        train_csv (Union[str, Path]): Path to a training CSV with columns for date, latitude,
+            longitude, and severity.
+        predict_csv (Union[str, Path]): Path to a CSV for prediction and evaluation with
+            columns for date, latitude, longitude, and severity.
+        cache_dir (Path, optional): Cache directory. Defaults to None.
+        save_dir (Path, optional): Directory to save experiment results. Defaults to
+            Path.cwd().
+        last_commit_hash (str, optional): Hash of the most recent commit to track codes
+            used to run the experiment. Defaults to None.
+        filter_train_by_water_distance (Optiona[int], optional): Filter training data to
+            samples within this distance of water in meters. If none, no filtering is done.
+            Defaults to None.
+        target_col (str, optional): Target column to predict. Must be either "severity" or
+            "density_cells_per_ml". Defaults to "severity".
+        debug (bool, optional): Run in debug mode. Defaults to False.
+    """
 
     @field_validator("train_csv", "predict_csv")
     def convert_filepaths(cls, path_field):
@@ -39,9 +64,13 @@ class ExperimentConfig(BaseModel):
             features_config=self.features_config,
             model_training_config=self.model_training_config,
             cache_dir=self.cache_dir,
+            target_col=self.target_col,
         )
         pipeline.run_training(
-            train_csv=self.train_csv, save_path=self.save_dir / "model.zip", debug=self.debug
+            train_csv=self.train_csv,
+            save_path=self.save_dir / "model.zip",
+            filter_by_water_distance=self.filter_train_by_water_distance,
+            debug=self.debug,
         )
 
         # Get last commit hash to save in artifact

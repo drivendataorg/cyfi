@@ -156,8 +156,9 @@ def get_items_metadata(
             bbox_dict = bbox_from_geometry(item.geometry)
             item_meta.update(bbox_dict)
 
-        if "eo:cloud_cover" in item.properties:
-            item_meta.update({"eo:cloud_cover": item.properties["eo:cloud_cover"]})
+        for optional_item_property in ["eo:cloud_cover", "s2:nodata_pixel_percentage"]:
+            if optional_item_property in item.properties:
+                item_meta.update({optional_item_property: item.properties[optional_item_property]})
         # Add links to download each band needed for features
         for band in config.use_sentinel_bands:
             item_meta.update({f"{band}_href": item.assets[band].href})
@@ -350,14 +351,14 @@ def download_row(
     sample_image_dir = imagery_dir / f"{row.sample_id}/{row.item_id}"
     sample_image_dir.mkdir(exist_ok=True, parents=True)
 
-    try:
-        # Get bounding box for array to save out
-        (minx, miny, maxx, maxy) = get_bounding_box(
-            sample_row.latitude,
-            sample_row.longitude,
-            config.image_feature_meter_window,
-        )
+    # Get bounding box for array to save out
+    (minx, miny, maxx, maxy) = get_bounding_box(
+        sample_row.latitude,
+        sample_row.longitude,
+        config.image_feature_meter_window,
+    )
 
+    try:
         # Iterate over bands and save
         for band in config.use_sentinel_bands:
             # Check if the file already exists
@@ -422,6 +423,10 @@ def download_satellite_data(
         chunksize=1,
         total=len(satellite_meta),
     )
-    exceptions = "\n".join([e for e in exception_logs if e])
+    exceptions = [e for e in exception_logs if e]
     if len(exceptions) > 0:
-        logger.warning(f"Exceptions raised during download:\n{exceptions}")
+        # Log number of exceptions to CLI
+        logger.warning(f"{len(exceptions):,} exceptions raised during download")
+        # Log full list of exceptions to .log file
+        exceptions = "\n".join(exceptions)
+        logger.debug(f"Exceptions:\n{exceptions}")

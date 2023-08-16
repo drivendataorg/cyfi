@@ -13,7 +13,11 @@ from cyano.data.climate_data import download_climate_data
 from cyano.data.elevation_data import download_elevation_data
 from cyano.data.features import generate_features
 from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
-from cyano.data.utils import add_unique_identifier
+from cyano.data.utils import (
+    add_unique_identifier,
+    water_distance_filter,
+    convert_density_to_severity,
+)
 
 
 class CyanoModelPipeline:
@@ -23,7 +27,19 @@ class CyanoModelPipeline:
         model_training_config: Optional[ModelTrainingConfig] = None,
         cache_dir: Optional[Path] = None,
         model: Optional[lgb.Booster] = None,
+        target_col: Optional[str] = "severity",
     ):
+        """Instantiate CyanoModelPipeline
+
+        Args:
+            features_config (FeaturesConfig): Features configuration
+            model_training_config (Optional[ModelTrainingConfig], optional): Model
+                training configuration. Defaults to None.
+            cache_dir (Optional[Path], optional): Cache directory. Defaults to None.
+            model (Optional[lgb.Booster], optional): Trained LGB model. Defaults to None.
+            target_col (Optional[str], optional): Target column to predict. Must be
+                either "severity" or "density_cells_per_ml". Defaults to "severity".
+        """
         self.features_config = features_config
         self.model_training_config = model_training_config
         self.model = model
@@ -32,29 +48,38 @@ class CyanoModelPipeline:
         )
         self.samples = None
         self.labels = None
+        self.target_col = target_col
 
         # make cache dir
         self.cache_dir.mkdir(exist_ok=True, parents=True)
 
-    def _prep_train_data(self, data, debug: bool = False):
+    def _prep_train_data(self, data, filter_by_water_distance: Optional[int], debug: bool):
         """Load labels and save out samples with UIDs"""
         labels = pd.read_csv(data)
-        labels = labels[["date", "latitude", "longitude", "severity"]]
+        labels = labels[["date", "latitude", "longitude", self.target_col]]
         labels = add_unique_identifier(labels)
         if debug:
             labels = labels.head(10)
+
+        # Filter by distance to water if specified
+        if filter_by_water_distance is not None:
+            labels = water_distance_filter(labels, filter_by_water_distance)
 
         # Save out samples with uids
         labels.to_csv(self.cache_dir / "train_samples_uid_mapping.csv", index=True)
         logger.info(f"Loaded {labels.shape[0]:,} samples for training")
 
         self.train_samples = labels[["date", "latitude", "longitude"]]
-        self.train_labels = labels["severity"]
+        self.train_labels = labels[self.target_col]
 
-    def _prepare_features(self, samples):
+    def _prepare_features(self, samples, train_split=True):
+        if train_split:
+            split = "train"
+        else:
+            split = "test"
         ## Identify satellite data
         satellite_meta = identify_satellite_data(samples, self.features_config)
-        save_satellite_to = self.cache_dir / "satellite_metadata_train.csv"
+        save_satellite_to = self.cache_dir / f"satellite_metadata_{split}.csv"
         satellite_meta.to_csv(save_satellite_to, index=False)
         logger.info(
             f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
@@ -72,7 +97,7 @@ class CyanoModelPipeline:
 
         ## Generate features
         features = generate_features(samples, satellite_meta, self.features_config, self.cache_dir)
-        save_features_to = self.cache_dir / "features_train.csv"
+        save_features_to = self.cache_dir / f"features_{split}.csv"
         features.to_csv(save_features_to, index=True)
         pct_with_features = features.index.nunique() / samples.shape[0]
         logger.success(
@@ -105,8 +130,10 @@ class CyanoModelPipeline:
             z.writestr("config.yaml", yaml.dump(self.features_config.model_dump()))
             z.writestr("lgb_model.txt", self.model.model_to_string())
 
-    def run_training(self, train_csv, save_path, debug=False):
-        self._prep_train_data(train_csv, debug)
+    def run_training(
+        self, train_csv, save_path, filter_by_water_distance: bool = False, debug: bool = False
+    ):
+        self._prep_train_data(train_csv, filter_by_water_distance, debug)
         self._prepare_train_features()
         self._train_model()
         self._to_disk(save_path)
@@ -134,7 +161,7 @@ class CyanoModelPipeline:
         self.predict_samples = samples
 
     def _prepare_predict_features(self):
-        self.predict_features = self._prepare_features(self.predict_samples)
+        self.predict_features = self._prepare_features(self.predict_samples, train_split=False)
 
     def _predict_model(self):
         preds = pd.Series(
@@ -149,16 +176,20 @@ class CyanoModelPipeline:
                 f"Grouping {preds.shape[0]:,} predictions by {preds.index.nunique():,} unique sample IDs"
             )
             preds = preds.groupby(preds.index).mean()
-        self.preds = preds.round().astype(int)
+        self.preds = preds
 
         self.output_df = self.predict_samples.join(self.preds)
         # For any missing samples, predict the average predicted severity
         logger.info(
             f"Predicting the mean for {self.output_df.severity.isna().sum():,} samples with no imagery"
         )
-        self.output_df["severity"] = self.output_df.severity.fillna(preds.mean().round()).astype(
-            int
+        self.output_df["severity"] = (
+            self.output_df.severity.fillna(preds.mean()).round().astype(int)
         )
+
+        # If predicting exact density, calculate severity bin
+        if self.target_col == "density_cells_per_ml":
+            self.output_df = convert_density_to_severity(self.output_df)
 
     def _write_predictions(self, preds_path):
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)

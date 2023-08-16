@@ -43,6 +43,10 @@ test: clean lint
 assets:
 	cyano experiment tests/assets/experiment_config.yaml
 
+## Sync experiments
+sync_experiments_to_s3:
+	aws s3 sync --exclude *.DS_Store experiments/results/ s3://drivendata-competition-nasa-cyanobacteria/experiments/results/
+	
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################
