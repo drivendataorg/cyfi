@@ -429,4 +429,4 @@ def download_satellite_data(
         logger.warning(f"{len(exceptions):,} exceptions raised during download")
         # Log full list of exceptions to .log file
         exceptions = "\n".join(exceptions)
-        logger.trace(f"Exceptions:\n{exceptions}")
+        logger.debug(f"Exceptions:\n{exceptions}")

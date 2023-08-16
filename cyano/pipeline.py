@@ -13,8 +13,11 @@ from cyano.data.climate_data import download_climate_data
 from cyano.data.elevation_data import download_elevation_data
 from cyano.data.features import generate_features
 from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
-from cyano.data.utils import add_unique_identifier, water_distance_filter
-from cyano.settings import SEVERITY_LEFT_EDGES
+from cyano.data.utils import (
+    add_unique_identifier,
+    water_distance_filter,
+    convert_density_to_severity,
+)
 
 
 class CyanoModelPipeline:
@@ -50,7 +53,7 @@ class CyanoModelPipeline:
         # make cache dir
         self.cache_dir.mkdir(exist_ok=True, parents=True)
 
-    def _prep_train_data(self, data, filter_by_water_distance: bool, debug: bool):
+    def _prep_train_data(self, data, filter_by_water_distance: Optional[int], debug: bool):
         """Load labels and save out samples with UIDs"""
         labels = pd.read_csv(data)
         labels = labels[["date", "latitude", "longitude", self.target_col]]
@@ -59,8 +62,8 @@ class CyanoModelPipeline:
             labels = labels.head(10)
 
         # Filter by distance to water if specified
-        if filter_by_water_distance:
-            labels = water_distance_filter(labels)
+        if filter_by_water_distance is not None:
+            labels = water_distance_filter(labels, filter_by_water_distance)
 
         # Save out samples with uids
         labels.to_csv(self.cache_dir / "train_samples_uid_mapping.csv", index=True)
@@ -186,18 +189,7 @@ class CyanoModelPipeline:
 
         # If predicting exact density, calculate severity bin
         if self.target_col == "density_cells_per_ml":
-            self.output_df["density"] = self.output_df.severity.copy()
-            self.output_df["severity"] = pd.cut(
-                self.output_df["density"],
-                SEVERITY_LEFT_EDGES + [SEVERITY_LEFT_EDGES[-1] * 2],
-                include_lowest=True,
-                right=False,
-                labels=range(1, 6),
-            )
-            self.output_df.loc[self.output_df.density >= SEVERITY_LEFT_EDGES[-1], "severity"] = 5
-            # Fill in negative density preds with severity 1
-            self.output_df.loc[self.output_df.density <= 0, "severity"] = 1
-            self.output_df.drop(columns=["density"], inplace=True)
+            self.output_df = convert_density_to_severity(self.output_df)
 
     def _write_predictions(self, preds_path):
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)
