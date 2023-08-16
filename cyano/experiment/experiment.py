@@ -27,18 +27,18 @@ class ExperimentConfig(BaseModel):
     """Configuration containing parameters to be used for an end-to-end experiment
 
     Args:
-        features_config (FeaturesConfig, optional): Features configuration. Defaults to 
+        features_config (FeaturesConfig, optional): Features configuration. Defaults to
             FeaturesConfig().
         model_training_config (ModelTrainingConfig, optional): Model training configuration.
             Defaults to ModelTrainingConfig().
         train_csv (Union[str, Path]): Path to a training CSV with columns for date, latitude,
             longitude, and severity.
-        predict_csv (Union[str, Path]): Path to a CSV for prediction and evaluation with 
+        predict_csv (Union[str, Path]): Path to a CSV for prediction and evaluation with
             columns for date, latitude, longitude, and severity.
         cache_dir (Path, optional): Cache directory. Defaults to None.
-        save_dir (Path, optional): Directory to save experiment results. Defaults to 
+        save_dir (Path, optional): Directory to save experiment results. Defaults to
             Path.cwd().
-        last_commit_hash (str, optional): Hash of the most recent commit to track code 
+        last_commit_hash (str, optional): Hash of the most recent commit to track codes
             used to run the experiment. Defaults to None.
         filter_train_by_water_distance (bool, optional): Whether to filter the training data
             to samples within 1,000m of water. Defaults to False.

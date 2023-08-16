@@ -173,7 +173,7 @@ class CyanoModelPipeline:
                 f"Grouping {preds.shape[0]:,} predictions by {preds.index.nunique():,} unique sample IDs"
             )
             preds = preds.groupby(preds.index).mean()
-        self.preds = preds  # .round().astype(int)
+        self.preds = preds
 
         self.output_df = self.predict_samples.join(self.preds)
         # For any missing samples, predict the average predicted severity
