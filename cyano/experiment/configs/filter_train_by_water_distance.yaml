@@ -8,7 +8,6 @@ features_config:
   metadata_features:
   - rounded_longitude
   n_sentinel_items: 15
-  num_threads: 8
   pc_collections:
   - sentinel-2-l2a
   pc_days_search_window: 15
