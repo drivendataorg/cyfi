@@ -26,7 +26,7 @@ def experiment(
         config_dict = yaml.safe_load(fp)
         config = ExperimentConfig(**config_dict)
 
-    logger.add(config.save_dir / "experiment.log")
+    logger.add(config.save_dir / "experiment.log", level=0)
     config.run_experiment()
 
 

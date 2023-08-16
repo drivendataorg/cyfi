@@ -423,6 +423,10 @@ def download_satellite_data(
         chunksize=1,
         total=len(satellite_meta),
     )
-    exceptions = "\n".join([e for e in exception_logs if e])
+    exceptions = [e for e in exception_logs if e]
     if len(exceptions) > 0:
-        logger.warning(f"Exceptions raised during download:\n{exceptions}")
+        # Log number of exceptions to CLI
+        logger.warning(f"{len(exceptions):,} exceptions raised during download")
+        # Log full list of exceptions to .log file
+        exceptions = "\n".join(exceptions)
+        logger.trace(f"Exceptions:\n{exceptions}")
