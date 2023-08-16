@@ -58,10 +58,14 @@ class CyanoModelPipeline:
         self.train_samples = labels[["date", "latitude", "longitude"]]
         self.train_labels = labels[self.target_col]
 
-    def _prepare_features(self, samples):
+    def _prepare_features(self, samples, train_split=True):
+        if train_split:
+            split = "train"
+        else:
+            split = "test"
         ## Identify satellite data
         satellite_meta = identify_satellite_data(samples, self.features_config)
-        save_satellite_to = self.cache_dir / "satellite_metadata_train.csv"
+        save_satellite_to = self.cache_dir / f"satellite_metadata_{split}.csv"
         satellite_meta.to_csv(save_satellite_to, index=False)
         logger.info(
             f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
@@ -79,7 +83,7 @@ class CyanoModelPipeline:
 
         ## Generate features
         features = generate_features(samples, satellite_meta, self.features_config, self.cache_dir)
-        save_features_to = self.cache_dir / "features_train.csv"
+        save_features_to = self.cache_dir / f"features_{split}.csv"
         features.to_csv(save_features_to, index=True)
         pct_with_features = features.index.nunique() / samples.shape[0]
         logger.success(
@@ -143,7 +147,7 @@ class CyanoModelPipeline:
         self.predict_samples = samples
 
     def _prepare_predict_features(self):
-        self.predict_features = self._prepare_features(self.predict_samples)
+        self.predict_features = self._prepare_features(self.predict_samples, train_split=False)
 
     def _predict_model(self):
         preds = pd.Series(
