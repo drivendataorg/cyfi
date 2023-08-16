@@ -184,6 +184,8 @@ class CyanoModelPipeline:
                 labels=range(1, 6),
             )
             self.output_df.loc[self.output_df.density >= SEVERITY_LEFT_EDGES[-1], "severity"] = 5
+            # Fill in negative density preds with severity 1
+            self.output_df.loc[self.output_df.density <= 0, "severity"] = 1
             self.output_df.drop(columns=["density"], inplace=True)
 
     def _write_predictions(self, preds_path):
