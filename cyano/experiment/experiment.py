@@ -24,6 +24,28 @@ class ExperimentConfig(BaseModel):
     filter_train_by_water_distance: bool = False
     target_col: str = "severity"
     debug: bool = False
+    """Configuration containing parameters to be used for an end-to-end experiment
+
+    Args:
+        features_config (FeaturesConfig, optional): Features configuration. Defaults to 
+            FeaturesConfig().
+        model_training_config (ModelTrainingConfig, optional): Model training configuration.
+            Defaults to ModelTrainingConfig().
+        train_csv (Union[str, Path]): Path to a training CSV with columns for date, latitude,
+            longitude, and severity.
+        predict_csv (Union[str, Path]): Path to a CSV for prediction and evaluation with 
+            columns for date, latitude, longitude, and severity.
+        cache_dir (Path, optional): Cache directory. Defaults to None.
+        save_dir (Path, optional): Directory to save experiment results. Defaults to 
+            Path.cwd().
+        last_commit_hash (str, optional): Hash of the most recent commit to track code 
+            used to run the experiment. Defaults to None.
+        filter_train_by_water_distance (bool, optional): Whether to filter the training data
+            to samples within 1,000m of water. Defaults to False.
+        target_col (str, optional): Target column to predict. Must be either "severity" or
+            "density_cells_per_ml". Defaults to "severity".
+        debug (bool, optional): Run in debug mode. Defaults to False.
+    """
 
     @field_validator("train_csv", "predict_csv")
     def convert_filepaths(cls, path_field):

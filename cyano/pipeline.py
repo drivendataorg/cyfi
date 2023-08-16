@@ -26,6 +26,17 @@ class CyanoModelPipeline:
         model: Optional[lgb.Booster] = None,
         target_col: Optional[str] = "severity",
     ):
+        """Instantiate CyanoModelPipeline
+
+        Args:
+            features_config (FeaturesConfig): Features configuration
+            model_training_config (Optional[ModelTrainingConfig], optional): Model
+                training configuration. Defaults to None.
+            cache_dir (Optional[Path], optional): Cache directory. Defaults to None.
+            model (Optional[lgb.Booster], optional): Trained LGB model. Defaults to None.
+            target_col (Optional[str], optional): Target column to predict. Must be
+                either "severity" or "density_cells_per_ml". Defaults to "severity".
+        """
         self.features_config = features_config
         self.model_training_config = model_training_config
         self.model = model
