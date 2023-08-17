@@ -7,7 +7,6 @@ geopandas
 geopy
 GitPython
 jupyter
-lightgbm
 loguru
 matplotlib
 numpy

@@ -24,6 +24,8 @@ create_environment:
 	
 ## Install Python Dependencies
 requirements:
+	conda install -c conda-forge herbie-data
+	conda install -c conda-forge lightgbm
 	pip install -r requirements_dev.txt
 
 ## Format using black
