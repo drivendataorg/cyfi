@@ -12,6 +12,10 @@ from cyano.experiment.experiment import ExperimentConfig
 from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
 
+from cyano.data.climate_data import load_hrrr_grid
+from cyano.data.utils import add_unique_identifier
+import pandas as pd
+
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
 load_dotenv(find_dotenv())
@@ -19,6 +23,25 @@ load_dotenv(find_dotenv())
 # Set logger to only log info or higher
 logger.remove()
 logger.add(sys.stderr, level="INFO")
+
+
+@app.command()
+def hrrgrid(
+    samples_path="s3://drivendata-competition-nasa-cyanobacteria/data/final/public/metadata.csv",
+    cache_dir="experiments/cache",
+    debug: bool = False,
+):
+    cache_dir = AnyPath(cache_dir)
+    logger.add(cache_dir / "hrrr_grid_download.log", level="DEBUG")
+    samples = pd.read_csv(AnyPath(samples_path))
+
+    samples = add_unique_identifier(samples)[["latitude", "longitude", "date"]]
+    if debug:
+        samples = samples.sample(n=15, random_state=2)
+
+    logger.info(f"Loaded {len(samples):,} samples")
+
+    _ = load_hrrr_grid(samples, cache_dir)
 
 
 @app.command()
