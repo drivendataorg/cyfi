@@ -13,6 +13,7 @@ numpy
 odc-stac
 opencv-python
 pandas
+pandas_path
 pathlib
 planetary-computer
 pydantic

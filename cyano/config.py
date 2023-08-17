@@ -33,6 +33,7 @@ class FeaturesConfig(BaseModel):
         "B04_mean",
     ]
     satellite_meta_features: Optional[List] = []
+    use_climate_sources: Optional[List] = []
     climate_features: Optional[List] = []
     elevation_features: Optional[List] = []
     metadata_features: Optional[List] = ["rounded_longitude"]
