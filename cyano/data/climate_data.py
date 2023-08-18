@@ -1,5 +1,6 @@
 import functools
 import os
+from typing import Optional
 
 from cloudpathlib import AnyPath
 from herbie import FastHerbie
@@ -211,7 +212,7 @@ def download_climate_for_date(
             how="inner",
         )
     except Exception as e:
-        logger.warning(f"{type(e)}: {e} for date {date}")
+        logger.debug(f"{type(e)}: {e} for date {date}")
         return
 
     # Save out data by sample id
@@ -221,7 +222,12 @@ def download_climate_for_date(
         sample_data.to_csv(sample_data_path, index=True)
 
 
-def download_climate_data(samples: pd.DataFrame, config: FeaturesConfig, cache_dir):
+def download_climate_data(
+    samples: pd.DataFrame,
+    config: FeaturesConfig,
+    cache_dir,
+    sample_grid_map: Optional[pd.DataFrame] = None,
+):
     """Query NOAA's HRRR database for a list of samples, and save out
     the raw results.
 
@@ -261,7 +267,12 @@ def download_climate_data(samples: pd.DataFrame, config: FeaturesConfig, cache_d
     )
 
     ## Get mapping of sample locations to grid indices in HRRR
-    sample_grid_map = load_hrrr_grid(samples, cache_dir)
+    if sample_grid_map is None:
+        sample_grid_map = load_hrrr_grid(samples, cache_dir)
+    else:
+        logger.info(
+            f"Using provided sample grid map with {sample_grid_map.index.nunique():,} samples"
+        )
 
     ## Iterate over required climate data sources
     for climate_var in config.climate_variables:

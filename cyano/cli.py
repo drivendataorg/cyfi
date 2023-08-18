@@ -12,9 +12,10 @@ from cyano.experiment.experiment import ExperimentConfig
 from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
 
-from cyano.data.climate_data import load_hrrr_grid
+from cyano.data.climate_data import load_hrrr_grid, download_climate_data
 from cyano.data.utils import add_unique_identifier
 import pandas as pd
+from cyano.settings import REPO_ROOT
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -26,7 +27,7 @@ logger.add(sys.stderr, level="INFO")
 
 
 @app.command()
-def hrrgrid(
+def hrrrgrid(
     samples_path="s3://drivendata-competition-nasa-cyanobacteria/data/final/public/metadata.csv",
     cache_dir="experiments/cache",
     debug: bool = False,
@@ -37,11 +38,48 @@ def hrrgrid(
 
     samples = add_unique_identifier(samples)[["latitude", "longitude", "date"]]
     if debug:
-        samples = samples.sample(n=15, random_state=2)
+        samples = samples.sample(n=100, random_state=2)
 
     logger.info(f"Loaded {len(samples):,} samples")
 
     _ = load_hrrr_grid(samples, cache_dir)
+
+
+@app.command()
+def downloadhrrr(
+    sample_grid_map=REPO_ROOT.parent / "experiments/cache/interim_hrrr_sample_grid_mapping.csv",
+    config_path=REPO_ROOT / "experiment/configs/third_sentinel_and_climate.yaml",
+    cache_dir=REPO_ROOT.parent / "experiments/cache",
+):
+    cache_dir = AnyPath(cache_dir)
+    cache_dir.mkdir(exist_ok=True, parents=True)
+
+    logger.add(cache_dir / "hrrr_data_download.log", level="DEBUG")
+
+    # Load sample grid map
+    sample_grid_map = pd.read_csv(sample_grid_map, index_col=0)
+    sample_grid_map["date"] = pd.to_datetime(sample_grid_map.date)
+    logger.info(
+        f"Loaded sample grid with {sample_grid_map.index.nunique():,} samples, {sample_grid_map.shape[0]:,} rows"
+    )
+
+    # Format samples list including only samples in sample grid map
+    meta = pd.read_csv(
+        AnyPath("s3://drivendata-competition-nasa-cyanobacteria/data/final/public/metadata.csv"),
+        index_col=0,
+    )
+    samples = add_unique_identifier(meta)[["latitude", "longitude", "date"]]
+    samples["date"] = pd.to_datetime(samples.date)
+    samples = samples[samples.index.isin(sample_grid_map.index)].copy()
+    logger.info(f"Loaded sample list of {samples.shape[0]:,} samples")
+
+    # Load feature config
+    with open(config_path, "r") as fp:
+        config_dict = yaml.safe_load(fp)
+    experiment_config = ExperimentConfig(**config_dict)
+    features_config = experiment_config.features_config
+
+    download_climate_data(samples, features_config, cache_dir, sample_grid_map=sample_grid_map)
 
 
 @app.command()
