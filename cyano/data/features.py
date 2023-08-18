@@ -12,6 +12,7 @@ from pathlib import Path
 from tqdm.contrib.concurrent import process_map
 
 from cyano.config import FeaturesConfig
+from cyano.data.climate_data import path_to_climate_data
 
 # Create a dictionary mapping feature names to feature generator
 # functions, which take a dictionary of band arrays as input
@@ -93,6 +94,9 @@ SATELLITE_FEATURE_CALCULATORS = {
     "WVP_max": lambda x: x["WVP"].max(),
     "WVP_range": lambda x: x["WVP"].max() - x["WVP"].min(),
 }
+
+# Mapping of climate variable name to column name its saved out in
+CLIMATE_VAR_TO_COL_MAPPING = {"TMP": "t2m", "SPFH": "sh2"}
 
 
 def generate_features_for_sample_item(
@@ -206,7 +210,7 @@ def generate_satellite_features(
 
 
 def generate_climate_features(
-    sample_ids: Union[List[str], pd.Index], config: FeaturesConfig
+    sample_ids: Union[List[str], pd.Index], config: FeaturesConfig, cache_dir
 ) -> pd.DataFrame:
     """Generate features from climate data
 
@@ -214,18 +218,41 @@ def generate_climate_features(
         sample_ids (Union[List[str], pd.Index]): List of unique indices for each sample
         config (FeaturesConfig): Configuration, including
             directory where raw source data is saved
+        cache_dir
 
     Returns:
         pd.DataFrame: Dataframe where the index is sample_id. There is
-            one columns for each climate feature and one row
-            for each sample
+            one column for each climate feature and one row
+            for each sample. All samples are included, regardless of
+            whether they have climate data available.
     """
-    # Load files
-    # - filter to those containing '_climate' in the name or other pattern
-    # - identify data for each sample based on uid
+    climate_features = {}
+    logger.info(f"Generating climate features for {len(sample_ids):,} samples.")
 
-    # Generate features for each sample
-    pass
+    for sample_id in tqdm(sample_ids):
+        climate_features[sample_id] = {}
+        for climate_var in config.climate_variables:
+            sample_data_path = path_to_climate_data(
+                sample_id, climate_var, config.climate_level, cache_dir
+            )
+            if not sample_data_path.exists():
+                continue
+
+            sample_data = pd.read_csv(sample_data_path)
+            var_col_name = CLIMATE_VAR_TO_COL_MAPPING[climate_var]
+
+            if f"{climate_var}_min" in config.climate_features:
+                climate_features[sample_id][f"{climate_var}_min"] = sample_data[var_col_name].min()
+            if f"{climate_var}_mean" in config.climate_features:
+                climate_features[sample_id][f"{climate_var}_mean"] = sample_data[
+                    var_col_name
+                ].mean()
+            if f"{climate_var}_max" in config.climate_features:
+                climate_features[sample_id][f"{climate_var}_max"] = sample_data[var_col_name].max()
+
+    climate_features = pd.DataFrame(climate_features).T
+
+    return climate_features
 
 
 def generate_elevation_features(
