@@ -150,13 +150,11 @@ def load_hrrr_grid(samples: pd.DataFrame, cache_dir):
             sample_grid_map["date"] = pd.to_datetime(sample_grid_map.date)
             return sample_grid_map.loc[samples.index]
 
-        logger.info(f"Generating grid for remaining {missing_samples.shape[0]:,} samples")
         new_sample_grid_map = query_grid_mapping(missing_samples, cache_dir)
         sample_grid_map = pd.concat([sample_grid_map, new_sample_grid_map]).drop_duplicates()
 
     # Otherwise generate grid for all samples
     else:
-        logger.info(f"Generating HRRR grid for {samples.shape[0]:,} samples")
         sample_grid_map = query_grid_mapping(samples, cache_dir).drop_duplicates()
 
     logger.info(
@@ -213,7 +211,7 @@ def download_climate_for_date(
             how="inner",
         )
     except Exception as e:
-        logger.warning(f"{type(e)}: {e} for {date}")
+        logger.warning(f"{type(e)}: {e} for date {date}")
         return
 
     # Save out data by sample id
@@ -238,11 +236,14 @@ def download_climate_data(samples: pd.DataFrame, config: FeaturesConfig, cache_d
 
     ## Check which samples are missing expected climate files
     samples = process_samples_for_hrrr(samples)
-    for var_name, level in config.use_climate_sources:
-        newcol = f"exists_{var_name}_{level}"
+    for climate_var in config.climate_variables:
+        newcol = f"exists_{climate_var}_{config.climate_level}"
         samples[newcol] = samples.index.map(
             functools.partial(
-                path_to_climate_data, var_name=var_name, level=level, cache_dir=cache_dir
+                path_to_climate_data,
+                var_name=climate_var,
+                level=config.climate_level,
+                cache_dir=cache_dir,
             )
         )
         samples[newcol] = samples[newcol].path.exists()
@@ -250,30 +251,32 @@ def download_climate_data(samples: pd.DataFrame, config: FeaturesConfig, cache_d
 
     if missing_any_climate_files_mask.sum() == 0:
         logger.success(
-            f"All required climte files have already been downloaded for sources {config.use_climate_sources}"
+            f"All required climate files have already been downloaded for sources {config.climate_variables}"
         )
         return
 
     samples = samples[missing_any_climate_files_mask].copy()
     logger.info(
-        f"Getting climate data for {samples.shape[0]:,} samples for sources {config.use_climate_sources}"
+        f"Getting climate data for {samples.shape[0]:,} samples for sources {config.climate_variables}"
     )
 
     ## Get mapping of sample locations to grid indices in HRRR
     sample_grid_map = load_hrrr_grid(samples, cache_dir)
 
     ## Iterate over required climate data sources
-    for var_name, level in config.use_climate_sources:
+    for climate_var in config.climate_variables:
         # Create source / level directory
-        path_to_climate_data("sample_id", var_name, level, cache_dir).parent.mkdir(
-            exist_ok=True, parents=True
-        )
+        path_to_climate_data(
+            "sample_id", climate_var, config.climate_level, cache_dir
+        ).parent.mkdir(exist_ok=True, parents=True)
 
         # Check which samples are missing files for this climate source
-        missing_files_mask = samples[f"exists_{var_name}_{level}"] != True
+        missing_files_mask = samples[f"exists_{climate_var}_{config.climate_level}"] != True
         missing_dates = samples[missing_files_mask].date.unique()
         timestamps_per_date = get_timestamps_per_date(missing_dates)
-        logger.info(f"Downloading {var_name} at {level} for {len(missing_dates):,} date(s)")
+        logger.info(
+            f"Downloading {climate_var} at {config.climate_level} for {len(missing_dates):,} date(s)"
+        )
         # Download climate data for each date
         _ = process_map(
             functools.partial(
@@ -281,8 +284,8 @@ def download_climate_data(samples: pd.DataFrame, config: FeaturesConfig, cache_d
                 timestamps_per_date=timestamps_per_date,
                 sample_grid_map=sample_grid_map,
                 cache_dir=cache_dir,
-                var_name=var_name,
-                level=level,
+                var_name=climate_var,
+                level=config.climate_level,
             ),
             missing_dates,
             max_workers=NUM_PROCESSES,
