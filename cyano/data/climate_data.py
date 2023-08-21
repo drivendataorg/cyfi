@@ -1,6 +1,6 @@
 import functools
 import os
-from typing import Optional
+from typing import List
 
 from cloudpathlib import AnyPath
 from herbie import FastHerbie
@@ -21,23 +21,25 @@ HERBIE_EXAMPLE_DATES = [
 ]
 
 
-def path_to_climate_data(sample_id, var_name, level, cache_dir):
-    """TODO: describe organization of climate data files
-
-
-    Args:
-        sample_id (_type_): _description_
-        var_name (_type_): _description_
-        level (_type_): _description_
-        cache_dir (_type_): _description_
-
-    Returns:
-        _type_: _description_
+def path_to_climate_data(sample_id, var_name, level, cache_dir) -> AnyPath:
+    """Get the path to an expected file of climate data based on the sample ID,
+    HRRR climate variable, HRRR elevation level, and cache directory. The
+    expected path will be cache_dir / {variable name}_{level}/{sample ID}.csv
     """
     return AnyPath(f"{cache_dir}/{var_name.lower()}_{level.replace(' ', '_')}/{sample_id}.csv")
 
 
 def process_samples_for_hrrr(samples: pd.DataFrame) -> pd.DataFrame:
+    """Prepare a list of samples to be used for searching the HRRR climate
+    dataset
+
+    Args:
+        samples (pd.DataFrame): Dataframe where the index is sample ID and
+            there are columns for date, longitude, and latitude
+
+    Returns:
+        pd.DataFrame: Processed samples
+    """
     ## Process samples
     samples["date"] = pd.to_datetime(samples.date)
     # Drop samples from before HRRR was available
@@ -51,8 +53,28 @@ def process_samples_for_hrrr(samples: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_location_grid(
-    latitude: float, longitude: float, xarrays_df: pd.DataFrame, try_grid_buffers=TRY_GRID_BUFFERS
-):
+    latitude: float,
+    longitude: float,
+    xarrays_df: pd.DataFrame,
+    try_grid_buffers: List[float] = TRY_GRID_BUFFERS,
+) -> pd.DataFrame:
+    """Get a grid mapping a location (latitude + longitude) to grid indices
+    in the HRRR dataset.
+
+    Args:
+        latitude (float): Latitude
+        longitude (float): Longitude
+        xarrays_df (pd.DataFrame): FastHerbie object with a relevant date range that
+            has been read into an xarray Dataset with FastHerbie.xarray
+        try_grid_buffers (List, optional): List of increasing lat / long buffers around
+            the given location to search for HRRR grid indices. Defaults to TRY_GRID_BUFFERS.
+
+    Returns:
+        pd.DataFrame: Dataframe with columns for latitude, longitude, and HRRR grid
+            indices x and y. There is one row for each unique combinations of x and y
+
+        Returns None if no HRRR grid indices are found
+    """
     for buffer in try_grid_buffers:
         minlon = longitude - buffer
         maxlon = longitude + buffer
@@ -73,18 +95,22 @@ def get_location_grid(
             return location_df
 
     logger.warning(f"Could not find any grid mapping for location ({latitude}, {longitude})")
+
     return None
 
 
 def query_grid_mapping(samples: pd.DataFrame, cache_dir) -> pd.DataFrame:
-    """Returns a dataframe with one row for each combination of sample ID and
-    HRRR data grid location (x,y)
+    """Queries the HRRR dataset and returns a dataframe with one row for
+        each combination of sample ID and matching HRRR data grid indices
 
     Args:
-        samples (pd.DataFrame): _description_
+        samples (pd.DataFrame): Dataframe where the index is sample ID and
+            there are columns for date, longitude, and latitude
 
     Returns:
-        pd.DataFrame: _description_
+        pd.DataFrame: Dataframe where the index is sample ID and there are
+            columns for x, y, and date. There is one row for each combination
+            of sample ID and HRRR grid index (x, y)
     """
     # Determine the number of processes to use when parallelizing
     NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
@@ -135,7 +161,21 @@ def query_grid_mapping(samples: pd.DataFrame, cache_dir) -> pd.DataFrame:
     return sample_grid_map[["x", "y", "date"]]
 
 
-def load_hrrr_grid(samples: pd.DataFrame, cache_dir):
+def load_hrrr_grid(samples: pd.DataFrame, cache_dir: AnyPath) -> pd.DataFrame:
+    """Load a mapping from sample ID to HRRR data grid indices. If a mapping
+    already exists at cache_dir / hrrr_sample_grid_mapping.csv, any new mappings
+    will be adding to that file and saved out.
+
+    Args:
+        samples (pd.DataFrame): Dataframe where the index is sample ID and
+            there are columns for date, longitude, and latitude
+        cache_dir (AnyPath): Data cache directory
+
+    Returns:
+        pd.DataFrame: Dataframe where the index is sample ID and there are
+            columns for x, y, and date. There is one row for each combination
+            of sample ID and HRRR grid index (x, y).
+    """
     ## Get mapping of sample locations to grid indices in HRRR
     grid_save_path = cache_dir / "hrrr_sample_grid_mapping.csv"
 
@@ -167,7 +207,17 @@ def load_hrrr_grid(samples: pd.DataFrame, cache_dir):
     return sample_grid_map[sample_grid_map.index.isin(samples.index)]
 
 
-def get_timestamps_per_date(dates):
+def get_timestamps_per_date(dates: List) -> pd.DataFrame:
+    """Generate a dataframe listing all of the timestamps to query for each
+    of a given set of dates. For each date, there will be one timestamp per
+    hour from 12pm on the previous date until 12pm on the given date.
+
+    Args:
+        dates (List): List of dates
+
+    Returns:
+        pd.DataFrame: Dataframe with columns for sample_date and query_timestamp
+    """
     query_timestamps = []
     sample_dates = []
     for date in dates:
@@ -187,13 +237,25 @@ def get_timestamps_per_date(dates):
 
 
 def download_climate_for_date(
-    date,
+    date: pd.Timestamp,
     timestamps_per_date: pd.DataFrame,
     sample_grid_map: pd.DataFrame,
-    cache_dir,
+    cache_dir: AnyPath,
     var_name: str,
     level: str,
 ):
+    """Query HRRR for all of the data needed on a specific date. Data will
+    be saved out by sample ID.
+
+    Args:
+        date (pd.Timestamp): Date
+        timestamps_per_date (pd.DataFrame): Dataframe that lists of timestamps
+            to query for each date
+        sample_grid_map (pd.DataFrame): Mapping from sample ID to HRRR data grid indices
+        cache_dir (AnyPath): Cache directory
+        var_name (str): Name of the variable in the HRRR data to pull
+        level (str): Elevation level in the HRRR data to pull
+    """
     # Query for climate data
     try:
         query_timestamps = timestamps_per_date[
@@ -225,17 +287,16 @@ def download_climate_for_date(
 def download_climate_data(
     samples: pd.DataFrame,
     config: FeaturesConfig,
-    cache_dir,
-    sample_grid_map: Optional[pd.DataFrame] = None,
+    cache_dir: AnyPath,
 ):
-    """Query NOAA's HRRR database for a list of samples, and save out
-    the raw results.
+    """Download all HRRR climate data needed to generate features
+    for the given samples
 
     Args:
         samples (pd.Dataframe): Dataframe with columns for date,
             longitude, latitude, and sample_id
-        config (FeaturesConfig): Configuration, including
-            directory to save raw source data
+        config (FeaturesConfig): Features configuration
+        cache_dir (AnyPath): Cache directory to save raw data
     """
     # Determine the number of processes to use when parallelizing
     NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
@@ -267,12 +328,7 @@ def download_climate_data(
     )
 
     ## Get mapping of sample locations to grid indices in HRRR
-    if sample_grid_map is None:
-        sample_grid_map = load_hrrr_grid(samples, cache_dir)
-    else:
-        logger.info(
-            f"Using provided sample grid map with {sample_grid_map.index.nunique():,} samples"
-        )
+    sample_grid_map = load_hrrr_grid(samples, cache_dir)
 
     ## Iterate over required climate data sources
     for climate_var in config.climate_variables:
