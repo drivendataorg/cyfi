@@ -35,5 +35,16 @@ def make_train_test_competition_split(split_dir="competition"):
         test.to_csv(f, index=True)
 
 
+@app.command()
+def make_train_test_competition_post_2016_split(split_dir="competition_post_2016"):
+    for split in ["train", "test"]:
+        with (SPLITS_PARENT_DIR / "competition" / f"{split}.csv").open("r") as f:
+            df = pd.read_csv(f)
+            df = df[pd.to_datetime(df.date).dt.year >= 2016]
+
+            with (SPLITS_PARENT_DIR / split_dir / f"{split}.csv").open("w") as f:
+                df.to_csv(f, index=False)
+
+
 if __name__ == "__main__":
     app()
