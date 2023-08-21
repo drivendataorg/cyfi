@@ -64,7 +64,7 @@ def handle_missing_train(features: pd.DataFrame, config: FeaturesConfig) -> pd.D
     # Drop samples with no satellite imagery features
     missing_satellite_mask = features[config.satellite_image_features].isna().all(axis=1)
     logger.warning(
-        f"Dropping {missing_satellite_mask.sum():,} samples ({missing_satellite_mask.mean():.0%}) with no satellite imagery from training"
+        f"Dropping {missing_satellite_mask.sum():,} samples with no satellite imagery from training"
     )
 
     features = features[~missing_satellite_mask].copy()
