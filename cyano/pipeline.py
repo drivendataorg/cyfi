@@ -176,20 +176,18 @@ class CyanoModelPipeline:
                 f"Grouping {preds.shape[0]:,} predictions by {preds.index.nunique():,} unique sample IDs"
             )
             preds = preds.groupby(preds.index).mean()
-        self.preds = preds
+        self.preds = preds.round()
 
         self.output_df = self.predict_samples.join(self.preds)
-        # For any missing samples, predict the average predicted severity
-        logger.info(
-            f"Predicting the mean for {self.output_df.severity.isna().sum():,} samples with no imagery"
-        )
-        self.output_df["severity"] = (
-            self.output_df.severity.fillna(preds.mean()).round().astype(int)
-        )
 
         # If predicting exact density, calculate severity bin
         if self.target_col == "density_cells_per_ml":
             self.output_df = convert_density_to_severity(self.output_df)
+
+        missing_mask = self.output_df.severity.isna()
+        logger.warning(
+            f"{missing_mask.sum():,} samples do not have predictions ({missing_mask.mean():.0%})"
+        )
 
     def _write_predictions(self, preds_path):
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)
