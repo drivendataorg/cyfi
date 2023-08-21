@@ -251,6 +251,8 @@ def generate_climate_features(
                 climate_features[sample_id][f"{climate_var}_max"] = sample_data[var_col_name].max()
 
     climate_features = pd.DataFrame(climate_features).T
+    missing_mask = climate_features.isna().any(axis=1)
+    logger.info(f"{missing_mask.sum():,} samples are missing climate features")
 
     return climate_features
 

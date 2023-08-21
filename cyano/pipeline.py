@@ -17,6 +17,8 @@ from cyano.data.satellite_data import identify_satellite_data, download_satellit
 from cyano.data.utils import (
     add_unique_identifier,
     convert_density_to_severity,
+    handle_missing_train,
+    handle_missing_predict,
 )
 
 
@@ -93,6 +95,14 @@ class CyanoModelPipeline:
 
         ## Generate features
         features = generate_features(samples, satellite_meta, self.features_config, self.cache_dir)
+
+        # Handle missing
+        if train_split:
+            features = handle_missing_train(features, self.features_config)
+        else:
+            features = handle_missing_predict(features)
+
+        # Save
         save_features_to = self.cache_dir / f"features_{split}.csv"
         features.to_csv(save_features_to, index=True)
 
