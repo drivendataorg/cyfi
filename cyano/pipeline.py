@@ -99,10 +99,6 @@ class CyanoModelPipeline:
         features = generate_features(samples, satellite_meta, self.features_config, self.cache_dir)
         save_features_to = self.cache_dir / f"features_{split}.csv"
         features.to_csv(save_features_to, index=True)
-        pct_with_features = features.index.nunique() / samples.shape[0]
-        logger.success(
-            f"{features.shape[1]:,} features for {features.index.nunique():,} samples ({pct_with_features:.0%}) saved to {save_features_to}"
-        )
 
         return features
 

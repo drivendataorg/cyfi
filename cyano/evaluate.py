@@ -101,15 +101,14 @@ class EvaluatePreds:
         y_true_df = add_unique_identifier(y_true_df)
 
         try:
-            y_true_df = y_true_df.loc[self.y_pred.index]
+            self.y_true_df = y_true_df.loc[self.y_pred.index]
         except KeyError:
             raise IndexError(
                 "Sample IDs for points (lat, lon, date) in evaluation_csv do not align with sample IDs in prediction_csv."
             )
 
-        self.y_true_df = y_true_df.loc
-        self.y_true = y_true_df["severity"].rename("y_true")
-        self.metadata = y_true_df.drop(columns=["severity"])
+        self.y_true = self.y_true_df["severity"].rename("y_true")
+        self.metadata = self.y_true_df.drop(columns=["severity"])
 
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(exist_ok=True, parents=True)
