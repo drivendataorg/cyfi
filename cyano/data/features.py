@@ -327,8 +327,9 @@ def generate_features(
     Returns:
         pd.DataFrame: Dataframe where the index is sample_id and there is one
             column for each feature. Each row is a unique combination of
-            sample and pystac item. Only samples that have at least one valid
-            non-metadata feature are included in the features dataframe
+            sample and pystac item. Samples with *any* features present from a
+            source other than the metadata are included. Missing values are left
+            as np.nan
     """
     # Generate satellite features
     # May be >1 row per sample, only includes samples with imagery

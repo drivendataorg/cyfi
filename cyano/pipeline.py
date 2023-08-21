@@ -17,8 +17,6 @@ from cyano.data.satellite_data import identify_satellite_data, download_satellit
 from cyano.data.utils import (
     add_unique_identifier,
     convert_density_to_severity,
-    handle_missing_train,
-    handle_missing_predict,
 )
 
 
