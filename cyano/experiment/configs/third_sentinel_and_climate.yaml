@@ -117,5 +117,5 @@ model_training_config:
     seed: 40
     verbosity: -1
 predict_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/test.csv
-save_dir: experiments/results/third_sentinel_only_multi_image
+save_dir: experiments/results/third_sentinel_and_climate
 train_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/train.csv
