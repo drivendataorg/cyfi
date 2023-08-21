@@ -207,49 +207,19 @@ def load_hrrr_grid(samples: pd.DataFrame, cache_dir: AnyPath) -> pd.DataFrame:
     return sample_grid_map[sample_grid_map.index.isin(samples.index)]
 
 
-def get_timestamps_per_date(dates: List) -> pd.DataFrame:
-    """Generate a dataframe listing all of the timestamps to query for each
-    of a given set of dates. For each date, there will be one timestamp per
-    hour from 12pm on the previous date until 12pm on the given date.
-
-    Args:
-        dates (List): List of dates
-
-    Returns:
-        pd.DataFrame: Dataframe with columns for sample_date and query_timestamp
-    """
-    query_timestamps = []
-    sample_dates = []
-    for date in dates:
-        timestamps = [
-            d for d in pd.date_range(start=date, periods=12, freq="-1H", inclusive="both")
-        ] + [d for d in pd.date_range(start=date, periods=12, freq="1H", inclusive="both")]
-        timestamps = list(set(timestamps))
-        query_timestamps += timestamps
-        sample_dates += [date for i in timestamps]
-
-    return (
-        pd.DataFrame({"query_timestamp": query_timestamps, "sample_date": sample_dates})
-        .drop_duplicates()
-        .sort_values(by=["sample_date", "query_timestamp"])
-        .reset_index(drop=True)
-    )
-
-
 def download_climate_for_date(
     date: pd.Timestamp,
-    timestamps_per_date: pd.DataFrame,
     sample_grid_map: pd.DataFrame,
     cache_dir: AnyPath,
     var_name: str,
     level: str,
 ):
     """Query HRRR for all of the data needed on a specific date. Data will
-    be saved out by sample ID.
+    be saved out by sample ID. For each date, data will be pulled for every
+    hour between 12pm on the previous date and 12pm on the given date.
 
     Args:
         date (pd.Timestamp): Date
-        timestamps_per_date (pd.DataFrame): Dataframe that lists of timestamps
             to query for each date
         sample_grid_map (pd.DataFrame): Mapping from sample ID to HRRR data grid indices
         cache_dir (AnyPath): Cache directory
@@ -258,9 +228,12 @@ def download_climate_for_date(
     """
     # Query for climate data
     try:
-        query_timestamps = timestamps_per_date[
-            timestamps_per_date.sample_date.dt.date == date.date()
-        ].query_timestamp.tolist()
+        query_timestamps = list(
+            set(
+                [d for d in pd.date_range(start=date, periods=12, freq="-1H", inclusive="both")]
+                + [d for d in pd.date_range(start=date, periods=12, freq="1H", inclusive="both")]
+            )
+        )
         FH = FastHerbie(query_timestamps, model="hrrr", fxx=[0], verbose=False)
         xarray_data = FH.xarray(f"{var_name}:{level}", remove_grib=False).drop_vars(
             ["step", "time", "longitude", "latitude"]
@@ -338,9 +311,9 @@ def download_climate_data(
         ).parent.mkdir(exist_ok=True, parents=True)
 
         # Check which samples are missing files for this climate source
-        missing_files_mask = samples[f"exists_{climate_var}_{config.climate_level}"] != True
-        missing_dates = samples[missing_files_mask].date.unique()
-        timestamps_per_date = get_timestamps_per_date(missing_dates)
+        missing_dates = samples[
+            ~samples[f"exists_{climate_var}_{config.climate_level}"]
+        ].date.unique()
         logger.info(
             f"Downloading {climate_var} at {config.climate_level} for {len(missing_dates):,} date(s)"
         )
@@ -348,7 +321,6 @@ def download_climate_data(
         _ = process_map(
             functools.partial(
                 download_climate_for_date,
-                timestamps_per_date=timestamps_per_date,
                 sample_grid_map=sample_grid_map,
                 cache_dir=cache_dir,
                 var_name=climate_var,
