@@ -22,6 +22,7 @@ class ExperimentConfig(BaseModel):
     save_dir: Path = Path.cwd()
     last_commit_hash: str = None
     target_col: str = "log_density"
+    skip_imagery_download: bool = False
     debug: bool = False
     """Configuration containing parameters to be used for an end-to-end experiment
 
@@ -67,6 +68,7 @@ class ExperimentConfig(BaseModel):
             model_training_config=self.model_training_config,
             cache_dir=self.cache_dir,
             target_col=self.target_col,
+            skip_imagery_download=self.skip_imagery_download,
         )
         pipeline.run_training(
             train_csv=self.train_csv,
