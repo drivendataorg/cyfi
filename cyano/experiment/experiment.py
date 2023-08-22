@@ -22,6 +22,7 @@ class ExperimentConfig(BaseModel):
     save_dir: Path = Path.cwd()
     last_commit_hash: str = None
     target_col: str = "severity"
+    skip_imagery_download: bool = False
     debug: bool = False
     """Configuration containing parameters to be used for an end-to-end experiment
 

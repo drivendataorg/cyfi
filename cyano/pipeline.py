@@ -27,6 +27,7 @@ class CyanoModelPipeline:
         cache_dir: Optional[Path] = None,
         model: Optional[lgb.Booster] = None,
         target_col: Optional[str] = "severity",
+        skip_imagery_download: bool = False,
     ):
         """Instantiate CyanoModelPipeline
 
@@ -48,6 +49,7 @@ class CyanoModelPipeline:
         self.samples = None
         self.labels = None
         self.target_col = target_col
+        self.skip_imagery_download = skip_imagery_download
 
         # make cache dir
         self.cache_dir.mkdir(exist_ok=True, parents=True)
@@ -67,7 +69,7 @@ class CyanoModelPipeline:
         self.train_samples = labels[["date", "latitude", "longitude"]]
         self.train_labels = labels[self.target_col]
 
-    def _prepare_features(self, samples, train_split=True):
+    def _prepare_features(self, samples, train_split: bool = True):
         if train_split:
             split = "train"
         else:
@@ -81,7 +83,10 @@ class CyanoModelPipeline:
         )
 
         ## Download satellite data
-        download_satellite_data(satellite_meta, samples, self.features_config, self.cache_dir)
+        if self.skip_imagery_download:
+            logger.warning("Not downloading any new satellite imagery")
+        else:
+            download_satellite_data(satellite_meta, samples, self.features_config, self.cache_dir)
 
         ## Download non-satellite data
         if self.features_config.climate_features:
