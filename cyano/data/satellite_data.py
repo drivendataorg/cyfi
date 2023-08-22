@@ -273,13 +273,10 @@ def select_items(
         items_meta.days_before_sample.between(0, config.pc_days_search_window)
     ].copy()
 
-    # Filter to low cloud percent
-    items_meta = items_meta[items_meta["eo:cloud_cover"] < 5].copy()
-
     # Sort and select
-    selected = items_meta.sort_values(by="days_before_sample", ascending=True).head(
-        config.n_sentinel_items
-    )
+    selected = items_meta.sort_values(
+        by=["eo:cloud_cover", "days_before_sample"], ascending=[True, True]
+    ).head(config.n_sentinel_items)
 
     return selected.item_id.tolist()
 
