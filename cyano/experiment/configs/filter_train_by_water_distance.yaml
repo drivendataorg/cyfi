@@ -106,6 +106,6 @@ model_training_config:
     num_leaves: 31
     seed: 40
     verbosity: -1
-predict_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition_train_near_water/test.csv
+predict_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/test.csv
 save_dir: experiments/results/filter_train_by_water_distance
-train_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition_train_near_water/train.csv
+train_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition_train_near_water_1000m/train.csv
