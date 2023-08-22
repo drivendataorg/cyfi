@@ -44,13 +44,14 @@ def predict(
     output_path: Path = typer.Option(
         default="preds.csv", help="Destination to save predictions csv"
     ),
+    cache_dir: Path = typer.Option(default=None, help="Cache directory for feature generation"),
 ):
     """Load an existing cyanobacteria prediction model and generate
     severity level predictions for a set of samples.
     """
     samples_path = AnyPath(samples_path)
 
-    pipeline = CyanoModelPipeline.from_disk(model_zip)
+    pipeline = CyanoModelPipeline.from_disk(model_zip, cache_dir=cache_dir)
     pipeline.run_prediction(samples_path, output_path)
 
 
