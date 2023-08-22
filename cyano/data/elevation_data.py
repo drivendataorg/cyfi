@@ -47,39 +47,45 @@ def download_sample_elevation(
     """
     save_path = path_to_elevation_data(sample_id, meters_window, cache_dir)
     if save_path.exists():
-        return
+        return None
 
-    search = catalog.search(
-        collections=["cop-dem-glo-30"],
-        intersects={"type": "Point", "coordinates": [longitude, latitude]},
-    )
-    items = list(search.items())
-    if len(items) == 0:
-        return
+    try:
+        search = catalog.search(
+            collections=["cop-dem-glo-30"],
+            intersects={"type": "Point", "coordinates": [longitude, latitude]},
+        )
+        items = list(search.items())
+        if len(items) == 0:
+            return None
 
-    signed_asset = planetary_computer.sign(items[0].assets["data"])
-    ele_array = rioxarray.open_rasterio(signed_asset.href)
+        signed_asset = planetary_computer.sign(items[0].assets["data"])
+        ele_array = rioxarray.open_rasterio(signed_asset.href)
 
-    bbox = get_bounding_box(latitude, longitude, meters_window=meters_window)
-    cropped_ele_array = ele_array.rio.clip_box(
-        minx=bbox[0], miny=bbox[1], maxx=bbox[2], maxy=bbox[3]
-    )
-    max_elev = cropped_ele_array.values.max()
-    min_elev = cropped_ele_array.values.min()
+        bbox = get_bounding_box(latitude, longitude, meters_window=meters_window)
+        cropped_ele_array = ele_array.rio.clip_box(
+            minx=bbox[0], miny=bbox[1], maxx=bbox[2], maxy=bbox[3]
+        )
+        max_elev = cropped_ele_array.values.max()
+        min_elev = cropped_ele_array.values.min()
 
-    sample_features = {
-        "elevation_at_sample": float(
-            ele_array.sel(x=longitude, y=latitude, method="nearest").values[0]
-        ),
-        "elevation_max": float(max_elev),
-        "elevation_min": float(min_elev),
-        "elevation_range": float(max_elev - min_elev),
-        "elevation_mean": float(cropped_ele_array.values.mean()),
-        "elevation_std": float(cropped_ele_array.values.std()),
-    }
+        sample_features = {
+            "elevation_at_sample": float(
+                ele_array.sel(x=longitude, y=latitude, method="nearest").values[0]
+            ),
+            "elevation_max": float(max_elev),
+            "elevation_min": float(min_elev),
+            "elevation_range": float(max_elev - min_elev),
+            "elevation_mean": float(cropped_ele_array.values.mean()),
+            "elevation_std": float(cropped_ele_array.values.std()),
+        }
 
-    with open(save_path, "w") as fp:
-        json.dump(sample_features, fp)
+        with open(save_path, "w") as fp:
+            json.dump(sample_features, fp)
+
+        return None
+
+    except Exception as e:
+        return f"{sample_id}: {type(e)} {e}"
 
 
 def download_elevation_data(samples: pd.DataFrame, config: FeaturesConfig, cache_dir: AnyPath):
@@ -95,15 +101,16 @@ def download_elevation_data(samples: pd.DataFrame, config: FeaturesConfig, cache
     # Determine the number of processes to use when parallelizing
     NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
 
-    logger.info(f"Querying elevation data for {samples.shape[0]:,} samples")
-
     # Create elevation directory
     (cache_dir / f"elevation_{config.elevation_feature_meter_window}").mkdir(
         exist_ok=True, parents=True
     )
 
     # Iterate over samples
-    _ = process_map(
+    logger.info(
+        f"Querying elevation data for {samples.shape[0]:,} samples with {NUM_PROCESSES} processes"
+    )
+    exceptions = process_map(
         functools.partial(
             download_sample_elevation,
             meters_window=config.elevation_feature_meter_window,
@@ -116,3 +123,10 @@ def download_elevation_data(samples: pd.DataFrame, config: FeaturesConfig, cache
         total=len(samples),
         max_workers=NUM_PROCESSES,
     )
+    exceptions = [e for e in exceptions if e]
+    if len(exceptions) > 0:
+        # Log number of exceptions to CLI
+        logger.warning(f"{len(exceptions)} exceptions raised during download")
+        # Log full lit of exceptions to .log file
+        exceptions = "\n".join(exceptions)
+        logger.debug(f"Exceptions:\n{exceptions}")
