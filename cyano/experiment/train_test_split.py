@@ -35,5 +35,32 @@ def make_train_test_competition_split(split_dir="competition"):
         test.to_csv(f, index=True)
 
 
+@app.command()
+def make_train_test_competition_water_distance_split(
+    split_dir: str = "competition_train_near_water", filter_distance_m: int = 1000
+):
+    """Write out train and test files using the competition split for use in experiments. Filter the train set to samples within filter_distance_m
+    meters of water based on Google Earth Engine.
+    """
+    # Update train set
+    with (SPLITS_PARENT_DIR / "competition/train.csv").open("r") as f:
+        train = pd.read_csv(f)
+        logger.info(f"Loaded {train.shape[0]:,} competition train samples")
+
+    train = train[train.distance_to_water_m < filter_distance_m]
+    logger.info(f"Filtered to {train.shape[0]:,} samples within {filter_distance_m:,} m of water")
+
+    with (SPLITS_PARENT_DIR / "competition/test.csv").open("r") as f:
+        test = pd.read_csv(f)
+        logger.info(f"Loaded {test.shape[0]:,} competition test samples")
+
+    logger.info(f"Writing out to {SPLITS_PARENT_DIR}/{split_dir}")
+    with (SPLITS_PARENT_DIR / f"{split_dir}/train.csv").open("w") as f:
+        train.to_csv(f, index=False)
+
+    with (SPLITS_PARENT_DIR / f"{split_dir}/test.csv").open("w") as f:
+        test.to_csv(f, index=False)
+
+
 if __name__ == "__main__":
     app()

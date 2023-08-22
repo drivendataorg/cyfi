@@ -15,7 +15,6 @@ from cyano.data.features import generate_features
 from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
 from cyano.data.utils import (
     add_unique_identifier,
-    water_distance_filter,
     convert_density_to_severity,
 )
 
@@ -53,17 +52,13 @@ class CyanoModelPipeline:
         # make cache dir
         self.cache_dir.mkdir(exist_ok=True, parents=True)
 
-    def _prep_train_data(self, data, filter_by_water_distance: Optional[int], debug: bool):
+    def _prep_train_data(self, data, debug: bool):
         """Load labels and save out samples with UIDs"""
         labels = pd.read_csv(data)
         labels = labels[["date", "latitude", "longitude", self.target_col]]
         labels = add_unique_identifier(labels)
         if debug:
             labels = labels.head(10)
-
-        # Filter by distance to water if specified
-        if filter_by_water_distance is not None:
-            labels = water_distance_filter(labels, filter_by_water_distance)
 
         # Save out samples with uids
         labels.to_csv(self.cache_dir / "train_samples_uid_mapping.csv", index=True)
@@ -126,10 +121,8 @@ class CyanoModelPipeline:
             z.writestr("config.yaml", yaml.dump(self.features_config.model_dump()))
             z.writestr("lgb_model.txt", self.model.model_to_string())
 
-    def run_training(
-        self, train_csv, save_path, filter_by_water_distance: bool = False, debug: bool = False
-    ):
-        self._prep_train_data(train_csv, filter_by_water_distance, debug)
+    def run_training(self, train_csv, save_path, debug: bool = False):
+        self._prep_train_data(train_csv, debug)
         self._prepare_train_features()
         self._train_model()
         self._to_disk(save_path)
