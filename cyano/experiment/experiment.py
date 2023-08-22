@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 import yaml
 
 from cloudpathlib import AnyPath
@@ -21,7 +21,6 @@ class ExperimentConfig(BaseModel):
     cache_dir: Path = None
     save_dir: Path = Path.cwd()
     last_commit_hash: str = None
-    filter_train_by_water_distance: Optional[int] = None
     target_col: str = "severity"
     debug: bool = False
     """Configuration containing parameters to be used for an end-to-end experiment
@@ -40,9 +39,6 @@ class ExperimentConfig(BaseModel):
             Path.cwd().
         last_commit_hash (str, optional): Hash of the most recent commit to track codes
             used to run the experiment. Defaults to None.
-        filter_train_by_water_distance (Optiona[int], optional): Filter training data to
-            samples within this distance of water in meters. If none, no filtering is done.
-            Defaults to None.
         target_col (str, optional): Target column to predict. Must be either "severity" or
             "density_cells_per_ml". Defaults to "severity".
         debug (bool, optional): Run in debug mode. Defaults to False.
@@ -69,7 +65,6 @@ class ExperimentConfig(BaseModel):
         pipeline.run_training(
             train_csv=self.train_csv,
             save_path=self.save_dir / "model.zip",
-            filter_by_water_distance=self.filter_train_by_water_distance,
             debug=self.debug,
         )
 

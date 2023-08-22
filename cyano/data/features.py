@@ -275,40 +275,51 @@ def generate_features(
     Returns:
         pd.DataFrame: Dataframe where the index is sample_id and there is one
             column for each feature. Each row is a unique combination of
-            sample and pystac item. Only samples that have valid satellite
-            imagery are included in the features
+            sample and pystac item. Only samples that have at least one valid
+            non-metadata feature are included in the features dataframe
     """
     # Generate satellite features
     # May be >1 row per sample, only includes samples with imagery
     satellite_features = generate_satellite_features(satellite_meta, config, cache_dir)
     logger.info(
-        f"Generated {satellite_features.shape[1]} satellite features. {satellite_features.index.nunique():,} samples, {satellite_features.shape[0]:,} item / sample combinations."
+        f"Generated {satellite_features.shape[1]} satellite features for {satellite_features.index.nunique():,} samples, {satellite_features.shape[0]:,} item/sample combinations."
     )
-    feature_sample_ids = satellite_features.index
 
     # Generate non-satellite features. Each has only one row per sample
-    # Only include samples for which we have satellite features
-    unique_feature_ids = satellite_features.index.unique
-    non_satellite_features = []
+    sample_ids = samples.index
+    features = satellite_features.copy()
     if config.climate_features:
-        climate_features = generate_climate_features(unique_feature_ids, config, cache_dir)
-        non_satellite_features.append(climate_features.loc[feature_sample_ids])
-        logger.info(f"Generated {climate_features.shape[0]} climate features")
+        climate_features = generate_climate_features(sample_ids, config, cache_dir)
+        logger.info(
+            f"Generated {climate_features.shape[1]} climate features for {climate_features.shape[0]:,} samples"
+        )
+        features = features.merge(
+            climate_features, left_index=True, right_index=True, how="outer", validate="m:1"
+        )
 
     if config.elevation_features:
-        elevation_features = generate_elevation_features(unique_feature_ids, config, cache_dir)
-        non_satellite_features.append(elevation_features.loc[feature_sample_ids])
-        logger.info(f"Generated {elevation_features.shape[0]} elevation features")
+        elevation_features = generate_elevation_features(sample_ids, config, cache_dir)
+        logger.info(
+            f"Generated {elevation_features.shape[1]} elevation features for {elevation_features.shape[0]:,} samples"
+        )
+        features = features.merge(
+            elevation_features, left_index=True, right_index=True, how="outer", validate="m:1"
+        )
 
     if config.metadata_features:
         metadata_features = generate_metadata_features(samples, config)
-        non_satellite_features.append(metadata_features.loc[feature_sample_ids])
+        logger.info(
+            f"Generated {metadata_features.shape[1]} metadata features for {metadata_features.shape[0]:,} samples"
+        )
+        # Don't include samples for which we only have metadata
+        features = features.merge(
+            metadata_features, left_index=True, right_index=True, how="left", validate="m:1"
+        )
 
-        logger.info(f"Generated {metadata_features.shape[0]} metadata features")
-    non_satellite_features = pd.concat(non_satellite_features, axis=1)
-
-    # Merge satellite and non-satellite features
-    features = pd.concat([satellite_features, non_satellite_features], axis=1)
+    pct_with_features = features.index.nunique() / samples.shape[0]
+    logger.success(
+        f"Generated {features.shape[1]:,} features for {features.index.nunique():,} samples ({pct_with_features:.0%})"
+    )
 
     all_feature_cols = (
         config.satellite_image_features

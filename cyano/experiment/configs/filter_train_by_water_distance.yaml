@@ -1,6 +1,5 @@
 cache_dir: experiments/cache
 debug: false
-filter_train_by_water_distance: 1000
 features_config:
   climate_features: []
   elevation_features: []
@@ -109,4 +108,4 @@ model_training_config:
     verbosity: -1
 predict_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/test.csv
 save_dir: experiments/results/filter_train_by_water_distance
-train_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/train.csv
+train_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition_train_near_water_1000m/train.csv
