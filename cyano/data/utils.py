@@ -3,12 +3,11 @@ import hashlib
 import numpy as np
 import pandas as pd
 
-from cyano.config import FeaturesConfig
 from cyano.settings import SEVERITY_LEFT_EDGES
 
 
 def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
-    """Given a dataframe with the columns []"latitude", "longitude", "date"],
+    """Given a dataframe with the columns ["latitude", "longitude", "date"],
     create a unique identifier for each row and set as the index
 
     Args:
