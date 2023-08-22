@@ -50,16 +50,10 @@ def make_train_test_competition_water_distance_split(
     train = train[train.distance_to_water_m < filter_distance_m]
     logger.info(f"Filtered to {train.shape[0]:,} samples within {filter_distance_m:,} m of water")
 
-    with (SPLITS_PARENT_DIR / "competition/test.csv").open("r") as f:
-        test = pd.read_csv(f)
-        logger.info(f"Loaded {test.shape[0]:,} competition test samples")
-
-    logger.info(f"Writing out to {SPLITS_PARENT_DIR}/{split_dir}")
-    with (SPLITS_PARENT_DIR / f"{split_dir}/train.csv").open("w") as f:
+    save_to = SPLITS_PARENT_DIR / f"{split_dir}_{filter_distance_m}m/train.csv"
+    logger.info(f"Writing out train samples to {save_to}")
+    with (save_to).open("w") as f:
         train.to_csv(f, index=False)
-
-    with (SPLITS_PARENT_DIR / f"{split_dir}/test.csv").open("w") as f:
-        test.to_csv(f, index=False)
 
 
 if __name__ == "__main__":

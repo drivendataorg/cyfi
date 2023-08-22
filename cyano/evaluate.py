@@ -45,11 +45,11 @@ def generate_and_plot_crosstab(y_true, y_pred, normalize=False):
     return ax
 
 
-def generate_actual_density_boxplot(y_true_df, y_pred):
+def generate_actual_density_boxplot(y_true_density, y_pred):
     df = pd.concat(
         [
-            y_true_df.density_cells_per_ml,
-            y_pred.loc[y_true_df.index],
+            y_true_density,
+            y_pred.loc[y_true_density.index],
         ],
         axis=1,
     )
@@ -101,14 +101,14 @@ class EvaluatePreds:
         y_true_df = add_unique_identifier(y_true_df)
 
         try:
-            self.y_true_df = y_true_df.loc[self.y_pred.index]
+            y_true_df = y_true_df.loc[self.y_pred.index]
         except KeyError:
             raise IndexError(
-                "Sample IDs for points (lat, lon, date) in evaluation_csv do not align with sample IDs in prediction_csv."
+                "Sample IDs for points (lat, lon, date) in y_pred_csv do not align with sample IDs in y_true_csv."
             )
 
-        self.y_true = self.y_true_df["severity"].rename("y_true")
-        self.metadata = self.y_true_df.drop(columns=["severity"])
+        self.y_true = y_true_df["severity"].rename("y_true")
+        self.metadata = y_true_df.drop(columns=["severity"])
 
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(exist_ok=True, parents=True)
@@ -167,7 +167,9 @@ class EvaluatePreds:
         crosstab_plot = generate_and_plot_crosstab(self.y_true, self.y_pred)
         crosstab_plot.figure.savefig(self.save_dir / "crosstab.png")
 
-        actual_density_boxplot = generate_actual_density_boxplot(self.y_true_df, self.y_pred)
+        actual_density_boxplot = generate_actual_density_boxplot(
+            self.metadata.density_cells_per_ml, self.y_pred
+        )
         actual_density_boxplot.figure.savefig(self.save_dir / "actual_density_boxplot.png")
 
         if "regional_rmse" in results:
