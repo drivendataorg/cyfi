@@ -1,6 +1,8 @@
+from typing import List
 import hashlib
 
 import numpy as np
+import geopy.distance as distance
 import pandas as pd
 
 from cyano.settings import SEVERITY_LEFT_EDGES
@@ -28,6 +30,25 @@ def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
 
     df["sample_id"] = uids
     return df.set_index("sample_id")
+
+
+def get_bounding_box(latitude: float, longitude: float, meters_window: int) -> List[float]:
+    """
+    Given a latitude, longitude, and buffer in meters, returns a bounding
+    box around the point with the buffer on the left, right, top, and bottom.
+
+    Returns a list of [minx, miny, maxx, maxy]
+    """
+    distance_search = distance.distance(meters=meters_window)
+
+    # calculate the lat/long bounds based on ground distance
+    # bearings are cardinal directions to move (south, west, north, and east)
+    min_lat = distance_search.destination((latitude, longitude), bearing=180)[0]
+    min_long = distance_search.destination((latitude, longitude), bearing=270)[1]
+    max_lat = distance_search.destination((latitude, longitude), bearing=0)[0]
+    max_long = distance_search.destination((latitude, longitude), bearing=90)[1]
+
+    return [min_long, min_lat, max_long, max_lat]
 
 
 def convert_density_to_severity(density_series: pd.Series) -> pd.Series:

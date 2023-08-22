@@ -34,6 +34,7 @@ class FeaturesConfig(BaseModel):
     ]
     satellite_meta_features: Optional[List] = []
     climate_features: Optional[List] = []
+    elevation_feature_meter_window: Optional[int] = 1000
     elevation_features: Optional[List] = []
     metadata_features: Optional[List] = ["rounded_longitude"]
     scl_filter: Optional[bool] = False

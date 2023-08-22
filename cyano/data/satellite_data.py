@@ -7,7 +7,6 @@ import shutil
 from typing import Dict, List, Tuple, Union
 
 from cloudpathlib import AnyPath
-import geopy.distance as distance
 from loguru import logger
 import numpy as np
 import pandas as pd
@@ -19,30 +18,12 @@ from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from cyano.config import FeaturesConfig
+from cyano.data.utils import get_bounding_box
 
 # Establish a connection to the STAC API
 catalog = Client.open(
     "https://planetarycomputer.microsoft.com/api/stac/v1", modifier=pc.sign_inplace
 )
-
-
-def get_bounding_box(latitude: float, longitude: float, meters_window: int) -> List[float]:
-    """
-    Given a latitude, longitude, and buffer in meters, returns a bounding
-    box around the point with the buffer on the left, right, top, and bottom.
-
-    Returns a list of [minx, miny, maxx, maxy]
-    """
-    distance_search = distance.distance(meters=meters_window)
-
-    # calculate the lat/long bounds based on ground distance
-    # bearings are cardinal directions to move (south, west, north, and east)
-    min_lat = distance_search.destination((latitude, longitude), bearing=180)[0]
-    min_long = distance_search.destination((latitude, longitude), bearing=270)[1]
-    max_lat = distance_search.destination((latitude, longitude), bearing=0)[0]
-    max_long = distance_search.destination((latitude, longitude), bearing=90)[1]
-
-    return [min_long, min_lat, max_long, max_lat]
 
 
 def get_date_range(date: str, days_window: int) -> str:

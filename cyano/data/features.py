@@ -2,6 +2,7 @@
 import functools
 import os
 import tarfile
+import json
 from typing import List, Union
 
 import appdirs
@@ -10,6 +11,7 @@ import cv2
 from loguru import logger
 import numpy as np
 import pandas as pd
+from pandas_path import path  # noqa
 from pathlib import Path
 from tqdm.contrib.concurrent import process_map
 import xarray as xr
@@ -233,7 +235,7 @@ def generate_climate_features(
 
 
 def generate_elevation_features(
-    sample_ids: Union[List[str], pd.Index], config: FeaturesConfig
+    sample_ids: Union[List[str], pd.Index], config: FeaturesConfig, cache_dir: AnyPath
 ) -> pd.DataFrame:
     """Generate features from elevation data
 
@@ -247,12 +249,19 @@ def generate_elevation_features(
             one columns for each elevation feature and one row
             for each sample
     """
-    # Load files
-    # - filter to those containing '_elevation' in the name or other pattern
-    # - identify data for each sample based on uid
+    elevation_dir = cache_dir / f"elevation_{config.elevation_feature_meter_window}"
+    elevation_paths = pd.Series([elevation_dir / f"{id}.json" for id in sample_ids])
+    exists_mask = elevation_paths.path.exists()
+    elevation_paths = elevation_paths[exists_mask]
 
-    # Generate features for each sample
-    pass
+    elevation_features = {path.stem: json.load(path.open("r")) for path in elevation_paths}
+    elevation_features = pd.DataFrame(elevation_features).T
+    if elevation_features.shape[0] != len(sample_ids):
+        logger.warning(
+            f"Generated elevation features for {exists_mask.mean():.0%} of sample ({exists_mask.sum():,} of {len(sample_ids):,})"
+        )
+
+    return elevation_features[config.elevation_features]
 
 
 def land_cover_for_sample(latitude: float, longitude: float, land_cover_data: xr.Dataset) -> int:
