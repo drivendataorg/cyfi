@@ -1,4 +1,6 @@
+import functools
 import json
+import os
 
 from cloudpathlib import AnyPath
 from loguru import logger
@@ -6,7 +8,7 @@ import pandas as pd
 import planetary_computer
 import pystac_client
 import rioxarray
-from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
 
 from cyano.config import FeaturesConfig
 from cyano.data.utils import get_bounding_box
@@ -21,15 +23,18 @@ catalog = pystac_client.Client.open(
 def path_to_elevation_data(
     sample_id: str, elevation_feature_meter_window: int, cache_dir: AnyPath
 ) -> AnyPath:
+    """Get the path to an expected file of elevation data based on the sample ID,
+    feature buffer size in meters, and cache directory
+    """
     return AnyPath(f"{cache_dir}/elevation_{elevation_feature_meter_window}/{sample_id}.json")
 
 
 def download_sample_elevation(
     sample_id: str, longitude: float, latitude: float, meters_window: int, cache_dir: AnyPath
 ):
-    """Query one sample's elevation data based on its latitude and
-    longitude, and download the result. Save all possible stats that we may
-    want to use during feature generation
+    """Query one sample's elevation data based on its latitude and longitude,
+    and download the result. Save all possible stats that we may want to use
+    during feature generation
 
     Args:
         sample_id (str): ID of the sample for which the item will be
@@ -87,14 +92,27 @@ def download_elevation_data(samples: pd.DataFrame, config: FeaturesConfig, cache
         config (FeaturesConfig): Configuration, including
             directory to save raw source data
     """
+    # Determine the number of processes to use when parallelizing
+    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
+
     logger.info(f"Querying elevation data for {samples.shape[0]:,} samples")
 
-    # Iterate over samples (parallelize later)
-    for sample in tqdm(samples.itertuples()):
-        download_sample_elevation(
-            sample.Index,
-            sample.latitude,
-            sample.longitude,
+    # Create elevation directory
+    (cache_dir / f"elevation_{config.elevation_feature_meter_window}").mkdir(
+        exist_ok=True, parents=True
+    )
+
+    # Iterate over samples
+    _ = process_map(
+        functools.partial(
+            download_sample_elevation,
             meters_window=config.elevation_feature_meter_window,
             cache_dir=cache_dir,
-        )
+        ),
+        samples.index,
+        samples.latitude,
+        samples.longitude,
+        chunksize=1,
+        total=len(samples),
+        max_workers=NUM_PROCESSES,
+    )

@@ -254,11 +254,11 @@ def generate_elevation_features(
     exists_mask = elevation_paths.path.exists()
     elevation_paths = elevation_paths[exists_mask]
 
-    elevation_features = {path.stem: json.load(path.open("r")) for path in elevation_paths}
+    elevation_features = {pth.stem: json.load(pth.open("r")) for pth in elevation_paths}
     elevation_features = pd.DataFrame(elevation_features).T
     if elevation_features.shape[0] != len(sample_ids):
         logger.warning(
-            f"Generated elevation features for {exists_mask.mean():.0%} of sample ({exists_mask.sum():,} of {len(sample_ids):,})"
+            f"Generated elevation features for {exists_mask.mean():.0%} of samples ({exists_mask.sum():,} of {len(sample_ids):,})"
         )
 
     return elevation_features[config.elevation_features]
