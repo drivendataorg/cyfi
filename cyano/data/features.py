@@ -1,12 +1,15 @@
 ## Code to generate features from raw downloaded source data
+import functools
+import os
 from typing import List, Union
 
+from cloudpathlib import AnyPath
 import cv2
 from loguru import logger
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
 
 from cyano.config import FeaturesConfig
 
@@ -92,6 +95,54 @@ SATELLITE_FEATURE_CALCULATORS = {
 }
 
 
+def generate_features_for_sample_item(
+    sample_id: str, item_id: str, config: FeaturesConfig, cache_dir: AnyPath
+):
+    """Generate the satellite features for specific combination of
+    sample and pystac item ID
+    """
+    sample_item_dir = (
+        Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}/{sample_id}/{item_id}"
+    )
+
+    # Skip combos we were not able to download
+    if not sample_item_dir.exists():
+        return None
+    # Filter by water pixels from SCL band
+    if config.scl_filter:
+        scl_band_path = sample_item_dir / "SCL.npy"
+        if not scl_band_path.exists():
+            return None
+        scl_array = np.load(scl_band_path)
+        # Skip if there is not enough water
+        if (scl_array == 6).mean() < 0.01:
+            return None
+
+    # Load band arrays into a dictionary with band names for keys
+    band_arrays = {}
+    # If we want to mask image data with water boundaries in some way, add here
+    for band in config.use_sentinel_bands:
+        if not (sample_item_dir / f"{band}.npy").exists():
+            raise FileNotFoundError(
+                f"Band {band} is missing from pystac item directory {sample_item_dir}"
+            )
+        # Rescale SCL band based on image size
+        band_arr = np.load(sample_item_dir / f"{band}.npy")
+        if config.scl_filter and (band != "SCL"):
+            scaled_scl = cv2.resize(scl_array[0], (band_arr.shape[2], band_arr.shape[1]))
+            # Filter array to water area
+            band_arrays[band] = band_arr[0][scaled_scl == 6]
+        else:
+            band_arrays[band] = band_arr
+
+    # Iterate over features to generate
+    sample_item_features = {"sample_id": sample_id, "item_id": item_id}
+    for feature in config.satellite_image_features:
+        sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
+
+    return sample_item_features
+
+
 def generate_satellite_features(
     satellite_meta: pd.DataFrame,
     config: FeaturesConfig,
@@ -114,58 +165,28 @@ def generate_satellite_features(
             satellite imagery. Each row is a unique combination of sample ID and
             item ID
     """
-    logger.info(
-        f"Generating satellite features for {len(satellite_meta):,} sample/item combos, {satellite_meta.sample_id.nunique():,} samples"
-    )
-    satellite_features = []
+    # Determine the number of processes to use when parallelizing
+    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
 
     # Calculate satellite metadata features
     if "month" in config.satellite_meta_features:
         satellite_meta["month"] = pd.to_datetime(satellite_meta.datetime).dt.month
 
+    logger.info(
+        f"Generating satellite features for {len(satellite_meta):,} sample/item combos, {satellite_meta.sample_id.nunique():,} samples with {NUM_PROCESSES} processes"
+    )
+
     # Iterate over selected sample / item combinations
-    for row in tqdm(satellite_meta.itertuples(), total=len(satellite_meta)):
-        sample_item_dir = (
-            Path(cache_dir)
-            / f"sentinel_{config.image_feature_meter_window}/{row.sample_id}/{row.item_id}"
-        )
-        # Skip combos we were not able to download
-        if not sample_item_dir.exists():
-            continue
-        # Filter by water pixels from SCL band
-        if config.scl_filter:
-            scl_band_path = sample_item_dir / "SCL.npy"
-            if not scl_band_path.exists():
-                continue
-            scl_array = np.load(scl_band_path)
-            # Skip if there is not enough water
-            if (scl_array == 6).mean() < 0.01:
-                continue
+    satellite_features = process_map(
+        functools.partial(generate_features_for_sample_item, config=config, cache_dir=cache_dir),
+        satellite_meta.sample_id,
+        satellite_meta.item_id,
+        chunksize=1,
+        total=len(satellite_meta),
+        max_workers=NUM_PROCESSES,
+    )
 
-        # Load band arrays into a dictionary with band names for keys
-        band_arrays = {}
-        # If we want to mask image data with water boundaries in some way, add here
-        for band in config.use_sentinel_bands:
-            if not (sample_item_dir / f"{band}.npy").exists():
-                raise FileNotFoundError(
-                    f"Band {band} is missing from pystac item directory {sample_item_dir}"
-                )
-            # Rescale SCL band based on image size
-            band_arr = np.load(sample_item_dir / f"{band}.npy")
-            if config.scl_filter and (band != "SCL"):
-                scaled_scl = cv2.resize(scl_array[0], (band_arr.shape[2], band_arr.shape[1]))
-                # Filter array to water area
-                band_arrays[band] = band_arr[0][scaled_scl == 6]
-            else:
-                band_arrays[band] = band_arr
-
-        # Iterate over features to generate
-        sample_item_features = {"sample_id": row.sample_id, "item_id": row.item_id}
-        for feature in config.satellite_image_features:
-            sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
-        satellite_features.append(pd.Series(sample_item_features))
-
-    satellite_features = pd.concat(satellite_features, axis=1).T
+    satellite_features = pd.DataFrame([features for features in satellite_features if features])
 
     # Add in satellite meta features
     satellite_features = satellite_features.merge(
