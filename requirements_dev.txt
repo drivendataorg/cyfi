@@ -7,10 +7,8 @@ geopandas
 geopy
 GitPython
 jupyter
-jupyterlab
 loguru
 matplotlib
-nb_black
 numpy
 odc-stac
 opencv-python
