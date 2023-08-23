@@ -52,7 +52,7 @@ def convert_density_to_severity(
         include_lowest=True,
         right=False,
         labels=range(1, 6),
-    )
+    ).astype(float)
 
     # Fill in values higher than max value
     df.loc[df.density >= SEVERITY_LEFT_EDGES[-1], "severity"] = 5
