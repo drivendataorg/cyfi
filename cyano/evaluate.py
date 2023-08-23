@@ -12,6 +12,7 @@ from sklearn.metrics import (
     mean_absolute_error,
     mean_squared_error,
     mean_absolute_percentage_error,
+    r2_score,
 )
 
 from cyano.data.utils import add_unique_identifier
@@ -107,24 +108,21 @@ class EvaluatePreds:
                 "Sample IDs for points (lat, lon, date) in y_pred_csv do not align with sample IDs in y_true_csv."
             )
 
-        self.y_true = y_true_df["severity"].rename("y_true")
-        self.metadata = y_true_df.drop(columns=["severity"])
+        self.y_true_df = y_true_df
+        self.y_pred_df = y_pred_df
 
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(exist_ok=True, parents=True)
 
-    def calculate_metrics(self):
+    def calculate_severity_metrics(y_true, y_pred, region=None):
         results = dict()
-        results["overall_rmse"] = mean_squared_error(self.y_true, self.y_pred, squared=False)
-        results["overall_mae"] = mean_absolute_error(self.y_true, self.y_pred)
-        results["overall_mape"] = mean_absolute_percentage_error(self.y_true, self.y_pred)
-        results["samples_missing_predictions"] = {
-            "count": float(self.missing_predictions_mask.sum()),
-            "percent": float(self.missing_predictions_mask.mean()),
-        }
+        results["overall_rmse"] = mean_squared_error(y_true, y_pred, squared=False)
+        results["overall_mae"] = mean_absolute_error(y_true, y_pred)
+        results["overall_mape"] = mean_absolute_percentage_error(y_true, y_pred)
 
-        if "region" in self.metadata.columns:
-            df = pd.concat([self.y_true, self.y_pred, self.metadata], axis=1)
+        if region is not None:
+            df = pd.concat([y_true, y_pred, region], axis=1)
+            df.columns = ["y_true", "y_pred", "region"]
             results["regional_rmse"] = (
                 df.groupby("region")
                 .apply(lambda x: mean_squared_error(x.y_true, x.y_pred, squared=False))
@@ -140,8 +138,22 @@ class EvaluatePreds:
             )
 
         results["classification_report"] = classification_report(
-            self.y_true, self.y_pred, labels=np.arange(1, 6), output_dict=True, zero_division=False
+            y_true, y_pred, labels=np.arange(1, 6), output_dict=True, zero_division=False
         )
+
+    def calculate_density_metrics(y_true, y_pred, region=None):
+        results = dict()
+        results["overall_r_squared"] = r2_score(y_true, y_pred)
+        results["overall_mape"] = mean_absolute_percentage_error(y_true, y_pred)
+
+        if region is not None:
+            df = pd.concat([y_true, y_pred, region], axis=1)
+            df.columns = ["y_true", "y_pred", "region"]
+            results["regional_r_squared"] = (
+                df.groupby("region")
+                .apply(lambda x: r2_score(x.y_true, x.y_pred, squared=False))
+                .to_dict()
+            )
 
         return results
 
@@ -157,7 +169,29 @@ class EvaluatePreds:
         return feature_importances
 
     def calculate_all_and_save(self):
-        results = self.calculate_metrics()
+        results = dict()
+
+        # calculate severity metrics
+        results["severity"] = self.calculate_severity_metrics(
+            self.y_true_df["severity"], self.y_pred_df["severity"]
+        )
+
+        # calculate missing predictions
+        results["samples_missing_predictions"] = {
+            "count": float(self.missing_predictions_mask.sum()),
+            "percent": float(self.missing_predictions_mask.mean()),
+        }
+
+        # add density metrics
+        for density_var in ["log_density", "density_cells_per_ml"]:
+            if density_var in self.y_true_df.columns:
+                results[density_var] = self.calculate_density_metrics(
+                    self.y_true_df[density_var], self.y_pred_df[density_var]
+                )
+
+                # TODO: plot scatter plot
+
+        # save out metrics
         with (self.save_dir / "results.json").open("w") as f:
             json.dump(results, f, indent=4)
 
