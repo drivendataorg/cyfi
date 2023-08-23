@@ -16,6 +16,7 @@ import lightgbm as lgb
 import pandas as pd
 from zipfile import ZipFile
 
+from cyano.data.utils import add_unique_identifier
 from cyano.evaluate import (
     EvaluatePreds,
     generate_and_plot_crosstab,
@@ -191,6 +192,32 @@ feature_importance.sort_values(by="importance_split", ascending=False).head(10)
 # **Takeaways**
 # 
 # All of our climate features are in the top most important features. Even though performance is somewhat lower on data with no satellite imagery, this implies that the model is still able to glean useful information with climate data alone.
+
+# ### Which new samples do we get features for?
+# 
+# Are we only covering additional older samples, or does climate data increase our coverage on newer samples as well? this helps determine whether the tradeoff of slight decrease in performance is worth the additional coverage moving forward. 
+
+test = pd.read_csv(s3_dir / "splits/competition/test.csv")
+test = add_unique_identifier(test)
+test["date"] = pd.to_datetime(test.date)
+test.head(2)
+
+
+new_coverage = test.loc[test_features[~test_features.has_satellite].sample_id]
+new_coverage.shape
+
+
+new_coverage.date.hist()
+plt.title("Dates for samples with climate data but no satellite imagery")
+plt.show()
+
+
+new_coverage.date.dt.year.value_counts().sort_index()
+
+
+# **Takeaway**
+# 
+# Most of the samples climate data enables us to cover are on the older side. There are almost none post-2017 that climate covers but satellite does not.
 
 # delete temporary dir
 shutil.rmtree(tmp_save_dir)
