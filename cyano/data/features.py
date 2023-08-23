@@ -210,7 +210,7 @@ def generate_satellite_features(
 
 
 def generate_climate_features(
-    sample_ids: Union[List[str], pd.Index], config: FeaturesConfig, cache_dir
+    sample_ids: Union[List[str], pd.Index], config: FeaturesConfig, cache_dir: AnyPath
 ) -> pd.DataFrame:
     """Generate features from climate data
 
@@ -218,7 +218,7 @@ def generate_climate_features(
         sample_ids (Union[List[str], pd.Index]): List of unique indices for each sample
         config (FeaturesConfig): Configuration, including
             directory where raw source data is saved
-        cache_dir
+        cache_dir (AnyPath): Cache directory
 
     Returns:
         pd.DataFrame: Dataframe where the index is sample_id. There is
@@ -327,9 +327,9 @@ def generate_features(
     Returns:
         pd.DataFrame: Dataframe where the index is sample_id and there is one
             column for each feature. Each row is a unique combination of
-            sample and pystac item. Samples with *any* features present from a
-            source other than the metadata are included. Missing values are left
-            as np.nan
+            sample and pystac item. Only samples that have at least one valid
+            non-metadata feature are included in the features dataframe.
+            Missing values are left as np.nan
     """
     # Generate satellite features
     # May be >1 row per sample, only includes samples with imagery
@@ -338,10 +338,10 @@ def generate_features(
     logger.info(
         f"Generated {satellite_features.shape[1]} satellite features for {sample_ct:,} samples ({(sample_ct / samples.shape[0]):.0%})"
     )
-    features = satellite_features.copy()
 
     # Generate non-satellite features. Each has only one row per sample
-    sample_ids = samples.index.unique()
+    sample_ids = samples.index
+    features = satellite_features.copy()
     if config.climate_features:
         climate_features = generate_climate_features(sample_ids, config, cache_dir)
         logger.info(
