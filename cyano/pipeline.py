@@ -169,7 +169,7 @@ class CyanoModelPipeline:
                 f"Grouping {preds.shape[0]:,} predictions by {preds.index.nunique():,} unique sample IDs"
             )
             preds = preds.groupby(preds.index).mean()
-        self.preds = preds.round()
+        self.preds = preds
 
         self.output_df = self.predict_samples.join(self.preds)
 
@@ -180,6 +180,8 @@ class CyanoModelPipeline:
         # If predicting exact density, calculate severity bin
         elif self.target_col == "density_cells_per_ml":
             self.output_df = convert_density_to_severity(self.output_df)
+
+        self.output_df["severity"] = self.output_df.severity.round()
 
         missing_mask = self.output_df.severity.isna()
         logger.warning(
