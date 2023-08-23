@@ -6,6 +6,7 @@ from zipfile import ZipFile
 
 import lightgbm as lgb
 from loguru import logger
+import numpy as np
 import pandas as pd
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
@@ -55,6 +56,9 @@ class CyanoModelPipeline:
     def _prep_train_data(self, data, debug: bool):
         """Load labels and save out samples with UIDs"""
         labels = pd.read_csv(data)
+        # Add log density if required
+        if self.target_col == "log_density":
+            labels["log_density"] = np.log(labels.density_cells_per_ml + 1)
         labels = labels[["date", "latitude", "longitude", self.target_col]]
         labels = add_unique_identifier(labels)
         if debug:
@@ -169,8 +173,12 @@ class CyanoModelPipeline:
 
         self.output_df = self.predict_samples.join(self.preds)
 
+        # If predicting log density, convert back to density than severity
+        if self.target_col == "log_density":
+            self.output_df["severity"] = np.exp(self.output_df.severity) - 1
+            self.output_df = convert_density_to_severity(self.output_df)
         # If predicting exact density, calculate severity bin
-        if self.target_col == "density_cells_per_ml":
+        elif self.target_col == "density_cells_per_ml":
             self.output_df = convert_density_to_severity(self.output_df)
 
         missing_mask = self.output_df.severity.isna()
