@@ -18,7 +18,7 @@ from sklearn.metrics import (
 from cyano.data.utils import add_unique_identifier
 
 
-def generate_and_plot_crosstab(y_true, y_pred, normalize=False):
+def generate_and_plot_crosstab(y_true, y_pred, normalize=False, ax=None):
     to_plot = pd.crosstab(y_pred, y_true)
 
     # make sure crosstab is 1-5 on both axes
@@ -37,7 +37,8 @@ def generate_and_plot_crosstab(y_true, y_pred, normalize=False):
         to_plot = to_plot / to_plot.sum()
         fmt = ".0%"
 
-    _, ax = plt.subplots()
+    if ax is None:
+        _, ax = plt.subplots()
 
     sns.heatmap(to_plot, cmap="Blues", annot=True, fmt=fmt, cbar=False, ax=ax)
 
@@ -46,7 +47,7 @@ def generate_and_plot_crosstab(y_true, y_pred, normalize=False):
     return ax
 
 
-def generate_actual_density_boxplot(y_true_density, y_pred):
+def generate_actual_density_boxplot(y_true_density, y_pred, ax=None):
     df = pd.concat(
         [
             y_true_density,
@@ -56,7 +57,8 @@ def generate_actual_density_boxplot(y_true_density, y_pred):
     )
     df.columns = ["density_cells_per_ml", "y_pred"]
 
-    _, ax = plt.subplots()
+    if ax is None:
+        _, ax = plt.subplots()
 
     sns.boxplot(
         data=df,
@@ -97,10 +99,12 @@ def generate_density_kdeplot(y_true, y_pred):
     return fig
 
 
-def generate_regional_barplot(regional_rmse):
+def generate_regional_barplot(regional_rmse, ax=None):
     to_plot = pd.DataFrame({"regional_rmse": regional_rmse}).sort_values("regional_rmse")
 
-    _, ax = plt.subplots()
+    if ax is None:
+        _, ax = plt.subplots()
+
     sns.barplot(to_plot.T, ax=ax)
     ax.set_xlabel("Region")
     ax.set_ylabel("RMSE")
