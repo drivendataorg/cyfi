@@ -54,6 +54,7 @@ def generate_actual_density_boxplot(y_true_density, y_pred):
         ],
         axis=1,
     )
+    df.columns = ["density_cells_per_ml", "y_pred"]
 
     _, ax = plt.subplots()
 
@@ -89,10 +90,12 @@ class EvaluatePreds:
         """
         self.model = model
 
-        y_pred_df = pd.read_csv(y_pred_csv).set_index("sample_id")
-        self.y_pred = y_pred_df[y_pred_df.severity.notna()]["severity"].rename("y_pred")
-        self.missing_predictions_mask = y_pred_df.severity.isna()
-        logger.info(f"Evaluating on {self.y_pred.shape[0]:,} samples (of {y_pred_df.shape[0]:,})")
+        all_preds = pd.read_csv(y_pred_csv).set_index("sample_id")
+
+        self.missing_predictions_mask = all_preds.severity.isna()
+        self.y_pred_df = all_preds[~self.missing_predictions_mask].copy()
+        self.y_pred_df["severity"] = self.y_pred_df.severity.astype(int)
+        logger.info(f"Evaluating on {len(self.y_pred_df):,} samples (of {len(all_preds):,})")
 
         y_true_df = pd.read_csv(y_true_csv)
 
@@ -102,18 +105,16 @@ class EvaluatePreds:
         y_true_df = add_unique_identifier(y_true_df)
 
         try:
-            y_true_df = y_true_df.loc[self.y_pred.index]
+            self.y_true_df = y_true_df.loc[self.y_pred_df.index]
         except KeyError:
             raise IndexError(
                 "Sample IDs for points (lat, lon, date) in y_pred_csv do not align with sample IDs in y_true_csv."
             )
 
-        self.y_true_df = y_true_df
-        self.y_pred_df = y_pred_df
-
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(exist_ok=True, parents=True)
 
+    @staticmethod
     def calculate_severity_metrics(y_true, y_pred, region=None):
         results = dict()
         results["overall_rmse"] = mean_squared_error(y_true, y_pred, squared=False)
@@ -140,7 +141,9 @@ class EvaluatePreds:
         results["classification_report"] = classification_report(
             y_true, y_pred, labels=np.arange(1, 6), output_dict=True, zero_division=False
         )
+        return results
 
+    @staticmethod
     def calculate_density_metrics(y_true, y_pred, region=None):
         results = dict()
         results["overall_r_squared"] = r2_score(y_true, y_pred)
@@ -184,7 +187,7 @@ class EvaluatePreds:
 
         # add density metrics
         for density_var in ["log_density", "density_cells_per_ml"]:
-            if density_var in self.y_true_df.columns:
+            if density_var in self.y_pred_df.columns:
                 results[density_var] = self.calculate_density_metrics(
                     self.y_true_df[density_var], self.y_pred_df[density_var]
                 )
@@ -198,11 +201,13 @@ class EvaluatePreds:
         feature_importance = self.calculate_feature_importance()
         feature_importance.to_csv(self.save_dir / "feature_importance.csv", index=False)
 
-        crosstab_plot = generate_and_plot_crosstab(self.y_true, self.y_pred)
+        crosstab_plot = generate_and_plot_crosstab(
+            self.y_true_df.severity, self.y_pred_df.severity
+        )
         crosstab_plot.figure.savefig(self.save_dir / "crosstab.png")
 
         actual_density_boxplot = generate_actual_density_boxplot(
-            self.metadata.density_cells_per_ml, self.y_pred
+            self.y_true_df.density_cells_per_ml, self.y_pred_df.severity
         )
         actual_density_boxplot.figure.savefig(self.save_dir / "actual_density_boxplot.png")
 
