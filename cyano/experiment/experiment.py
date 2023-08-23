@@ -5,6 +5,7 @@ import yaml
 from cloudpathlib import AnyPath
 import git
 from loguru import logger
+import pandas as pd
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
@@ -73,6 +74,11 @@ class ExperimentConfig(BaseModel):
             save_path=self.save_dir / "model.zip",
             debug=self.debug,
         )
+
+        # Copy train and test features to experiment dir
+        for split in ["train", "test"]:
+            df = pd.read_csv(self.cache_dir / f"features_{split}.csv")
+            df.to_csv(self.save_dir / f"features_{split}.csv", index=True)
 
         # Get last commit hash to save in artifact
         repo = git.Repo(REPO_ROOT.parent)
