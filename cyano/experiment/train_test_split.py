@@ -1,5 +1,6 @@
 from cloudpathlib import S3Path
 from loguru import logger
+import numpy as np
 import pandas as pd
 import typer
 
@@ -22,6 +23,9 @@ def make_train_test_competition_split(split_dir="competition"):
     split_df = pd.read_csv(
         S3_COMP_BUCKET / "data/interim/processed_unified_labels.csv", index_col=0
     )[["split"]]
+
+    # add log density
+    df["log_density"] = np.log(df.density_cells_per_ml + 1)
 
     logger.info("Creating train and test subsets")
     train = df.loc[split_df.split == "train"]
