@@ -159,7 +159,7 @@ plt.show()
 regional_scores
 
 
-pd.DataFrame(results).T[
+pd.DataFrame(results).loc[
     [
         "overall_rmse",
         "overall_mae",
