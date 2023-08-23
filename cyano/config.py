@@ -33,7 +33,7 @@ class FeaturesConfig(BaseModel):
         "B04_mean",
     ]
     satellite_meta_features: Optional[List] = []
-    climate_variables: Optional[List] = []  # ['TMP', 'SPFH']
+    climate_variables: Optional[List] = []
     climate_level: Optional[str] = "2 m above ground"
     climate_features: Optional[List] = []
     elevation_features: Optional[List] = []
