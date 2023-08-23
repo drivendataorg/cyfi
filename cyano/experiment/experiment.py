@@ -79,6 +79,10 @@ class ExperimentConfig(BaseModel):
             predict_csv=self.predict_csv, preds_path=self.save_dir / "preds.csv", debug=self.debug
         )
 
+        # Save out continuous values if we're not predicting severity
+        if self.target_col != "severity":
+            pipeline.preds.to_csv(self.save_dir / "continuous_preds.csv", index=True)
+
         if self.debug:
             logger.info("Evaluation is not run in debug mode")
         else:
