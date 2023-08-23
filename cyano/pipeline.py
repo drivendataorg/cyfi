@@ -168,9 +168,9 @@ class CyanoModelPipeline:
             preds = preds.groupby(preds.index).mean()
 
         # do not allow negative values
-        preds = np.where(preds < 0, 0, preds)
+        preds.loc[preds < 0] = 0
 
-        self.preds = np.round(preds)
+        self.preds = preds
         self.output_df = self.predict_samples.join(self.preds)
 
         # If predicting log density, exponentiate and then convert to severity
