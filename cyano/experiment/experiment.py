@@ -75,10 +75,9 @@ class ExperimentConfig(BaseModel):
             debug=self.debug,
         )
 
-        # Copy train and test features to experiment dir
-        for split in ["train", "test"]:
-            df = pd.read_csv(self.cache_dir / f"features_{split}.csv")
-            df.to_csv(self.save_dir / f"features_{split}.csv", index=True)
+        # Copy train features to experiment dir
+        df = pd.read_csv(self.cache_dir / "features_train.csv")
+        df.to_csv(self.save_dir / "features_train.csv", index=False)
 
         # Get last commit hash to save in artifact
         repo = git.Repo(REPO_ROOT.parent)
@@ -90,6 +89,10 @@ class ExperimentConfig(BaseModel):
         pipeline.run_prediction(
             predict_csv=self.predict_csv, preds_path=self.save_dir / "preds.csv", debug=self.debug
         )
+
+        # Copy test features to experiment dir
+        df = pd.read_csv(self.cache_dir / "features_test.csv")
+        df.to_csv(self.save_dir / "features_test.csv", index=False)
 
         if self.debug:
             logger.info("Evaluation is not run in debug mode")
