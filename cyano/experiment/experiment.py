@@ -39,8 +39,8 @@ class ExperimentConfig(BaseModel):
             Path.cwd().
         last_commit_hash (str, optional): Hash of the most recent commit to track codes
             used to run the experiment. Defaults to None.
-        target_col (str, optional): Target column to predict. Must be either "severity" or
-            "density_cells_per_ml". Defaults to "severity".
+        target_col (str, optional): Target column to predict. Must be either "severity",
+            "density_cells_per_ml", or "log_density". Defaults to "severity".
         debug (bool, optional): Run in debug mode. Defaults to False.
     """
 
@@ -78,10 +78,6 @@ class ExperimentConfig(BaseModel):
         pipeline.run_prediction(
             predict_csv=self.predict_csv, preds_path=self.save_dir / "preds.csv", debug=self.debug
         )
-
-        # Save out continuous values if we're not predicting severity
-        if self.target_col != "severity":
-            pipeline.preds.to_csv(self.save_dir / "continuous_preds.csv", index=True)
 
         if self.debug:
             logger.info("Evaluation is not run in debug mode")

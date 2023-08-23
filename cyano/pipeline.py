@@ -56,9 +56,6 @@ class CyanoModelPipeline:
     def _prep_train_data(self, data, debug: bool):
         """Load labels and save out samples with UIDs"""
         labels = pd.read_csv(data)
-        # Add log density if required
-        if self.target_col == "log_density":
-            labels["log_density"] = np.log(labels.density_cells_per_ml + 1)
         labels = labels[["date", "latitude", "longitude", self.target_col]]
         labels = add_unique_identifier(labels)
         if debug:
@@ -160,7 +157,7 @@ class CyanoModelPipeline:
         preds = pd.Series(
             data=self.model.predict(self.predict_features),
             index=self.predict_features.index,
-            name="severity",
+            name=self.target_col,
         )
 
         # Group by sample id if multiple predictions per id
@@ -169,19 +166,24 @@ class CyanoModelPipeline:
                 f"Grouping {preds.shape[0]:,} predictions by {preds.index.nunique():,} unique sample IDs"
             )
             preds = preds.groupby(preds.index).mean()
-        self.preds = preds
 
+        # do not allow negative values
+        preds = np.where(preds < 0, 0, preds)
+
+        self.preds = np.round(preds)
         self.output_df = self.predict_samples.join(self.preds)
 
-        # If predicting log density, convert back to density than severity
+        # If predicting log density, exponentiate and then convert to severity
         if self.target_col == "log_density":
-            self.output_df["severity"] = np.exp(self.output_df.severity) - 1
-            self.output_df = convert_density_to_severity(self.output_df)
-        # If predicting exact density, calculate severity bin
-        elif self.target_col == "density_cells_per_ml":
-            self.output_df = convert_density_to_severity(self.output_df)
+            self.output_df["severity"] = convert_density_to_severity(
+                np.exp(self.output_df.log_density) - 1
+            )
 
-        self.output_df["severity"] = self.output_df.severity.round()
+        # If predicting exact density, convert to severity
+        elif self.target_col == "density_cells_per_ml":
+            self.output_df["severity"] = convert_density_to_severity(
+                self.output_df.density_cells_per_ml
+            )
 
         missing_mask = self.output_df.severity.isna()
         logger.warning(
