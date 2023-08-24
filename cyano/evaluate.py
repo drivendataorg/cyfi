@@ -84,7 +84,9 @@ def generate_regional_barplot(regional_rmse):
 
 
 class EvaluatePreds:
-    def __init__(self, y_true_csv: Path, y_pred_csv: Path, save_dir: Path, model: lgb.Booster):
+    def __init__(
+        self, y_true_csv: Path, y_pred_csv: Path, save_dir: Path, model: lgb.Booster = None
+    ):
         """Instantate EvaluatePreds class. To automatically generate all key visualizations, run
         cls.calculate_all_and_save() after instantiation.
         """
@@ -160,12 +162,13 @@ class EvaluatePreds:
 
         return results
 
-    def calculate_feature_importance(self):
+    @staticmethod
+    def calculate_feature_importance(model):
         feature_importances = pd.DataFrame(
             {
-                "feature": self.model.feature_name(),
-                "importance_gain": self.model.feature_importance(importance_type="gain"),
-                "importance_split": self.model.feature_importance(importance_type="split"),
+                "feature": model.feature_name(),
+                "importance_gain": model.feature_importance(importance_type="gain"),
+                "importance_split": model.feature_importance(importance_type="split"),
             }
         ).sort_values(by="importance_gain", ascending=False)
 
@@ -198,8 +201,9 @@ class EvaluatePreds:
         with (self.save_dir / "results.json").open("w") as f:
             json.dump(results, f, indent=4)
 
-        feature_importance = self.calculate_feature_importance()
-        feature_importance.to_csv(self.save_dir / "feature_importance.csv", index=False)
+        if self.model is not None:
+            feature_importance = self.calculate_feature_importance(self.model)
+            feature_importance.to_csv(self.save_dir / "feature_importance.csv", index=False)
 
         crosstab_plot = generate_and_plot_crosstab(
             self.y_true_df.severity, self.y_pred_df.severity
