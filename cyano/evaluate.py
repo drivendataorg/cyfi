@@ -113,6 +113,11 @@ class EvaluatePreds:
                 "Sample IDs for points (lat, lon, date) in y_pred_csv do not align with sample IDs in y_true_csv."
             )
 
+        if "region" in self.y_true_df.columns:
+            self.region = self.y_true_df.region
+        else:
+            self.region = None
+
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(exist_ok=True, parents=True)
 
@@ -155,9 +160,7 @@ class EvaluatePreds:
             df = pd.concat([y_true, y_pred, region], axis=1)
             df.columns = ["y_true", "y_pred", "region"]
             results["regional_r_squared"] = (
-                df.groupby("region")
-                .apply(lambda x: r2_score(x.y_true, x.y_pred, squared=False))
-                .to_dict()
+                df.groupby("region").apply(lambda x: r2_score(x.y_true, x.y_pred)).to_dict()
             )
 
         return results
@@ -179,7 +182,9 @@ class EvaluatePreds:
 
         # calculate severity metrics
         results["severity"] = self.calculate_severity_metrics(
-            self.y_true_df["severity"], self.y_pred_df["severity"]
+            y_true=self.y_true_df["severity"],
+            y_pred=self.y_pred_df["severity"],
+            region=self.region,
         )
 
         # calculate missing predictions
@@ -192,9 +197,10 @@ class EvaluatePreds:
         for density_var in ["log_density", "density_cells_per_ml"]:
             if density_var in self.y_pred_df.columns:
                 results[density_var] = self.calculate_density_metrics(
-                    self.y_true_df[density_var], self.y_pred_df[density_var]
+                    y_true=self.y_true_df[density_var],
+                    y_pred=self.y_pred_df[density_var],
+                    region=self.region,
                 )
-
                 # TODO: plot scatter plot
 
         # save out metrics
