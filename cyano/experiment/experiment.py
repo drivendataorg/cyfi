@@ -21,7 +21,7 @@ class ExperimentConfig(BaseModel):
     cache_dir: Path = None
     save_dir: Path = Path.cwd()
     last_commit_hash: str = None
-    target_col: str = "severity"
+    target_col: str = "log_density"
     debug: bool = False
     """Configuration containing parameters to be used for an end-to-end experiment
 
@@ -40,7 +40,7 @@ class ExperimentConfig(BaseModel):
         last_commit_hash (str, optional): Hash of the most recent commit to track codes
             used to run the experiment. Defaults to None.
         target_col (str, optional): Target column to predict. Must be either "severity",
-            "density_cells_per_ml", or "log_density". Defaults to "severity".
+            "density_cells_per_ml", or "log_density". Defaults to "log_density".
         debug (bool, optional): Run in debug mode. Defaults to False.
     """
 

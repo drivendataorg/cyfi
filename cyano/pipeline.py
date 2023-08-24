@@ -27,7 +27,7 @@ class CyanoModelPipeline:
         model_training_config: Optional[ModelTrainingConfig] = None,
         cache_dir: Optional[Path] = None,
         model: Optional[lgb.Booster] = None,
-        target_col: Optional[str] = "severity",
+        target_col: Optional[str] = "log_density",
     ):
         """Instantiate CyanoModelPipeline
 
