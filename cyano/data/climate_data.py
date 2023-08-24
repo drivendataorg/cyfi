@@ -196,7 +196,7 @@ def load_hrrr_grid(samples: pd.DataFrame, cache_dir: AnyPath) -> pd.DataFrame:
 
     # Otherwise generate grid for all samples
     else:
-        sample_grid_map = query_grid_mapping(samples, cache_dir).drop_duplicates()
+        sample_grid_map = query_location_grids(samples, cache_dir).drop_duplicates()
 
     logger.info(
         f"Saving updated grid mapping with {sample_grid_map.index.nunique():,} samples to {grid_save_path}"
