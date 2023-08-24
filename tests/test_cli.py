@@ -24,9 +24,17 @@ def test_cli_experiment(experiment_config_path):
         config = ExperimentConfig(**yaml.safe_load(f))
 
     # Check that artifact config, model zip, and predictions got saved out
-    assert (Path(config.save_dir) / "config_artifact.yaml").exists()
-    assert (Path(config.save_dir) / "model.zip").exists()
-    assert (Path(config.save_dir) / "preds.csv").exists()
+    for file in ["config_artifact.yaml", "model.zip", "preds.csv"]:
+        assert (Path(config.save_dir) / file).exists()
+
+    # Check the appropriate files are in the metrics directory
+    for file in [
+        "actual_density_boxplot.png",
+        "crosstab.png",
+        "feature_importance.csv",
+        "results.json",
+    ]:
+        assert (Path(config.save_dir) / "metrics" / file).exists()
 
 
 def test_cli_predict(tmp_path, predict_data_path, predict_data):
