@@ -1,14 +1,13 @@
+import json
 from pathlib import Path
 
-from cyano.experiment.experiment import ExperimentConfig
 from cyano.evaluate import EvaluatePreds
+
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 
-def test_evaluate_preds(tmp_path):
-    experiment_config = ExperimentConfig.from_file(ASSETS_DIR / "experiment_config.yaml")
-
+def test_evaluate_preds(experiment_config, tmp_path):
     ep = EvaluatePreds(
         y_true_csv=experiment_config.predict_csv,
         y_pred_csv=experiment_config.save_dir / "preds.csv",
@@ -32,17 +31,46 @@ def test_evaluate_preds(tmp_path):
         assert (col in ep.y_true_df.columns) & (col in ep.y_pred_df.columns)
 
 
-def test_calculate_all_and_save():
-    # ep.clculate_all_and_save()
+def test_calculate_all_and_save(experiment_config, tmp_path):
+    ep = EvaluatePreds(
+        y_true_csv=experiment_config.predict_csv,
+        y_pred_csv=experiment_config.save_dir / "preds.csv",
+        save_dir=tmp_path / "metrics",
+    )
+    ep.calculate_all_and_save()
+
+    with (tmp_path / "metrics/results.json").open("r") as f:
+        results = json.load(f)
+
     # check we have metrics for both log density and severity in results
-    # check filepaths are correct
-    # check some metrics are correct
-    pass
+    assert list(results.keys()) == ["severity", "samples_missing_predictions", "log_density"]
 
+    # we have region in our ground truth so we expect regional columns
+    assert "region" in ep.y_true_df.columns
+    assert list(results["severity"].keys()) == [
+        "overall_rmse",
+        "overall_mae",
+        "overall_mape",
+        "regional_rmse",
+        "region_averaged_rmse",
+        "regional_mae",
+        "classification_report",
+    ]
+    assert list(results["log_density"].keys()) == [
+        "overall_r_squared",
+        "overall_mape",
+        "regional_r_squared",
+    ]
 
-def test_calculate_severity_metrics():
-    pass
+    # if region is removed, region metrics are not calculated
+    ep.region = None
+    ep.calculate_all_and_save()
+    with (tmp_path / "metrics/results.json").open("r") as f:
+        results = json.load(f)
 
-
-def calculate_density_metrics():
-    pass
+    assert list(results["severity"].keys()) == [
+        "overall_rmse",
+        "overall_mae",
+        "overall_mape",
+        "classification_report",
+    ]
