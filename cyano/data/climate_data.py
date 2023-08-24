@@ -52,13 +52,13 @@ def process_samples_for_hrrr(samples: pd.DataFrame) -> pd.DataFrame:
     return samples
 
 
-def get_location_grid(
+def query_single_location_grid(
     latitude: float,
     longitude: float,
     xarrays_df: pd.DataFrame,
     try_grid_buffers: List[float] = TRY_GRID_BUFFERS,
 ) -> pd.DataFrame:
-    """Get a grid mapping a location (latitude + longitude) to grid indices
+    """Get the grid mapping of one location (latitude + longitude) to grid indices
     in the HRRR dataset.
 
     Args:
@@ -99,7 +99,7 @@ def get_location_grid(
     return None
 
 
-def query_grid_mapping(samples: pd.DataFrame, cache_dir) -> pd.DataFrame:
+def query_location_grids(samples: pd.DataFrame, cache_dir) -> pd.DataFrame:
     """Queries the HRRR dataset and returns a dataframe with one row for
         each combination of sample ID and matching HRRR data grid indices
 
@@ -130,7 +130,7 @@ def query_grid_mapping(samples: pd.DataFrame, cache_dir) -> pd.DataFrame:
     results = []
     for chunk in np.array_split(locations, max(1, len(locations) // 1000)):
         chunk_results = process_map(
-            functools.partial(get_location_grid, xarrays_df=xarrays_df),
+            functools.partial(query_single_location_grid, xarrays_df=xarrays_df),
             chunk.latitude,
             chunk.longitude,
             max_workers=NUM_PROCESSES,
@@ -191,7 +191,7 @@ def load_hrrr_grid(samples: pd.DataFrame, cache_dir: AnyPath) -> pd.DataFrame:
             sample_grid_map["date"] = pd.to_datetime(sample_grid_map.date)
             return sample_grid_map.loc[samples.index]
 
-        new_sample_grid_map = query_grid_mapping(missing_samples, cache_dir)
+        new_sample_grid_map = query_location_grids(missing_samples, cache_dir)
         sample_grid_map = pd.concat([sample_grid_map, new_sample_grid_map]).drop_duplicates()
 
     # Otherwise generate grid for all samples
