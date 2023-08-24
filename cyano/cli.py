@@ -1,5 +1,4 @@
 import sys
-import yaml
 from zipfile import ZipFile
 
 from cloudpathlib import AnyPath
