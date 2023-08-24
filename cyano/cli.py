@@ -5,12 +5,19 @@ from cloudpathlib import AnyPath
 from dotenv import load_dotenv, find_dotenv
 import lightgbm as lgb
 from loguru import logger
+from pandas_path import path  # noqa
 from pathlib import Path
 import typer
 
 from cyano.experiment.experiment import ExperimentConfig
 from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
+
+import pandas as pd
+from cyano.data.elevation_data import download_elevation_data
+from cyano.config import FeaturesConfig
+from cyano.data.utils import add_unique_identifier
+from cyano.settings import REPO_ROOT
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -73,6 +80,33 @@ def evaluate(
     EvaluatePreds(
         y_pred_csv=y_pred_csv, y_true_csv=y_true_csv, save_dir=save_dir, model=model
     ).calculate_all_and_save()
+
+
+@app.command()
+def download_elevation(
+    data_dir: str = "s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition",
+    meters_window: int = 1000,
+    cache_dir: str = str(REPO_ROOT.parent / "experiments/cache"),
+):
+    cache_dir = AnyPath(cache_dir)
+    logger.add(cache_dir / "elevation_download.log", level="DEBUG")
+
+    config = FeaturesConfig(elevation_feature_meter_window=meters_window)
+    logger.info(
+        f"Downloading elevation data with window {config.elevation_feature_meter_window:,}m to {cache_dir}"
+    )
+
+    for split in ["train", "test"]:
+        df = pd.read_csv(AnyPath(data_dir) / f"{split}.csv")
+        df = add_unique_identifier(df)[["longitude", "latitude", "date"]]
+        logger.info(f"Loaded {df.shape[0]:,} {split} samples")
+
+        df["elev_exists"] = cache_dir / "elevation_1000" / df.index.path.with_suffix(".json")
+        df["elev_exists"] = df.elev_exists.path.exists()
+        logger.info(f"Elevation data already exists for {df.elev_exists.sum()} samples")
+
+        df = df[~df.elev_exists]
+        download_elevation_data(df, config, cache_dir)
 
 
 if __name__ == "__main__":
