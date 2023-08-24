@@ -51,6 +51,7 @@ jobs:
         with:
           python-version: "3.10"
           channels: conda-forge
+          auto-activate-base: false
 
       - name: Install dependencies
         run: |
