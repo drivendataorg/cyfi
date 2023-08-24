@@ -362,5 +362,91 @@ shutil.rmtree(tmp_save_dir)
 
 
 
+# ***
+# 
+# # scrap
+
+from cyano.settings import REPO_ROOT
+from cyano.config import FeaturesConfig, ModelTrainingConfig
+from cyano.pipeline import CyanoModelPipeline
+from cyano.data.climate_data import download_climate_data
+from cyano.data.features import generate_features
+import numpy as np
+
+
+train = pd.read_csv(REPO_ROOT.parent / "tests/assets/train_data.csv")
+train.shape
+
+
+train = add_unique_identifier(train)
+
+
+train.head()
+
+
+eval = pd.read_csv(REPO_ROOT.parent / "tests/assets/evaluate_data.csv")
+eval = add_unique_identifier(eval)
+
+predict = pd.read_csv(REPO_ROOT.parent / "tests/assets/predict_data.csv")
+predict = add_unique_identifier(predict)
+
+
+meta = pd.read_csv(
+    AnyPath(
+        "s3://drivendata-competition-nasa-cyanobacteria/data/final/combined_final_release.csv"
+    )
+)
+meta = add_unique_identifier(meta)
+meta.head(2)
+
+
+
+
+
+predict
+
+
+pipe = CyanoModelPipeline(
+    features_config=FeaturesConfig(
+        use_sentinel_bands=["B02"],
+        image_feature_meter_window=500,
+        satellite_image_features=["B02_mean", "B02_min", "B02_max"],
+        climate_features=["TMP_min", "SPFH_mean"],
+        climate_variables=["TMP", "SPFH"],
+        climate_level="2 m above ground",
+    ),
+    model_training_config=ModelTrainingConfig(),
+    cache_dir=REPO_ROOT.parent / "tests/assets/feature_cache",
+)
+
+
+train_path = REPO_ROOT.parent / "tests/assets/train_data.csv"
+pipe._prep_train_data(train_path, False)
+
+
+download_climate_data(pipe.train_samples, pipe.features_config, pipe.cache_dir)
+
+
+pipe.train_samples
+
+
+sat_meta = pd.read_csv(REPO_ROOT.parent / "tests/assets/satellite_metadata.csv")
+
+
+fts = generate_features(
+    pipe.train_samples, sat_meta, pipe.features_config, pipe.cache_dir
+)
+fts
+
+
+fts[["TMP_min", "SPFH_mean"]].notna().all()
+
+
+np.isclose(fts.loc["9c601f226c2af07d570134127a7fda27", "SPFH_mean"], 0.01440739)
+
+
+fts.loc["9c601f226c2af07d570134127a7fda27", "SPFH_mean"]
+
+
 
 
