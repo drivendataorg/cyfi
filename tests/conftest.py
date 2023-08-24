@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from cyano.config import FeaturesConfig
-
+from cyano.experiment.experiment import ExperimentConfig
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
@@ -46,3 +46,8 @@ def features_config():
         image_feature_meter_window=500,
         satellite_image_features=["B02_mean", "B02_min", "B02_max"],
     )
+
+
+@pytest.fixture
+def experiment_config():
+    return ExperimentConfig.from_file(ASSETS_DIR / "experiment_config.yaml")
