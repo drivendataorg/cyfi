@@ -45,8 +45,8 @@ def features_config():
         use_sentinel_bands=["B02"],
         image_feature_meter_window=500,
         satellite_image_features=["B02_mean", "B02_min", "B02_max"],
-        climate_features=["TMP_min", "SPFH_mean"],
-        climate_variables=["TMP", "SPFH"],
+        climate_features=["SPFH_mean"],
+        climate_variables=["SPFH"],
         climate_level="2 m above ground",
     )
 
@@ -54,3 +54,8 @@ def features_config():
 @pytest.fixture
 def experiment_config():
     return ExperimentConfig.from_file(ASSETS_DIR / "experiment_config.yaml")
+
+
+@pytest.fixture
+def hrrr_grid_map():
+    return pd.read_csv(ASSETS_DIR / "feature_cache/hrrr_sample_grid_mapping.csv")
