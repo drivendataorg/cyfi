@@ -31,6 +31,7 @@ def test_cli_experiment(experiment_config_path):
     for file in [
         "actual_density_boxplot.png",
         "crosstab.png",
+        "density_scatterplot.png",
         "feature_importance.csv",
         "results.json",
     ]:

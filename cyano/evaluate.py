@@ -72,6 +72,22 @@ def generate_actual_density_boxplot(y_true_density, y_pred):
     return ax
 
 
+def generate_density_scatterplot(y_true, y_pred):
+    to_plot = pd.concat([y_true, y_pred.loc[y_true.index]], axis=1)
+    to_plot.columns = ["y_true", "y_pred"]
+    _, ax = plt.subplots()
+    sns.scatterplot(data=to_plot, y="y_pred", x="y_true", ax=ax)
+
+    max_value = max(y_true.max(), y_pred.max()) * 1.1
+    ax.set_xlim(0, max_value)
+    ax.set_ylim(0, max_value)
+
+    ax.set_xlabel(f"Actual {y_true.name}")
+    ax.set_ylabel(f"Predicted {y_pred.name}")
+
+    return ax
+
+
 def generate_regional_barplot(regional_rmse):
     to_plot = pd.DataFrame({"regional_rmse": regional_rmse}).sort_values("regional_rmse")
 
@@ -201,7 +217,11 @@ class EvaluatePreds:
                     y_pred=self.y_pred_df[density_var],
                     region=self.region,
                 )
-                # TODO: plot scatter plot
+
+                density_scatter = generate_density_scatterplot(
+                    self.y_true_df[density_var], self.y_pred_df[density_var]
+                )
+                density_scatter.figure.savefig(self.save_dir / "density_scatterplot.png")
 
         # save out metrics
         with (self.save_dir / "results.json").open("w") as f:

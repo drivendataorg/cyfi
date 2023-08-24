@@ -25,7 +25,7 @@ features_config:
   - B02
   - B03
   - B04
-last_commit_hash: c8ed2ebd1d7a11044741fb077511399922e12571
+last_commit_hash: 19bcdac3d1ec5049cccefada034f0badcdc3dc9a
 model_training_config:
   num_boost_round: 1000
   params:
