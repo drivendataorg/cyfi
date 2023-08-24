@@ -269,6 +269,8 @@ def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) ->
     metadata_features = samples.copy()
     if "rounded_longitude" in config.metadata_features:
         metadata_features["rounded_longitude"] = (metadata_features.longitude / 10).round(0)
+    if "rounded_latitude" in config.metadata_features:
+        metadata_features["rounded_latitude"] = (metadata_features.latitude / 10).round(0)
 
     return metadata_features[config.metadata_features]
 
