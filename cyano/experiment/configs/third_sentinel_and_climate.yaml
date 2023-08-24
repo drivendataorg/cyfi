@@ -10,8 +10,7 @@ features_config:
   - SPFH_max
   elevation_features: []
   image_feature_meter_window: 200
-  metadata_features:
-  - rounded_longitude
+  metadata_features: []
   n_sentinel_items: 15
   pc_collections:
   - sentinel-2-l2a
