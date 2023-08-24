@@ -28,6 +28,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          conda install -c conda-forge herbie-data
+	        conda install -c conda-forge lightgbm
           pip install -r requirements_dev.txt
 
       - name: Lint package
@@ -58,6 +60,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          conda install -c conda-forge herbie-data
+	        conda install -c conda-forge lightgbm
           pip install -r requirements_dev.txt
 
       - name: Run tests
