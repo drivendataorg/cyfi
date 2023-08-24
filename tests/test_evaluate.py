@@ -19,11 +19,11 @@ def test_evaluate_preds(experiment_config, tmp_path):
     assert ep.save_dir == tmp_path / "metrics"
 
     # two missing predictions are expected
-    assert ep.missing_predictions_mask.sum() == 2
+    assert ep.missing_predictions_mask.sum() == 1
     assert len(ep.missing_predictions_mask) == 5
 
-    # y_true and y_pred dfs should have three observations
-    assert len(ep.y_pred_df) == 3
+    # y_true and y_pred dfs should have four observations
+    assert len(ep.y_pred_df) == 4
 
     assert experiment_config.target_col == "log_density"
     # check we have both log density and severity (which is always predicted)

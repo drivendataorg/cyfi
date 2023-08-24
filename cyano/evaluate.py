@@ -85,6 +85,7 @@ def generate_density_scatterplot(y_true, y_pred):
 
     return ax
 
+
 def generate_density_kdeplot(y_true, y_pred):
     to_plot = pd.concat([y_true, y_pred.loc[y_true.index]], axis=1)
     to_plot.columns = ["y_true", "y_pred"]
@@ -94,6 +95,7 @@ def generate_density_kdeplot(y_true, y_pred):
     fig.set(xlim=(0, max_value), ylim=(0, max_value))
     fig.set_axis_labels(f"Actual {y_true.name}", f"Predicted {y_pred.name}")
     return fig
+
 
 def generate_regional_barplot(regional_rmse):
     to_plot = pd.DataFrame({"regional_rmse": regional_rmse}).sort_values("regional_rmse")
