@@ -84,6 +84,7 @@ def evaluate(
 
 @app.command()
 def download_elevation(
+    split: str,
     data_dir: str = "s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition",
     meters_window: int = 1000,
     cache_dir: str = str(REPO_ROOT.parent / "experiments/cache"),
@@ -96,17 +97,16 @@ def download_elevation(
         f"Downloading elevation data with window {config.elevation_feature_meter_window:,}m to {cache_dir}"
     )
 
-    for split in ["train", "test"]:
-        df = pd.read_csv(AnyPath(data_dir) / f"{split}.csv")
-        df = add_unique_identifier(df)[["longitude", "latitude", "date"]]
-        logger.info(f"Loaded {df.shape[0]:,} {split} samples")
+    df = pd.read_csv(AnyPath(data_dir) / f"{split}.csv")
+    df = add_unique_identifier(df)[["longitude", "latitude", "date"]]
+    logger.info(f"Loaded {df.shape[0]:,} {split} samples")
 
-        df["elev_exists"] = cache_dir / "elevation_1000" / df.index.path.with_suffix(".json")
-        df["elev_exists"] = df.elev_exists.path.exists()
-        logger.info(f"Elevation data already exists for {df.elev_exists.sum()} samples")
+    df["elev_exists"] = cache_dir / "elevation_1000" / df.index.path.with_suffix(".json")
+    df["elev_exists"] = df.elev_exists.path.exists()
+    logger.info(f"Elevation data already exists for {df.elev_exists.sum()} samples")
 
-        df = df[~df.elev_exists]
-        download_elevation_data(df, config, cache_dir)
+    df = df[~df.elev_exists]
+    download_elevation_data(df, config, cache_dir)
 
 
 if __name__ == "__main__":
