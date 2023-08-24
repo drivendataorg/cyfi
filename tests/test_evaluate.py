@@ -18,7 +18,7 @@ def test_evaluate_preds(experiment_config, tmp_path):
     assert ep.y_true_df.index.name == "sample_id"
     assert ep.save_dir == tmp_path / "metrics"
 
-    # two missing predictions are expected
+    # one missing prediction is expected
     assert ep.missing_predictions_mask.sum() == 1
     assert len(ep.missing_predictions_mask) == 5
 
