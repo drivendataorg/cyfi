@@ -54,10 +54,11 @@ jobs:
 
       - name: Install dependencies
         run: |
+          which python
           conda update pip
-          conda install -c conda-forge herbie-data
-          conda install -c conda-forge lightgbm
-          pip install -r requirements_dev.txt
+          conda install herbie-data
+          conda install lightgbm
+          python -m pip install -r requirements_dev.txt
 
       - name: Run tests
         run: |
