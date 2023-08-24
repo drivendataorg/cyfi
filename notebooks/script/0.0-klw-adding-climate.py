@@ -3,7 +3,7 @@
 
 # Look at the results of adding climate data. See the impact on performance for samples with satellite imagery vs. samples with only climate data
 
-# %load_ext lab_black
+get_ipython().run_line_magic('load_ext', 'lab_black')
 get_ipython().run_line_magic('load_ext', 'autoreload')
 get_ipython().run_line_magic('autoreload', '2')
 
@@ -126,7 +126,7 @@ evals["without_satellite"] = EvaluatePreds(
 )
 
 
-# ## Evaluate
+# ### Evaluate
 
 fig, axes = plt.subplots(1, 2, figsize=(9, 4), sharex=True, sharey=True)
 for i, key in enumerate(evals.keys()):
@@ -252,25 +252,22 @@ test_features[test_features.SPFH_max.notna()].sample_id.nunique()
 
 
 # same number have satellite features as well
-test_features['has_satellite'] = test_features.AOT_mean.notna()
+test_features["has_satellite"] = test_features.AOT_mean.notna()
 test_features[test_features.has_satellite].sample_id.nunique()
 
 
 preds_sat_path = tmp_save_dir / "preds_with_sat.csv"
 preds_no_sat_path = tmp_save_dir / "preds_no_sat.csv"
 
-
 # Save out subset with satellite imagery
 preds_sat = preds.loc[test_features[test_features.has_satellite].sample_id.unique()]
 print(preds_sat.shape)
 preds_sat.to_csv(preds_sat_path, index=True)
 
-
 # Save out subset without satellite imagery
 preds_no_sat = preds.loc[test_features[~test_features.has_satellite].sample_id]
 print(preds_no_sat.shape)
 preds_no_sat.to_csv(preds_no_sat_path, index=True)
-
 
 # Load model
 archive = ZipFile(s3_dir / "results/third_sentinel_and_climate_no_meta/model.zip", "r")
@@ -339,7 +336,8 @@ pd.DataFrame(results).loc[
 
 
 feature_importance = pd.read_csv(
-    s3_dir / "results/third_sentinel_and_climate_no_meta/metrics/feature_importance.csv",
+    s3_dir
+    / "results/third_sentinel_and_climate_no_meta/metrics/feature_importance.csv",
     index_col=0,
 )
 
