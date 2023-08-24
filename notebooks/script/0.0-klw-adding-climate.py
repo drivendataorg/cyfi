@@ -3,7 +3,7 @@
 
 # Look at the results of adding climate data. See the impact on performance for samples with satellite imagery vs. samples with only climate data
 
-get_ipython().run_line_magic('load_ext', 'lab_black')
+# %load_ext lab_black
 get_ipython().run_line_magic('load_ext', 'autoreload')
 get_ipython().run_line_magic('autoreload', '2')
 
@@ -13,6 +13,7 @@ import yaml
 
 from cloudpathlib import AnyPath
 import lightgbm as lgb
+import matplotlib.pyplot as plt
 import pandas as pd
 from zipfile import ZipFile
 
@@ -28,11 +29,19 @@ from cyano.evaluate import (
 s3_dir = AnyPath("s3://drivendata-competition-nasa-cyanobacteria/experiments")
 
 
+tmp_save_dir = AnyPath("tmp_data")
+tmp_save_dir.mkdir(exist_ok=True, parents=True)
+
+
 # load ground truth
 true_path = s3_dir / "splits/competition/test.csv"
 true = pd.read_csv(true_path, index_col=0)
 true.shape
 
+
+# # With metadata features
+# 
+# With metadata feature for `rounded_longitude`
 
 # load predictions
 preds = pd.read_csv(
@@ -82,9 +91,6 @@ test_features.groupby(
 ).sample_id.nunique()
 
 
-tmp_save_dir = AnyPath("tmp_data")
-tmp_save_dir.mkdir(exist_ok=True, parents=True)
-
 preds_sat_path = tmp_save_dir / "preds_with_sat.csv"
 preds_no_sat_path = tmp_save_dir / "preds_no_sat.csv"
 
@@ -121,9 +127,6 @@ evals["without_satellite"] = EvaluatePreds(
 
 
 # ## Evaluate
-
-import matplotlib.pyplot as plt
-
 
 fig, axes = plt.subplots(1, 2, figsize=(9, 4), sharex=True, sharey=True)
 for i, key in enumerate(evals.keys()):
@@ -219,17 +222,143 @@ new_coverage.date.dt.year.value_counts().sort_index()
 # 
 # Most of the samples climate data enables us to cover are on the older side. There are almost none post-2017 that climate covers but satellite does not.
 
+# # Without metadata feature
+# 
+# Look into performance without the metadata feature of `rounded_longitude`
+
+preds = pd.read_csv(
+    s3_dir / "results/third_sentinel_and_climate_no_meta/preds.csv", index_col=0
+)
+preds.shape
+
+
+preds.isna().sum()
+
+
+# ### Save out subsets
+# 
+# So that we can instantiate separate `EvaluatePreds` classes, save out two versions of the predictions -- one with only samples that have satellite imagery, one with only samples that *don't* have satellite imagery
+
+# Load test features to see which samples had satellite imagery
+test_features = pd.read_csv(
+    s3_dir / "results/third_sentinel_and_climate_no_meta/features_test.csv"
+)
+test_features.shape, test_features.sample_id.nunique()
+
+
+# how many have climate features?
+# checks out, same as experiment with metadata
+test_features[test_features.SPFH_max.notna()].sample_id.nunique()
+
+
+# same number have satellite features as well
+test_features['has_satellite'] = test_features.AOT_mean.notna()
+test_features[test_features.has_satellite].sample_id.nunique()
+
+
+preds_sat_path = tmp_save_dir / "preds_with_sat.csv"
+preds_no_sat_path = tmp_save_dir / "preds_no_sat.csv"
+
+
+# Save out subset with satellite imagery
+preds_sat = preds.loc[test_features[test_features.has_satellite].sample_id.unique()]
+print(preds_sat.shape)
+preds_sat.to_csv(preds_sat_path, index=True)
+
+
+# Save out subset without satellite imagery
+preds_no_sat = preds.loc[test_features[~test_features.has_satellite].sample_id]
+print(preds_no_sat.shape)
+preds_no_sat.to_csv(preds_no_sat_path, index=True)
+
+
+# Load model
+archive = ZipFile(s3_dir / "results/third_sentinel_and_climate_no_meta/model.zip", "r")
+model = lgb.Booster(model_str=archive.read("lgb_model.txt").decode())
+type(model)
+
+
+# ### Instantiate `EvaluatePreds` classes
+
+evals = {}
+evals["with_satellite"] = EvaluatePreds(
+    true_path, preds_sat_path, "tmp/eval_sat", model
+)
+
+
+evals["without_satellite"] = EvaluatePreds(
+    true_path, preds_no_sat_path, "tmp/eval_sat", model
+)
+
+
+# ### Evaluate
+
+fig, axes = plt.subplots(1, 2, figsize=(9, 4), sharex=True, sharey=True)
+for i, key in enumerate(evals.keys()):
+    generate_and_plot_crosstab(evals[key].y_true, evals[key].y_pred, ax=axes[i])
+    axes[i].set_title(key)
+
+
+fig, axes = plt.subplots(1, 2, figsize=(9, 4), sharex=True, sharey=True)
+for i, key in enumerate(evals.keys()):
+    generate_actual_density_boxplot(
+        evals[key].metadata.density_cells_per_ml, evals[key].y_pred, ax=axes[i]
+    )
+    axes[i].set_title(key)
+
+
+results = {key: evalpreds.calculate_metrics() for key, evalpreds in evals.items()}
+
+
+fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+
+for i, metric in enumerate(
+    [
+        "regional_mae",
+        "regional_rmse",
+    ]
+):
+    regional_scores = pd.DataFrame({key: res[metric] for key, res in results.items()})
+    regional_scores.plot(kind="bar", ax=axes[i])
+    axes[i].set_title(metric)
+plt.show()
+
+
+# See RMSE in detail for regions
+regional_scores
+
+
+pd.DataFrame(results).loc[
+    [
+        "overall_rmse",
+        "overall_mae",
+        "overall_mape",
+        "region_averaged_rmse",
+    ]
+]
+
+
+feature_importance = pd.read_csv(
+    s3_dir / "results/third_sentinel_and_climate_no_meta/metrics/feature_importance.csv",
+    index_col=0,
+)
+
+# what are the top features by importance gain?
+feature_importance.sort_values(by="importance_gain", ascending=False).head(10)
+
+
+# what are the top features by importance split?
+feature_importance.sort_values(by="importance_split", ascending=False).head(10)
+
+
+
+
+
+
+
+
 # delete temporary dir
 shutil.rmtree(tmp_save_dir)
-
-
-
-
-
-
-
-
-
 
 
 
