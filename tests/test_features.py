@@ -10,14 +10,14 @@ from cyano.data.utils import add_unique_identifier
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 
-def test_generate_features(train_data, features_config, satellite_meta):
+def test_generate_features(train_data, features_config_with_climate, satellite_meta):
     train_data = add_unique_identifier(train_data)
 
     # Generate features based on saved imagery
     features = generate_features(
         train_data,
         satellite_meta,
-        features_config,
+        features_config_with_climate,
         cache_dir=str(ASSETS_DIR / "feature_cache"),
     )
 
@@ -86,7 +86,7 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
             )
 
 
-def test_download_climate_data(tmp_path, train_data, features_config, hrrr_grid_map):
+def test_download_climate_data(tmp_path, train_data, features_config_with_climate, hrrr_grid_map):
     # Save existing HRRR grid mapping to cache dir so we don't have to regenerate
     hrrr_grid_map.to_csv(tmp_path / "hrrr_sample_grid_mapping.csv", index=False)
 
@@ -99,9 +99,9 @@ def test_download_climate_data(tmp_path, train_data, features_config, hrrr_grid_
 
     # Download climate data
     train_data = add_unique_identifier(train_data).loc[check_sample_ids]
-    download_climate_data(train_data, features_config, tmp_path)
+    download_climate_data(train_data, features_config_with_climate, tmp_path)
 
-    spfh_dir = tmp_path / f"spfh_{features_config.climate_level.replace(' ', '_')}"
+    spfh_dir = tmp_path / f"spfh_{features_config_with_climate.climate_level.replace(' ', '_')}"
     assert spfh_dir.exists()
     for sample_id in check_sample_ids:
         assert (spfh_dir / f"{sample_id}.csv").exists()

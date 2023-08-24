@@ -45,6 +45,15 @@ def features_config():
         use_sentinel_bands=["B02"],
         image_feature_meter_window=500,
         satellite_image_features=["B02_mean", "B02_min", "B02_max"],
+    )
+
+
+@pytest.fixture
+def features_config_with_climate():
+    return FeaturesConfig(
+        use_sentinel_bands=["B02"],
+        image_feature_meter_window=500,
+        satellite_image_features=["B02_mean", "B02_min", "B02_max"],
         climate_features=["SPFH_mean"],
         climate_variables=["SPFH"],
         climate_level="2 m above ground",
