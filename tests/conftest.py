@@ -45,6 +45,9 @@ def features_config():
         use_sentinel_bands=["B02"],
         image_feature_meter_window=500,
         satellite_image_features=["B02_mean", "B02_min", "B02_max"],
+        climate_features=["TMP_min", "SPFH_mean"],
+        climate_variables=["TMP", "SPFH"],
+        climate_level="2 m above ground",
     )
 
 
