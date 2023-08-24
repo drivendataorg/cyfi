@@ -1,6 +1,5 @@
 from cloudpathlib import S3Path
 from loguru import logger
-import numpy as np
 import pandas as pd
 import typer
 
@@ -58,58 +57,6 @@ def make_train_test_competition_water_distance_split(
     logger.info(f"Writing out train samples to {save_to}")
     with (save_to).open("w") as f:
         train.to_csv(f, index=False)
-
-
-@app.command()
-def make_train_test_by_provider(split_dir: str = "data_provider"):
-    """Write out train and test files split by data provider. A few large
-    or key geographically diverse datasets are kept as split between train
-    and test using the competition split. The remainder are put entirely
-    in train or test.
-    """
-    train_providers = [
-        "EPA Central Data Exchange",
-        "Delaware National Resources and the University of Delaware's Citizen Monitoring Program",
-        "EPA Water Quality Data Portal",
-        "Bureau of Water Kansas Department of Health and Environment",
-        "Texas Commission on Environmental Quality",
-        "Pennsylvania Department of Environmental Protection",
-    ]
-    test_providers = [
-        "Connecticut State Department of Public Health",
-        "Indiana State Department of Health",
-        "Wyoming Department of Environmental Quality",
-        "New Mexico Environment Department",
-        "US Army Corps of Engineers",
-    ]
-
-    logger.info("Loading competition dataset")
-    df = pd.read_csv(S3_COMP_BUCKET / "data/final/combined_final_release.csv", index_col=0)
-    logger.info(f"Loaded {df.shape[0]:,} samples")
-
-    logger.info("Getting competition split info")
-    split_df = pd.read_csv(
-        S3_COMP_BUCKET / "data/interim/processed_unified_labels.csv", index_col=0
-    )
-    df["comp_split"] = split_df.loc[df.index].split.values
-
-    df["split"] = np.where(
-        df.data_provider.isin(train_providers),
-        "train",
-        np.where(df.data_provider.isin(test_providers), "test", df.comp_split),
-    )
-
-    train = df[df.split == "train"].drop(columns=["comp_split", "split"])
-    test = df[df.split == "test"].drop(columns=["comp_split", "split"])
-    logger.info(
-        f"Generated {train.shape[0]:,} train samples and {test.shape[0]:,} test samples. Writing out to {SPLITS_PARENT_DIR / split_dir}"
-    )
-
-    with (SPLITS_PARENT_DIR / f"{split_dir}/train.csv").open("w") as f:
-        train.to_csv(f, index=True)
-
-    with (SPLITS_PARENT_DIR / f"{split_dir}/test.csv").open("w") as f:
-        test.to_csv(f, index=True)
 
 
 if __name__ == "__main__":
