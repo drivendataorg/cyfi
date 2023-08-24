@@ -9,6 +9,7 @@ from loguru import logger
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from cyano.config import FeaturesConfig
