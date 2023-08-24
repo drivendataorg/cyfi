@@ -74,8 +74,10 @@ def generate_actual_density_boxplot(y_true_density, y_pred, ax=None):
     return ax
 
 
-def generate_density_scatterplot(y_true, y_pred):
-    _, ax = plt.subplots()
+def generate_density_scatterplot(y_true, y_pred, ax=None):
+    if ax is None:
+        _, ax = plt.subplots()
+
     ax.scatter(x=y_true, y=y_pred, s=1, alpha=0.2)
 
     max_value = max(y_true.max(), y_pred.max()) * 1.1
