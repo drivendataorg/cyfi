@@ -3,6 +3,15 @@
         "overall_rmse": 2.0,
         "overall_mae": 2.0,
         "overall_mape": 2.0,
+        "regional_rmse": {
+            "northeast": 2.0,
+            "south": 2.0
+        },
+        "region_averaged_rmse": 2.0,
+        "regional_mae": {
+            "northeast": 2.0,
+            "south": 2.0
+        },
         "classification_report": {
             "1": {
                 "precision": 0.0,
@@ -60,6 +69,10 @@
     },
     "log_density": {
         "overall_r_squared": -3.5494751617634552,
-        "overall_mape": 1.7817931672977408e+16
+        "overall_mape": 1.7817931672977408e+16,
+        "regional_r_squared": {
+            "northeast": NaN,
+            "south": -4.089873168751293
+        }
     }
 }
