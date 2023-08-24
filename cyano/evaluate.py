@@ -85,6 +85,15 @@ def generate_density_scatterplot(y_true, y_pred):
 
     return ax
 
+def generate_density_kdeplot(y_true, y_pred):
+    to_plot = pd.concat([y_true, y_pred.loc[y_true.index]], axis=1)
+    to_plot.columns = ["y_true", "y_pred"]
+    fig = sns.displot(data=to_plot, y="y_pred", x="y_true", kind="kde")
+
+    max_value = max(y_true.max(), y_pred.max()) * 1.1
+    fig.set(xlim=(0, max_value), ylim=(0, max_value))
+    fig.set_axis_labels(f"Actual {y_true.name}", f"Predicted {y_pred.name}")
+    return fig
 
 def generate_regional_barplot(regional_rmse):
     to_plot = pd.DataFrame({"regional_rmse": regional_rmse}).sort_values("regional_rmse")
@@ -220,6 +229,11 @@ class EvaluatePreds:
                     self.y_true_df[density_var], self.y_pred_df[density_var]
                 )
                 density_scatter.figure.savefig(self.save_dir / "density_scatterplot.png")
+
+                density_kde = generate_density_kdeplot(
+                    self.y_true_df[density_var], self.y_pred_df[density_var]
+                )
+                density_kde.figure.savefig(self.save_dir / "density_kde.png")
 
         # save out metrics
         with (self.save_dir / "results.json").open("w") as f:
