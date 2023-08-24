@@ -55,6 +55,12 @@ class ExperimentConfig(BaseModel):
     def serialize_path_to_str(self, x, _info):
         return str(x)
 
+    @classmethod
+    def from_file(cls, yaml_file):
+        with open(yaml_file, "r") as fp:
+            config_dict = yaml.safe_load(fp)
+        return cls(**config_dict)
+
     def run_experiment(self):
         pipeline = CyanoModelPipeline(
             features_config=self.features_config,
