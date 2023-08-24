@@ -73,10 +73,8 @@ def generate_actual_density_boxplot(y_true_density, y_pred):
 
 
 def generate_density_scatterplot(y_true, y_pred):
-    to_plot = pd.concat([y_true, y_pred.loc[y_true.index]], axis=1)
-    to_plot.columns = ["y_true", "y_pred"]
     _, ax = plt.subplots()
-    sns.scatterplot(data=to_plot, y="y_pred", x="y_true", ax=ax)
+    ax.scatter(x=y_true, y=y_pred, s=1, alpha=0.2)
 
     max_value = max(y_true.max(), y_pred.max()) * 1.1
     ax.set_xlim(0, max_value)

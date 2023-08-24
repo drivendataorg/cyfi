@@ -1,5 +1,3 @@
-import yaml
-
 import pandas as pd
 from pathlib import Path
 from typer.testing import CliRunner
@@ -20,8 +18,7 @@ def test_cli_experiment(experiment_config_path):
     )
     assert result.exit_code == 0
 
-    with experiment_config_path.open("r") as f:
-        config = ExperimentConfig(**yaml.safe_load(f))
+    config = ExperimentConfig.from_file(experiment_config_path)
 
     # Check that artifact config, model zip, and predictions got saved out
     for file in ["config_artifact.yaml", "model.zip", "preds.csv"]:

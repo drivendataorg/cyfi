@@ -41,7 +41,7 @@ def convert_density_to_severity(density_series: pd.Series) -> pd.Series:
     """
     density = pd.cut(
         density_series,
-        SEVERITY_LEFT_EDGES + [SEVERITY_LEFT_EDGES[-1] + 1],
+        SEVERITY_LEFT_EDGES + [np.inf],
         include_lowest=True,
         right=False,
         labels=np.arange(1, 6),
