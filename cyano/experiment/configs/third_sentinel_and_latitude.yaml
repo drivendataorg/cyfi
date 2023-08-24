@@ -1,4 +1,5 @@
 cache_dir: experiments/cache
+target_col: log_density
 debug: false
 features_config:
   climate_features: []
