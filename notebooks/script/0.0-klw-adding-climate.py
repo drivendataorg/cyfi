@@ -3,7 +3,7 @@
 
 # Look at the results of adding climate data. See the impact on performance for samples with satellite imagery vs. samples with only climate data
 
-# %load_ext lab_black
+get_ipython().run_line_magic('load_ext', 'lab_black')
 get_ipython().run_line_magic('load_ext', 'autoreload')
 get_ipython().run_line_magic('autoreload', '2')
 
@@ -24,7 +24,7 @@ from cyano.evaluate import (
     generate_actual_density_boxplot,
     generate_regional_barplot,
     generate_density_scatterplot,
-    generate_density_kdeplot
+    generate_density_kdeplot,
 )
 
 
@@ -133,23 +133,30 @@ evals["without_satellite"] = EvaluatePreds(
 
 fig, axes = plt.subplots(1, 2, figsize=(9, 4), sharex=True, sharey=True)
 for i, key in enumerate(evals.keys()):
-    generate_and_plot_crosstab(evals[key].y_true_df.severity, evals[key].y_pred_df.severity, ax=axes[i])
+    generate_and_plot_crosstab(
+        evals[key].y_true_df.severity, evals[key].y_pred_df.severity, ax=axes[i]
+    )
     axes[i].set_title(key)
 
 
 fig, axes = plt.subplots(1, 2, figsize=(9, 4), sharex=True, sharey=True)
 for i, key in enumerate(evals.keys()):
     generate_actual_density_boxplot(
-        evals[key].y_true_df.density_cells_per_ml, evals[key].y_pred_df.severity, ax=axes[i]
+        evals[key].y_true_df.density_cells_per_ml,
+        evals[key].y_pred_df.severity,
+        ax=axes[i],
     )
     axes[i].set_title(key)
 
 
-severity_results = {key: evalpreds.calculate_severity_metrics(
-    y_true=evalpreds.y_true_df.severity,
-    y_pred=evalpreds.y_pred_df.severity,
-    region=evalpreds.region
-) for key, evalpreds in evals.items()}
+severity_results = {
+    key: evalpreds.calculate_severity_metrics(
+        y_true=evalpreds.y_true_df.severity,
+        y_pred=evalpreds.y_pred_df.severity,
+        region=evalpreds.region,
+    )
+    for key, evalpreds in evals.items()
+}
 
 
 fig, axes = plt.subplots(1, 2, figsize=(8, 4))
@@ -160,7 +167,9 @@ for i, metric in enumerate(
         "regional_rmse",
     ]
 ):
-    regional_scores = pd.DataFrame({key: res[metric] for key, res in severity_results.items()})
+    regional_scores = pd.DataFrame(
+        {key: res[metric] for key, res in severity_results.items()}
+    )
     regional_scores.plot(kind="bar", ax=axes[i])
     axes[i].set_title(metric)
 plt.show()
@@ -194,6 +203,14 @@ for i, key in enumerate(evals.keys()):
     generate_density_kdeplot(
         evals[key].y_true_df.log_density, evals[key].y_pred_df.log_density
     )
+
+
+# log density metrics for just samples with satellite imagery
+evals["with_satellite"].calculate_density_metrics(
+    y_true=evals["with_satellite"].y_true_df.log_density,
+    y_pred=evals["with_satellite"].y_pred_df.log_density,
+    region=evals["with_satellite"].region,
+)
 
 
 # ### Feature importances
