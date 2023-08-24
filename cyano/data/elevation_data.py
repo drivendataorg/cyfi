@@ -1,6 +1,4 @@
-import functools
 import json
-import os
 
 from cloudpathlib import AnyPath
 from loguru import logger
@@ -8,7 +6,7 @@ import pandas as pd
 import planetary_computer
 import pystac_client
 import rioxarray
-from tqdm.contrib.concurrent import process_map
+from tqdm import tqdm
 
 from cyano.config import FeaturesConfig
 from cyano.data.utils import get_bounding_box
@@ -56,7 +54,7 @@ def download_sample_elevation(
         )
         items = list(search.items())
         if len(items) == 0:
-            return None
+            return f"{sample_id}: No items returned"
 
         signed_asset = planetary_computer.sign(items[0].assets["data"])
         ele_array = rioxarray.open_rasterio(signed_asset.href)
@@ -93,40 +91,34 @@ def download_elevation_data(samples: pd.DataFrame, config: FeaturesConfig, cache
     save out the raw results.
 
     Args:
-        samples (pd.Dataframe): Dataframe with columns for date,
-            longitude, latitude, and sample_id
+        samples (pd.Dataframe): Dataframe where the index is sample ID
+            with columns for longitude and latitude
         config (FeaturesConfig): Configuration, including
             directory to save raw source data
     """
-    # Determine the number of processes to use when parallelizing
-    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
-
     # Create elevation directory
     (cache_dir / f"elevation_{config.elevation_feature_meter_window}").mkdir(
         exist_ok=True, parents=True
     )
 
     # Iterate over samples
-    logger.info(
-        f"Querying elevation data for {samples.shape[0]:,} samples with {NUM_PROCESSES} processes"
-    )
-    exceptions = process_map(
-        functools.partial(
-            download_sample_elevation,
+    logger.info(f"Querying elevation data for {samples.shape[0]:,} samples")
+    exceptions = []
+    for row in tqdm(samples.itertuples(), total=len(samples)):
+        exception = download_sample_elevation(
+            row.Index,
+            row.longitude,
+            row.latitude,
             meters_window=config.elevation_feature_meter_window,
             cache_dir=cache_dir,
-        ),
-        samples.index,
-        samples.latitude,
-        samples.longitude,
-        chunksize=1,
-        total=len(samples),
-        max_workers=NUM_PROCESSES,
-    )
-    exceptions = [e for e in exceptions if e]
+        )
+        if exception:
+            exceptions.append(exception)
+
+    # # exceptions = [e for e in exceptions if e]
     if len(exceptions) > 0:
         # Log number of exceptions to CLI
-        logger.warning(f"{len(exceptions)} exceptions raised during download")
-        # Log full lit of exceptions to .log file
+        logger.warning(f"Elevation could not be downloaded for {len(exceptions):,} samples")
+        # Log full list of exceptions to .log file
         exceptions = "\n".join(exceptions)
         logger.debug(f"Exceptions:\n{exceptions}")
