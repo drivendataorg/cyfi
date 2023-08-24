@@ -1,5 +1,4 @@
 import sys
-import yaml
 from zipfile import ZipFile
 
 from cloudpathlib import AnyPath
@@ -27,10 +26,7 @@ def experiment(
     config_path: Path = typer.Argument(exists=True, help="Path to an experiment configuration")
 ):
     """Run an experiment"""
-    with open(config_path, "r") as fp:
-        config_dict = yaml.safe_load(fp)
-        config = ExperimentConfig(**config_dict)
-
+    config = ExperimentConfig.from_file(config_path)
     logger.add(config.save_dir / "experiment.log", level="DEBUG")
     config.run_experiment()
 

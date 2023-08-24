@@ -6,6 +6,7 @@ from zipfile import ZipFile
 
 import lightgbm as lgb
 from loguru import logger
+import numpy as np
 import pandas as pd
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
@@ -156,7 +157,7 @@ class CyanoModelPipeline:
         preds = pd.Series(
             data=self.model.predict(self.predict_features),
             index=self.predict_features.index,
-            name="severity",
+            name=self.target_col,
         )
 
         # Group by sample id if multiple predictions per id
@@ -165,13 +166,24 @@ class CyanoModelPipeline:
                 f"Grouping {preds.shape[0]:,} predictions by {preds.index.nunique():,} unique sample IDs"
             )
             preds = preds.groupby(preds.index).mean()
-        self.preds = preds.round()
 
+        # do not allow negative values
+        preds.loc[preds < 0] = 0
+
+        self.preds = preds
         self.output_df = self.predict_samples.join(self.preds)
 
-        # If predicting exact density, calculate severity bin
-        if self.target_col == "density_cells_per_ml":
-            self.output_df = convert_density_to_severity(self.output_df)
+        # If predicting log density, exponentiate and then convert to severity
+        if self.target_col == "log_density":
+            self.output_df["severity"] = convert_density_to_severity(
+                np.exp(self.output_df.log_density) - 1
+            )
+
+        # If predicting exact density, convert to severity
+        elif self.target_col == "density_cells_per_ml":
+            self.output_df["severity"] = convert_density_to_severity(
+                self.output_df.density_cells_per_ml
+            )
 
         missing_mask = self.output_df.severity.isna()
         logger.warning(

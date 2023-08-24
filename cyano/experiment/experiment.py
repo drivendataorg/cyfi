@@ -39,8 +39,8 @@ class ExperimentConfig(BaseModel):
             Path.cwd().
         last_commit_hash (str, optional): Hash of the most recent commit to track codes
             used to run the experiment. Defaults to None.
-        target_col (str, optional): Target column to predict. Must be either "severity" or
-            "density_cells_per_ml". Defaults to "severity".
+        target_col (str, optional): Target column to predict. Must be either "severity",
+            "density_cells_per_ml", or "log_density". Defaults to "severity".
         debug (bool, optional): Run in debug mode. Defaults to False.
     """
 
@@ -54,6 +54,12 @@ class ExperimentConfig(BaseModel):
     @field_serializer("train_csv", "predict_csv", "cache_dir", "save_dir")
     def serialize_path_to_str(self, x, _info):
         return str(x)
+
+    @classmethod
+    def from_file(cls, yaml_file):
+        with open(yaml_file, "r") as fp:
+            config_dict = yaml.safe_load(fp)
+        return cls(**config_dict)
 
     def run_experiment(self):
         pipeline = CyanoModelPipeline(
