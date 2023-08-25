@@ -355,13 +355,15 @@ def generate_features(
         pd.DataFrame: Dataframe where the index is sample_id and there is one
             column for each feature. Each row is a unique combination of
             sample and pystac item. Only samples that have at least one valid
-            non-metadata feature are included in the features dataframe
+            non-metadata feature are included in the features dataframe. Missing
+            values are left as np.nan
     """
     # Generate satellite features
     # May be >1 row per sample, only includes samples with imagery
     satellite_features = generate_satellite_features(satellite_meta, config, cache_dir)
+    sample_ct = satellite_features.index.nunique()
     logger.info(
-        f"Generated {satellite_features.shape[1]} satellite features for {satellite_features.index.nunique():,} samples, {satellite_features.shape[0]:,} item/sample combinations."
+        f"Generated {satellite_features.shape[1]} satellite features for {sample_ct:,} samples ({(sample_ct / samples.shape[0]):.0%})"
     )
 
     # Generate non-satellite features. Each has only one row per sample
@@ -370,7 +372,7 @@ def generate_features(
     if config.climate_features:
         climate_features = generate_climate_features(sample_ids, config, cache_dir)
         logger.info(
-            f"Generated {climate_features.shape[1]} climate features for {climate_features.shape[0]:,} samples"
+            f"Generated climate features for {climate_features.shape[0]:,} samples ({(climate_features.shape[0] / samples.shape[0]):.0%})"
         )
         features = features.merge(
             climate_features, left_index=True, right_index=True, how="outer", validate="m:1"
@@ -379,7 +381,7 @@ def generate_features(
     if config.elevation_features:
         elevation_features = generate_elevation_features(sample_ids, config, cache_dir)
         logger.info(
-            f"Generated {elevation_features.shape[1]} elevation features for {elevation_features.shape[0]:,} samples"
+            f"Generated elevation features for {elevation_features.shape[0]:,} samples ({(elevation_features.shape[0] / samples.shape[0]):.0%})"
         )
         features = features.merge(
             elevation_features, left_index=True, right_index=True, how="outer", validate="m:1"
@@ -388,7 +390,7 @@ def generate_features(
     if config.metadata_features:
         metadata_features = generate_metadata_features(samples, config)
         logger.info(
-            f"Generated {metadata_features.shape[1]} metadata features for {metadata_features.shape[0]:,} samples"
+            f"Generated metadata features for {metadata_features.shape[0]:,} samples ({(metadata_features.shape[0] / samples.shape[0]):.0%})"
         )
         # Don't include samples for which we only have metadata
         features = features.merge(
@@ -397,7 +399,7 @@ def generate_features(
 
     pct_with_features = features.index.nunique() / samples.shape[0]
     logger.success(
-        f"Generated {features.shape[1]:,} features for {features.index.nunique():,} samples ({pct_with_features:.0%})"
+        f"Generated {features.shape[1]:,} features for {features.index.nunique():,} samples ({pct_with_features:.0%}). {features.shape[0]:,} rows total"
     )
 
     all_feature_cols = (
