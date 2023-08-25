@@ -11,7 +11,7 @@ from cyano.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
-IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS")
+IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", False)
 
 
 def test_known_features(train_data, features_config, satellite_meta):
