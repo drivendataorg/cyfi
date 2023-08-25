@@ -8,6 +8,7 @@ import lightgbm as lgb
 from loguru import logger
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import StratifiedGroupKFold
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
 from cyano.data.climate_data import download_climate_data
@@ -18,6 +19,7 @@ from cyano.data.utils import (
     add_unique_identifier,
     convert_density_to_severity,
 )
+from cyano.settings import RANDOM_STATE
 
 
 class CyanoModelPipeline:
@@ -56,7 +58,6 @@ class CyanoModelPipeline:
     def _prep_train_data(self, data, debug: bool):
         """Load labels and save out samples with UIDs"""
         labels = pd.read_csv(data)
-        labels = labels[["date", "latitude", "longitude", self.target_col]]
         labels = add_unique_identifier(labels)
         if debug:
             labels = labels.head(10)
@@ -65,7 +66,7 @@ class CyanoModelPipeline:
         labels.to_csv(self.cache_dir / "train_samples_uid_mapping.csv", index=True)
         logger.info(f"Loaded {labels.shape[0]:,} samples for training")
 
-        self.train_samples = labels[["date", "latitude", "longitude"]]
+        self.train_samples = labels.drop(columns=[self.target_col])
         self.train_labels = labels[self.target_col]
 
     def _prepare_features(self, samples, train_split: bool = True):
@@ -102,15 +103,61 @@ class CyanoModelPipeline:
         self.train_features = self._prepare_features(self.train_samples)
 
     def _train_model(self):
-        lgb_data = lgb.Dataset(
-            self.train_features, label=self.train_labels.loc[self.train_features.index]
+        # Train without folds if we cannot split by region or have insufficient samples
+        if (
+            (self.model_training_config.n_folds == 1)
+            or ("region" not in self.train_samples.columns)
+            or (self.train_features.index.nunique() <= self.model_training_config.n_folds)
+        ):
+            logger.info(f"Training single LGB model")
+            lgb_data = lgb.Dataset(
+                self.train_features, label=self.train_labels.loc[self.train_features.index]
+            )
+            self.models = [
+                lgb.train(
+                    self.model_training_config.params.model_dump(),
+                    lgb_data,
+                    num_boost_round=self.model_training_config.num_boost_round,
+                )
+            ]
+
+        # Train with folds by region
+        logger.info(f"Training {self.model_training_config.n_folds} model folds")
+        train_features = self.train_features.copy().reset_index(drop=False)
+        kf = StratifiedGroupKFold(
+            n_splits=self.model_training_config.n_folds, shuffle=True, random_state=RANDOM_STATE
+        )
+        splits = kf.split(
+            train_features,
+            self.train_samples.loc[train_features.sample_id].region,
+            groups=train_features.sample_id,
         )
 
-        self.model = lgb.train(
-            self.model_training_config.params.model_dump(),
-            lgb_data,
-            num_boost_round=self.model_training_config.num_boost_round,
-        )
+        trained_models = []
+        for train_idx, valid_idx in splits:
+            # Train model on fold
+            train_split_features = train_features.loc[train_idx].set_index("sample_id")
+            valid_split_features = train_features.loc[valid_idx].set_index("sample_id")
+
+            lgb_train_data = lgb.Dataset(
+                train_split_features, label=self.train_labels.loc[train_split_features.index]
+            )
+            lgb_valid_data = lgb.Dataset(
+                valid_split_features,
+                label=self.train_labels.loc[valid_split_features.index],
+                reference=lgb_train_data,
+            )
+
+            trained_model = lgb.train(
+                self.model_training_config.params.model_dump(),
+                lgb_train_data,
+                valid_sets=[lgb_train_data, lgb_valid_data],
+                valid_names=["train", "valid"],
+                num_boost_round=self.model_training_config.num_boost_round,
+            )
+            trained_models.append(trained_model)
+
+        self.models = trained_models
 
     def _to_disk(self, save_path: Path):
         save_dir = Path(save_path).parent
@@ -120,7 +167,8 @@ class CyanoModelPipeline:
         logger.info(f"Saving model to {save_path}")
         with ZipFile(save_path, "w") as z:
             z.writestr("config.yaml", yaml.dump(self.features_config.model_dump()))
-            z.writestr("lgb_model.txt", self.model.model_to_string())
+            for idx, model in enumerate(self.models):
+                z.writestr(f"lgb_model_{idx}.txt", model.model_to_string())
 
     def run_training(self, train_csv, save_path, debug: bool = False):
         self._prep_train_data(train_csv, debug)
@@ -154,11 +202,15 @@ class CyanoModelPipeline:
         self.predict_features = self._prepare_features(self.predict_samples, train_split=False)
 
     def _predict_model(self):
-        preds = pd.Series(
-            data=self.model.predict(self.predict_features),
-            index=self.predict_features.index,
-            name=self.target_col,
-        )
+        logger.info(f"Ensembling {len(self.models)} models")
+        preds = []
+        for model in self.models:
+            preds.append(
+                pd.Series(
+                    data=model.predict(self.predict_features), index=self.predict_features.index
+                )
+            )
+        preds = pd.concat(preds).rename(self.target_col)
 
         # Group by sample id if multiple predictions per id
         if not preds.index.is_unique:
@@ -186,9 +238,10 @@ class CyanoModelPipeline:
             )
 
         missing_mask = self.output_df.severity.isna()
-        logger.warning(
-            f"{missing_mask.sum():,} samples do not have predictions ({missing_mask.mean():.0%})"
-        )
+        if missing_mask.any():
+            logger.warning(
+                f"{missing_mask.sum():,} samples do not have predictions ({missing_mask.mean():.0%})"
+            )
 
     def _write_predictions(self, preds_path):
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)
