@@ -2,14 +2,14 @@ from pathlib import Path
 
 import numpy as np
 
-from cyano.data.features import generate_features
+from cyano.data.features import generate_features, generate_metadata_features
 from cyano.data.satellite_data import download_satellite_data, generate_candidate_metadata
 from cyano.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 
-def test_known_features(train_data, features_config, satellite_meta):
+def test_generate_features(train_data, features_config, satellite_meta):
     train_data = add_unique_identifier(train_data)
 
     # Generate features based on saved imagery
@@ -20,10 +20,16 @@ def test_known_features(train_data, features_config, satellite_meta):
         cache_dir=str(ASSETS_DIR / "feature_cache"),
     )
 
+    # Check that we have the expected feature columns
+    assert (features.columns == ["B02_mean", "B02_min", "B02_max", "land_cover"]).all()
+
     # Check that generated stats match known imagery stats
     assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_mean"], 402.2583)
     assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_min"], 309)
     assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_max"], 1296)
+
+    # Check that we only have data with satellite imagery
+    assert features.B02_mean.notna().all()
 
 
 def test_generate_candidate_metadata(train_data, features_config):
@@ -76,3 +82,15 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
             assert set([pth.stem for pth in sample_item_dir.iterdir()]) == set(
                 features_config.use_sentinel_bands
             )
+
+
+def test_generate_metadata_features(train_data, features_config):
+    train_data = add_unique_identifier(train_data)
+
+    features = generate_metadata_features(train_data, features_config)
+
+    assert features.land_cover.notna().all()
+    # Check that generated land cover classes match known classes
+    assert features.loc["2543db364f727f17fe4ce7881aa180da", "land_cover"] == 190
+    assert features.loc["671520fa92f555ab335e0cfa888c57e7", "land_cover"] == 60
+    assert features.shape[0] == train_data.shape[0]

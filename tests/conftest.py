@@ -45,6 +45,7 @@ def features_config():
         use_sentinel_bands=["B02"],
         image_feature_meter_window=500,
         satellite_image_features=["B02_mean", "B02_min", "B02_max"],
+        metadata_features=["land_cover"],
     )
 
 
