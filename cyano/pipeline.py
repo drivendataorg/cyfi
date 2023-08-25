@@ -1,6 +1,6 @@
 from pathlib import Path
 import tempfile
-from typing import Optional
+from typing import List, Optional
 import yaml
 from zipfile import ZipFile
 
@@ -28,7 +28,7 @@ class CyanoModelPipeline:
         features_config: FeaturesConfig,
         model_training_config: Optional[ModelTrainingConfig] = None,
         cache_dir: Optional[Path] = None,
-        model: Optional[lgb.Booster] = None,
+        models: Optional[List[lgb.Booster]] = None,
         target_col: Optional[str] = "log_density",
     ):
         """Instantiate CyanoModelPipeline
@@ -44,7 +44,7 @@ class CyanoModelPipeline:
         """
         self.features_config = features_config
         self.model_training_config = model_training_config
-        self.model = model
+        self.models = models
         self.cache_dir = (
             Path(tempfile.TemporaryDirectory().name) if cache_dir is None else Path(cache_dir)
         )
@@ -183,8 +183,14 @@ class CyanoModelPipeline:
     def from_disk(cls, filepath, cache_dir=None):
         archive = ZipFile(filepath, "r")
         features_config = FeaturesConfig(**yaml.safe_load(archive.read("config.yaml")))
-        model = lgb.Booster(model_str=archive.read("lgb_model.txt").decode())
-        return cls(features_config=features_config, model=model, cache_dir=cache_dir)
+        # Determine the number of ensembled models
+        model_files = [name for name in archive.namelist() if "lgb_model" in name]
+        logger.info(f"Loading {len(model_files)} ensembled models")
+        models = []
+        for model_file in model_files:
+            models.append(lgb.Booster(model_str=archive.read(model_file).decode()))
+
+        return cls(features_config=features_config, models=models, cache_dir=cache_dir)
 
     def _prep_predict_data(self, data, debug: bool = False):
         df = pd.read_csv(data)
