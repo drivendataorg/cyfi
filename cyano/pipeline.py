@@ -110,7 +110,7 @@ class CyanoModelPipeline:
             or (self.train_features.index.nunique() <= self.model_training_config.n_folds)
         ):
             logger.info(f"Training single LGB model")
-            self.model_training_config.params.early_stopping_round = 0
+            self.model_training_config.params.early_stopping_round = None
             lgb_data = lgb.Dataset(
                 self.train_features, label=self.train_labels.loc[self.train_features.index]
             )
@@ -121,6 +121,8 @@ class CyanoModelPipeline:
                     num_boost_round=self.model_training_config.num_boost_round,
                 )
             ]
+
+            return
 
         # Train with folds by region
         logger.info(f"Training {self.model_training_config.n_folds} model folds")

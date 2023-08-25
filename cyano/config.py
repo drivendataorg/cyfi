@@ -12,7 +12,7 @@ class LGBParams(BaseModel):
     num_leaves: Optional[int] = 31
     learning_rate: Optional[float] = 0.1
     verbosity: Optional[int] = -1
-    early_stopping_round: Optional[int] = 0
+    early_stopping_round: Optional[int] = None
     bagging_seed: Optional[int] = RANDOM_STATE
     seed: Optional[int] = RANDOM_STATE
 
