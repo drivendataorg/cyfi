@@ -45,10 +45,12 @@ def features_config():
         use_sentinel_bands=["B02"],
         image_feature_meter_window=500,
         satellite_image_features=["B02_mean", "B02_min", "B02_max"],
-        metadata_features=["land_cover"],
     )
 
 
 @pytest.fixture
 def experiment_config():
     return ExperimentConfig.from_file(ASSETS_DIR / "experiment_config.yaml")
+
+@pytest.fixture
+def land_cover_data()
