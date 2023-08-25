@@ -1,9 +1,11 @@
 ## Code to generate features from raw downloaded source data
 import functools
 import os
+import tarfile
 from typing import List, Union
 
-from cloudpathlib import AnyPath
+import appdirs
+from cloudpathlib import AnyPath, S3Path
 import cv2
 from loguru import logger
 import numpy as np
@@ -14,7 +16,6 @@ import xarray as xr
 
 
 from cyano.config import FeaturesConfig
-from cyano.settings import REPO_ROOT
 
 # Create a dictionary mapping feature names to feature generator
 # functions, which take a dictionary of band arrays as input
@@ -285,9 +286,22 @@ def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) ->
 
     # Pull in land cover classification from CDRP
     if "land_cover" in config.metadata_features:
+        destination_dir = Path(appdirs.user_cache_dir()) / "cyano"
+        destination_dir.mkdir(exist_ok=True)
+        land_cover_map_filepath = destination_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
+
+        if land_cover_map_filepath.exists():
+            logger.debug(f"Using land cover map already downloaded to {destination_dir}")
+        else:
+            logger.debug(f"Downloading ~2GB land cover map to {destination_dir}")
+            s3p = S3Path("s3://drivendata-public-assets/land_cover_map.tar.gz")
+            s3p.download_to(destination_dir)
+            file = tarfile.open(destination_dir / "land_cover_map.tar.gz")
+            file.extractall(destination_dir)
+
         logger.info(f"Loading land cover features with {NUM_PROCESSES} processes")
         land_cover_data = xr.open_dataset(
-            REPO_ROOT / "assets/C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
+            destination_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
         )
         land_covers = process_map(
             functools.partial(land_cover_for_sample, land_cover_data=land_cover_data),
