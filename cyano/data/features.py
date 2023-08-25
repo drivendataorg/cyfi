@@ -286,22 +286,22 @@ def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) ->
 
     # Pull in land cover classification from CDRP
     if "land_cover" in config.metadata_features:
-        destination_dir = Path(appdirs.user_cache_dir()) / "cyano"
-        destination_dir.mkdir(exist_ok=True)
-        land_cover_map_filepath = destination_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
+        lc_cache_dir = Path(appdirs.user_cache_dir()) / "cyano"
+        lc_cache_dir.mkdir(exist_ok=True)
+        land_cover_map_filepath = lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
 
         if land_cover_map_filepath.exists():
-            logger.debug(f"Using land cover map already downloaded to {destination_dir}")
+            logger.debug(f"Using land cover map already downloaded to {lc_cache_dir}")
         else:
-            logger.debug(f"Downloading ~2GB land cover map to {destination_dir}")
+            logger.debug(f"Downloading ~2GB land cover map to {lc_cache_dir}")
             s3p = S3Path("s3://drivendata-public-assets/land_cover_map.tar.gz")
-            s3p.download_to(destination_dir)
-            file = tarfile.open(destination_dir / "land_cover_map.tar.gz")
-            file.extractall(destination_dir)
+            s3p.download_to(lc_cache_dir)
+            file = tarfile.open(lc_cache_dir / "land_cover_map.tar.gz")
+            file.extractall(lc_cache_dir)
 
         logger.info(f"Loading land cover features with {NUM_PROCESSES} processes")
         land_cover_data = xr.open_dataset(
-            destination_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
+            lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
         )
         land_covers = process_map(
             functools.partial(land_cover_for_sample, land_cover_data=land_cover_data),
