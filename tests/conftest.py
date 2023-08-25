@@ -51,6 +51,3 @@ def features_config():
 @pytest.fixture
 def experiment_config():
     return ExperimentConfig.from_file(ASSETS_DIR / "experiment_config.yaml")
-
-@pytest.fixture
-def land_cover_data()
