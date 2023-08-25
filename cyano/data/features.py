@@ -255,6 +255,17 @@ def generate_elevation_features(
     pass
 
 
+def land_cover_for_sample(latitude: float, longitude: float, land_cover_data: xr.Dataset) -> int:
+    """Get the land cover classification value for a specific location
+
+    Args:
+        latitude (float): Latitude
+        longitude (Longitude): Longitude
+        land_cover_data (xr.Dataset): xarray Dataset with land cover information
+    """
+    return land_cover_data.sel(lat=latitude, lon=longitude, method="nearest").lccs_class.data[0]
+
+
 def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
     """Generate features from sample metadata
 
@@ -267,22 +278,27 @@ def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) ->
         pd.DataFrame: Dataframe where the index is sample_id. There is one column
             for each metadata feature and one row for each sample
     """
+    # Determine the number of processes to use when parallelizing
+    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
+
     # Generate features for each sample
     metadata_features = samples.copy()
 
     # Pull in land cover classification from CDRP
     if "land_cover" in config.metadata_features:
+        logger.info(f"Loading land cover features with {NUM_PROCESSES} processes")
         land_cover_data = xr.open_dataset(
             REPO_ROOT / "assets/C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
         )
-        logger.info(f"Loading land cover features")
-        land_covers = []
-        for row in tqdm(samples.itertuples(), total=len(samples)):
-            land_covers.append(
-                land_cover_data.sel(
-                    lat=row.latitude, lon=row.longitude, method="nearest"
-                ).lccs_class.data[0]
-            )
+        land_covers = process_map(
+            functools.partial(land_cover_for_sample, land_cover_data=land_cover_data),
+            metadata_features.latitude,
+            metadata_features.longitude,
+            chunksize=1,
+            total=len(metadata_features),
+            max_workers=NUM_PROCESSES,
+        )
+
         metadata_features["land_cover"] = land_covers
 
     if "rounded_longitude" in config.metadata_features:
@@ -352,8 +368,9 @@ def generate_features(
         logger.info(
             f"Generated {metadata_features.shape[1]} metadata features for {metadata_features.shape[0]:,} samples"
         )
+        # Don't include samples for which we only have metadata
         features = features.merge(
-            metadata_features, left_index=True, right_index=True, how="outer", validate="m:1"
+            metadata_features, left_index=True, right_index=True, how="left", validate="m:1"
         )
 
     pct_with_features = features.index.nunique() / samples.shape[0]
