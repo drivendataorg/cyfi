@@ -103,7 +103,7 @@ class CyanoModelPipeline:
         self.train_features = self._prepare_features(self.train_samples)
 
     def _train_model(self):
-        # Train without folds if we cannot split by region or have insufficient samples
+        # Train without folds if we cannot distribute by region or have insufficient samples
         if (
             (self.model_training_config.n_folds == 1)
             or ("region" not in self.train_samples.columns)
@@ -124,7 +124,7 @@ class CyanoModelPipeline:
 
             return
 
-        # Train with folds by region
+        # Train with folds, distributing regions evenly between folds
         logger.info(f"Training {self.model_training_config.n_folds} model folds")
         train_features = self.train_features.copy().reset_index(drop=False)
         kf = StratifiedGroupKFold(
