@@ -9,9 +9,13 @@ from loguru import logger
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
+import xarray as xr
+
 
 from cyano.config import FeaturesConfig
+from cyano.settings import REPO_ROOT
 
 # Create a dictionary mapping feature names to feature generator
 # functions, which take a dictionary of band arrays as input
@@ -263,10 +267,24 @@ def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) ->
         pd.DataFrame: Dataframe where the index is sample_id. There is one column
             for each metadata feature and one row for each sample
     """
-    # Pull in any external information needed (eg land use by state)
-
     # Generate features for each sample
     metadata_features = samples.copy()
+
+    # Pull in land cover classification from CDRP
+    if "land_cover" in config.metadata_features:
+        land_cover_data = xr.open_dataset(
+            REPO_ROOT / "assets/C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
+        )
+        logger.info(f"Loading land cover features")
+        land_covers = []
+        for row in tqdm(samples.itertuples(), total=len(samples)):
+            land_covers.append(
+                land_cover_data.sel(
+                    lat=row.latitude, lon=row.longitude, method="nearest"
+                ).lccs_class.data[0]
+            )
+        metadata_features["land_cover"] = land_covers
+
     if "rounded_longitude" in config.metadata_features:
         metadata_features["rounded_longitude"] = (metadata_features.longitude / 10).round(0)
     if "rounded_latitude" in config.metadata_features:
@@ -334,9 +352,8 @@ def generate_features(
         logger.info(
             f"Generated {metadata_features.shape[1]} metadata features for {metadata_features.shape[0]:,} samples"
         )
-        # Don't include samples for which we only have metadata
         features = features.merge(
-            metadata_features, left_index=True, right_index=True, how="left", validate="m:1"
+            metadata_features, left_index=True, right_index=True, how="outer", validate="m:1"
         )
 
     pct_with_features = features.index.nunique() / samples.shape[0]
