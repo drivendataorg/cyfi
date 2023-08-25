@@ -110,6 +110,7 @@ class CyanoModelPipeline:
             or (self.train_features.index.nunique() <= self.model_training_config.n_folds)
         ):
             logger.info(f"Training single LGB model")
+            self.model_training_config.params.early_stopping_round = 0
             lgb_data = lgb.Dataset(
                 self.train_features, label=self.train_labels.loc[self.train_features.index]
             )
