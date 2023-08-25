@@ -24,6 +24,8 @@ create_environment:
 	
 ## Install Python Dependencies
 requirements:
+	conda install -c conda-forge lightgbm -y
+	conda install -c conda-forge xarray dask netCDF4 bottleneck -y
 	pip install -r requirements_dev.txt
 
 ## Format using black
