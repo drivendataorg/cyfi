@@ -98,7 +98,7 @@ features_config:
   climate_variables: []
   climate_level: 2 m above ground
 model_training_config:
-  num_boost_round: 1000
+  num_boost_round: 100000
   n_folds: 5
   params:
     application: regression
