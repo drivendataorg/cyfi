@@ -66,7 +66,15 @@ class CyanoModelPipeline:
         labels.to_csv(self.cache_dir / "train_samples_uid_mapping.csv", index=True)
         logger.info(f"Loaded {labels.shape[0]:,} samples for training")
 
-        self.train_samples = labels.drop(columns=[self.target_col])
+        expected_cols = ["date", "latitude", "longitude"]
+        if self.model_training_config.n_folds > 1:
+            if "region" not in labels.columns:
+                raise ValueError(
+                    "To train with n_folds > 1, the labels dataframe must include a column for `region`"
+                )
+            expected_cols += ["region"]
+
+        self.train_samples = labels[expected_cols]
         self.train_labels = labels[self.target_col]
 
     def _prepare_features(self, samples, train_split: bool = True):
@@ -103,11 +111,9 @@ class CyanoModelPipeline:
         self.train_features = self._prepare_features(self.train_samples)
 
     def _train_model(self):
-        # Train without folds if we cannot distribute by region or have insufficient samples
-        if (
-            (self.model_training_config.n_folds == 1)
-            or ("region" not in self.train_samples.columns)
-            or (self.train_features.index.nunique() <= self.model_training_config.n_folds)
+        # Train without folds if we have insufficient samples
+        if (self.model_training_config.n_folds == 1) or (
+            self.train_features.index.nunique() <= self.model_training_config.n_folds
         ):
             logger.info("Training single LGB model")
             self.model_training_config.params.early_stopping_round = None
@@ -122,45 +128,46 @@ class CyanoModelPipeline:
                 )
             ]
 
-            return
-
-        # Train with folds, distributing regions evenly between folds
-        logger.info(f"Training {self.model_training_config.n_folds} model folds")
-        train_features = self.train_features.copy().reset_index(drop=False)
-        kf = StratifiedGroupKFold(
-            n_splits=self.model_training_config.n_folds, shuffle=True, random_state=RANDOM_STATE
-        )
-        splits = kf.split(
-            train_features,
-            self.train_samples.loc[train_features.sample_id].region,
-            groups=train_features.sample_id,
-        )
-
-        trained_models = []
-        for train_idx, valid_idx in splits:
-            # Train model on fold
-            train_split_features = train_features.loc[train_idx].set_index("sample_id")
-            valid_split_features = train_features.loc[valid_idx].set_index("sample_id")
-
-            lgb_train_data = lgb.Dataset(
-                train_split_features, label=self.train_labels.loc[train_split_features.index]
+        else:
+            # Train with folds, distributing regions evenly between folds
+            logger.info(f"Training {self.model_training_config.n_folds} model folds")
+            train_features = self.train_features.copy().reset_index(drop=False)
+            kf = StratifiedGroupKFold(
+                n_splits=self.model_training_config.n_folds,
+                shuffle=True,
+                random_state=RANDOM_STATE,
             )
-            lgb_valid_data = lgb.Dataset(
-                valid_split_features,
-                label=self.train_labels.loc[valid_split_features.index],
-                reference=lgb_train_data,
+            splits = kf.split(
+                train_features,
+                self.train_samples.loc[train_features.sample_id].region,
+                groups=train_features.sample_id,
             )
 
-            trained_model = lgb.train(
-                self.model_training_config.params.model_dump(),
-                lgb_train_data,
-                valid_sets=[lgb_train_data, lgb_valid_data],
-                valid_names=["train", "valid"],
-                num_boost_round=self.model_training_config.num_boost_round,
-            )
-            trained_models.append(trained_model)
+            trained_models = []
+            for train_idx, valid_idx in splits:
+                # Train model on fold
+                train_split_features = train_features.loc[train_idx].set_index("sample_id")
+                valid_split_features = train_features.loc[valid_idx].set_index("sample_id")
 
-        self.models = trained_models
+                lgb_train_data = lgb.Dataset(
+                    train_split_features, label=self.train_labels.loc[train_split_features.index]
+                )
+                lgb_valid_data = lgb.Dataset(
+                    valid_split_features,
+                    label=self.train_labels.loc[valid_split_features.index],
+                    reference=lgb_train_data,
+                )
+
+                trained_model = lgb.train(
+                    self.model_training_config.params.model_dump(),
+                    lgb_train_data,
+                    valid_sets=[lgb_train_data, lgb_valid_data],
+                    valid_names=["train", "valid"],
+                    num_boost_round=self.model_training_config.num_boost_round,
+                )
+                trained_models.append(trained_model)
+
+            self.models = trained_models
 
     def _to_disk(self, save_path: Path):
         save_dir = Path(save_path).parent
