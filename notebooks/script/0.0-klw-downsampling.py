@@ -139,7 +139,8 @@ pipe.predict_features = test_features
 pipe._predict_model()
 
 
-pipe._write_predictions(tmp_dir / "preds.csv")
+preds_path = tmp_dir / "preds.csv"
+pipe._write_predictions(preds_path)
 
 
 # ## Evaluate
@@ -154,11 +155,11 @@ from cyano.evaluate import (
 
 
 ep = EvaluatePreds(
-    y_true_csv=AnyPath(
+    y_true_csv = AnyPath(
         "s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/test.csv"
     ),
-    y_pred_csv="preds.csv",
-    save_dir="eval",
+    y_pred_csv = preds_path,
+    save_dir = "eval",
 )
 
 
