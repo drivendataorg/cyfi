@@ -112,5 +112,5 @@ model_training_config:
     verbosity: -1
     early_stopping_round: 100
 predict_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/test.csv
-save_dir: experiments/results/sentinel_landcover_folds_boosted
+save_dir: experiments/results/third_sentinel_with_folds
 train_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/train.csv
