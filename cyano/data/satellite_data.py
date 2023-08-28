@@ -328,7 +328,6 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
     logger.info(
         f"Selecting which satellite items to use for feature generation with {NUM_PROCESSES} processes"
     )
-
     selected_satellite_meta = process_map(
         functools.partial(
             select_sample_items,
@@ -344,28 +343,11 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
     )
 
     # Drop values of None
-    selected_satellite_meta = [items_meta for items_meta in selected_satellite_meta if items_meta]
+    selected_satellite_meta = [
+        items_meta for items_meta in selected_satellite_meta if items_meta is not None
+    ]
     # Concatenate all satellite metadata
     selected_satellite_meta = pd.concat(selected_satellite_meta).reset_index(drop=True)
-
-    # selected_satellite_meta = []
-    # for sample in tqdm(samples.itertuples(), total=len(samples)):
-    #     sample_item_ids = sample_item_map[sample.Index]["sentinel_item_ids"]
-    #     if len(sample_item_ids) == 0:
-    #         continue
-
-    #     sample_items_meta = candidate_sentinel_meta[
-    #         candidate_sentinel_meta.item_id.isin(sample_item_ids)
-    #     ].copy()
-    #     selected_ids = select_items(sample_items_meta, sample.date, config)
-
-    #     # Save out the selected items
-    #     sample_items_meta = sample_items_meta[sample_items_meta.item_id.isin(selected_ids)]
-    #     sample_items_meta["sample_id"] = sample.Index
-
-    #     selected_satellite_meta.append(sample_items_meta)
-
-    # selected_satellite_meta = pd.concat(selected_satellite_meta).reset_index(drop=True)
     logger.info(
         f"Identified satellite imagery for {selected_satellite_meta.sample_id.nunique():,} samples"
     )
