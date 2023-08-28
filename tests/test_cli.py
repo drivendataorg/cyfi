@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from typer.testing import CliRunner
+from zipfile import ZipFile
 
 from cyano.cli import app
 from cyano.experiment.experiment import ExperimentConfig
@@ -34,6 +35,21 @@ def test_cli_experiment(experiment_config_path):
         "results.json",
     ]:
         assert (Path(config.save_dir) / "metrics" / file).exists()
+
+
+def test_cli_experiment_with_folds(experiment_config_with_folds_path):
+    # Run CLI command
+    result = runner.invoke(
+        app,
+        ["experiment", str(experiment_config_with_folds_path)],
+    )
+    assert result.exit_code == 0
+
+    # Check that the correct number of models got saved out
+    config = ExperimentConfig.from_file(experiment_config_with_folds_path)
+    archive = ZipFile(Path(config.save_dir) / "model.zip")
+    model_files = [name for name in archive.namelist() if "lgb_model" in name]
+    assert len(model_files) == config.model_training_config.n_folds
 
 
 def test_cli_predict(tmp_path, predict_data_path, predict_data):
