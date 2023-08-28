@@ -1,15 +1,19 @@
 ## Code to generate features from raw downloaded source data
 import functools
 import os
+import tarfile
 from typing import List, Union
 
-from cloudpathlib import AnyPath
+import appdirs
+from cloudpathlib import AnyPath, S3Path
 import cv2
 from loguru import logger
 import numpy as np
 import pandas as pd
 from pathlib import Path
 from tqdm.contrib.concurrent import process_map
+import xarray as xr
+
 
 from cyano.config import FeaturesConfig
 
@@ -251,6 +255,17 @@ def generate_elevation_features(
     pass
 
 
+def land_cover_for_sample(latitude: float, longitude: float, land_cover_data: xr.Dataset) -> int:
+    """Get the land cover classification value for a specific location
+
+    Args:
+        latitude (float): Latitude
+        longitude (Longitude): Longitude
+        land_cover_data (xr.Dataset): xarray Dataset with land cover information
+    """
+    return land_cover_data.sel(lat=latitude, lon=longitude, method="nearest").lccs_class.data[0]
+
+
 def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
     """Generate features from sample metadata
 
@@ -263,10 +278,42 @@ def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) ->
         pd.DataFrame: Dataframe where the index is sample_id. There is one column
             for each metadata feature and one row for each sample
     """
-    # Pull in any external information needed (eg land use by state)
+    # Determine the number of processes to use when parallelizing
+    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
 
     # Generate features for each sample
     metadata_features = samples.copy()
+
+    # Pull in land cover classification from CDRP
+    if "land_cover" in config.metadata_features:
+        lc_cache_dir = Path(appdirs.user_cache_dir()) / "cyano"
+        lc_cache_dir.mkdir(exist_ok=True)
+        land_cover_map_filepath = lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
+
+        if land_cover_map_filepath.exists():
+            logger.debug(f"Using land cover map already downloaded to {lc_cache_dir}")
+        else:
+            logger.debug(f"Downloading ~2GB land cover map to {lc_cache_dir}")
+            s3p = S3Path("s3://drivendata-public-assets/land_cover_map.tar.gz")
+            s3p.download_to(lc_cache_dir)
+            file = tarfile.open(lc_cache_dir / "land_cover_map.tar.gz")
+            file.extractall(lc_cache_dir)
+
+        logger.info(f"Loading land cover features with {NUM_PROCESSES} processes")
+        land_cover_data = xr.open_dataset(
+            lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
+        )
+        land_covers = process_map(
+            functools.partial(land_cover_for_sample, land_cover_data=land_cover_data),
+            metadata_features.latitude,
+            metadata_features.longitude,
+            chunksize=1,
+            total=len(metadata_features),
+            max_workers=NUM_PROCESSES,
+        )
+
+        metadata_features["land_cover"] = land_covers
+
     if "rounded_longitude" in config.metadata_features:
         metadata_features["rounded_longitude"] = (metadata_features.longitude / 10).round(0)
     if "rounded_latitude" in config.metadata_features:

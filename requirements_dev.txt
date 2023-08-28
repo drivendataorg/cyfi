@@ -1,5 +1,6 @@
 -e .
 
+appdirs
 black
 cloudpathlib[s3]>=0.4.1
 flake8
@@ -7,7 +8,6 @@ geopandas
 geopy
 GitPython
 jupyter
-lightgbm
 loguru
 matplotlib
 numpy

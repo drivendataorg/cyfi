@@ -1,12 +1,18 @@
+from distutils.util import strtobool
+import os
 from pathlib import Path
 
 import numpy as np
+import pytest
 
-from cyano.data.features import generate_features
+from cyano.config import FeaturesConfig
+from cyano.data.features import generate_features, generate_metadata_features
 from cyano.data.satellite_data import download_satellite_data, generate_candidate_metadata
 from cyano.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
+
+IN_GITHUB_ACTIONS = strtobool(os.getenv("GITHUB_ACTIONS", "false"))
 
 
 def test_known_features(train_data, features_config, satellite_meta):
@@ -76,3 +82,19 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
             assert set([pth.stem for pth in sample_item_dir.iterdir()]) == set(
                 features_config.use_sentinel_bands
             )
+
+
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Entails ~2GB download of land cover map")
+def test_land_cover_features(train_data):
+    feature_config = FeaturesConfig(metadata_features=["land_cover"])
+    train_data = add_unique_identifier(train_data)
+    features = generate_metadata_features(
+        train_data,
+        feature_config,
+    )
+
+    assert features.land_cover.notna().all()
+    # Check that generated land cover classes match known classes
+    assert features.loc["2543db364f727f17fe4ce7881aa180da", "land_cover"] == 190
+    assert features.loc["671520fa92f555ab335e0cfa888c57e7", "land_cover"] == 60
+    assert features.shape[0] == train_data.shape[0]
