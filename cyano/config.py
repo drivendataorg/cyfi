@@ -16,6 +16,21 @@ class LGBParams(BaseModel):
     early_stopping_round: Optional[int] = None
     bagging_seed: Optional[int] = RANDOM_STATE
     seed: Optional[int] = RANDOM_STATE
+    """LightGBM model training parameters. For details, see
+    [LightGBM's documentation](https://lightgbm.readthedocs.io/en/latest/Parameters.html).
+
+    Args:
+        application (Optional[str], optional): Regression application. Defaults to "regression".
+        metric (Optional[str], optional): Metric to use. Defaults to "rmse".
+        max_depth (Optional[int], optional): Limit the max depth for tree model. Defaults to -1.
+        num_leaves (Optional[int], optional): Max number of tree leaves. Defaults to 31.
+        learning_rate (Optional[float], optional): Learning rate. Defaults to 0.1.
+        verbosity (Optional[int], optional): Level of LightGBM's verbosity. Defaults to -1.
+        bagging_seed (Optional[int], optional): Random seed for bagging. Defaults to RANDOM_STATE.
+        seed (Optional[int], optional): Seed used to generate other random seeds. Defaults 
+            to RANDOM_STATE.
+
+    """
 
 
 class FeaturesConfig(BaseModel):
@@ -79,3 +94,11 @@ class ModelTrainingConfig(BaseModel):
 
     # Silence warning for conflict with pydantic protected namespace
     model_config = ConfigDict(protected_namespaces=())
+    """Model training configuration
+
+    Args:
+        params (Optional[LGBParams], optional): Parameters for LightGBM training. For details
+            see [LightGBM's documentation](https://lightgbm.readthedocs.io/en/latest/Parameters.html).
+            Defaults to LGBParams().s
+        num_boost_round (Optional[int], optional): Number of boosting iterations. Defaults to 1000.
+    """
