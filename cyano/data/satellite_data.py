@@ -253,8 +253,7 @@ def select_items(
     date: Union[str, pd.Timestamp],
     config: FeaturesConfig,
 ) -> List[str]:
-    """Select which pystac items to include from a dataframe of items
-    based on a sample's date
+    """Select which pystac items to include for a given sample
 
     Args:
         item_meta (pd.DataFrame): Dataframe with metadata about all possible
@@ -282,28 +281,6 @@ def select_items(
     return selected.item_id.tolist()
 
 
-def select_sample_items(
-    sample_id: str,
-    sample_date: Union[str, pd.Timestamp],
-    sample_item_map: pd.DataFrame,
-    candidate_sentinel_meta: pd.DataFrame,
-    config: FeaturesConfig,
-):
-    sample_item_ids = sample_item_map[sample_id]["sentinel_item_ids"]
-    if len(sample_item_ids) == 0:
-        return None
-
-    sample_items_meta = candidate_sentinel_meta[
-        candidate_sentinel_meta.item_id.isin(sample_item_ids)
-    ].copy()
-    selected_ids = select_items(sample_items_meta, sample_date, config)
-
-    sample_items_meta = sample_items_meta[sample_items_meta.item_id.isin(selected_ids)]
-    sample_items_meta["sample_id"] = sample_id
-
-    return sample_items_meta
-
-
 def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
     """Identify all pystac items to be used during feature
     generation for a given set of samples
@@ -318,35 +295,28 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
             and pystac item id. The 'selected' column indicates
             which will be used in feature generation
     """
-    # Determine the number of processes to use when parallelizing
-    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
-
     ## Get all candidate item metadata
     candidate_sentinel_meta, sample_item_map = generate_candidate_metadata(samples, config)
 
     ## Select which items to use for each sample
-    logger.info(
-        f"Selecting which satellite items to use for feature generation with {NUM_PROCESSES} processes"
-    )
-    selected_satellite_meta = process_map(
-        functools.partial(
-            select_sample_items,
-            sample_item_map=sample_item_map,
-            candidate_sentinel_meta=candidate_sentinel_meta,
-            config=config,
-        ),
-        samples.index,
-        samples.date,
-        max_workers=NUM_PROCESSES,
-        chunksize=1,
-        total=len(samples),
-    )
+    logger.info("Selecting which items to use for feature generation")
+    selected_satellite_meta = []
+    for sample in tqdm(samples.itertuples(), total=len(samples)):
+        sample_item_ids = sample_item_map[sample.Index]["sentinel_item_ids"]
+        if len(sample_item_ids) == 0:
+            continue
 
-    # Drop values of None
-    selected_satellite_meta = [
-        items_meta for items_meta in selected_satellite_meta if items_meta is not None
-    ]
-    # Concatenate all satellite metadata
+        sample_items_meta = candidate_sentinel_meta[
+            candidate_sentinel_meta.item_id.isin(sample_item_ids)
+        ].copy()
+        selected_ids = select_items(sample_items_meta, sample.date, config)
+
+        # Save out the selected items
+        sample_items_meta = sample_items_meta[sample_items_meta.item_id.isin(selected_ids)]
+        sample_items_meta["sample_id"] = sample.Index
+
+        selected_satellite_meta.append(sample_items_meta)
+
     selected_satellite_meta = pd.concat(selected_satellite_meta).reset_index(drop=True)
     logger.info(
         f"Identified satellite imagery for {selected_satellite_meta.sample_id.nunique():,} samples"
