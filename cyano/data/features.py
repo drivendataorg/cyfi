@@ -243,11 +243,12 @@ def generate_elevation_features(
         sample_ids (Union[List[str], pd.Index]): List of unique indices for each sample
         config (FeaturesConfig): Configuration, including
             directory where raw source data is saved
+        cache_dir (AnyPath): Cache directory
 
     Returns:
         pd.DataFrame: Dataframe where the index is sample_id. There is
             one columns for each elevation feature and one row
-            for each sample
+            for each sample with elevation data
     """
     elevation_dir = cache_dir / f"elevation_{config.elevation_feature_meter_window}"
     elevation_paths = pd.Series([elevation_dir / f"{id}.json" for id in sample_ids])

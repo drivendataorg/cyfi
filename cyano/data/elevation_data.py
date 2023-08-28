@@ -115,7 +115,6 @@ def download_elevation_data(samples: pd.DataFrame, config: FeaturesConfig, cache
         if exception:
             exceptions.append(exception)
 
-    # # exceptions = [e for e in exceptions if e]
     if len(exceptions) > 0:
         # Log number of exceptions to CLI
         logger.warning(f"Elevation could not be downloaded for {len(exceptions):,} samples")
