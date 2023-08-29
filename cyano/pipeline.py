@@ -212,22 +212,15 @@ class CyanoModelPipeline:
         self._to_disk(save_path)
 
     @classmethod
-    def _load_models(cls, filepath):
+    def from_disk(cls, filepath, cache_dir=None):
         archive = ZipFile(filepath, "r")
+        features_config = FeaturesConfig(**yaml.safe_load(archive.read("config.yaml")))
         # Determine the number of ensembled models
         model_files = [name for name in archive.namelist() if "lgb_model" in name]
         logger.info(f"Loading {len(model_files)} ensembled models")
         models = []
         for model_file in model_files:
             models.append(lgb.Booster(model_str=archive.read(model_file).decode()))
-
-        return models
-
-    @classmethod
-    def from_disk(cls, filepath, cache_dir=None):
-        archive = ZipFile(filepath, "r")
-        features_config = FeaturesConfig(**yaml.safe_load(archive.read("config.yaml")))
-        models = cls._load_models(filepath)
 
         return cls(features_config=features_config, models=models, cache_dir=cache_dir)
 
