@@ -15,6 +15,7 @@ import yaml
 
 from cloudpathlib import AnyPath
 import lightgbm as lgb
+from loguru import logger
 import pandas as pd
 from sklearn.model_selection import GridSearchCV
 
@@ -84,7 +85,29 @@ grid_search = GridSearchCV(
 
 # Note that grid search CV always tries to maximize the score, so root mean squared error has to be negative
 
-get_ipython().run_cell_magic('time', '', 'grid_search.fit(\n    train_features,\n    train.loc[train_features.index].log_density\n)\n')
+# Load past grid search results if we can
+grid_search_results_path = AnyPath(
+    's3://drivendata-competition-nasa-cyanobacteria/experiments/grid_search.csv'
+)
+if grid_search_results_path.exists():
+    logger.info('Loading existing grid search results')
+    results = pd.read_csv(grid_search_results_path)
+    results = results.sort_values(by='mean_test_score', ascending=False)
+else:
+    logger.info('Running grid search')
+    grid_search.fit(
+    train_features,
+    train.loc[train_features.index].log_density
+)
+    results = pd.DataFrame(grid_search.cv_results_).sort_values(by='mean_test_score', ascending=False)
+    with grid_search_results_path.open('w') as fp:
+        results.to_csv(fp, index=False)
+
+
+results.shape
+
+
+results.head()
 
 
 results = pd.DataFrame(grid_search.cv_results_).sort_values(by='mean_test_score', ascending=False)
