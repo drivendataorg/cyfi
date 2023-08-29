@@ -3,8 +3,10 @@
 
 # Use gridsearch to see if there are more optimal lightGBM parameters we should be using.
 # 
-# We'll use the features that a have already been generated for our current best experiment (third sentinel + land cover features, trained with folds). Compare the results to that [best experiment](https://docs.google.com/presentation/d/1zWrSMSivxylx_iH_aOapJfyziRsDuyuXOELduOn6x3c/edit#slide=id.g278eb39bdd6_0_43)
+# We'll use the features that a have already been generated for our current best experiment (third sentinel + land cover features, trained with folds). Compare the results to that best experiment: `s3://drivendata-competition-nasa-cyanobacteria/experiments/results/filter_water_distance_550
+# `
 
+# %load_ext lab_black
 get_ipython().run_line_magic('load_ext', 'autoreload')
 get_ipython().run_line_magic('autoreload', '2')
 
@@ -27,7 +29,7 @@ tmp_dir.mkdir(exist_ok=True)
 
 
 experiment_dir = AnyPath(
-    "s3://drivendata-competition-nasa-cyanobacteria/experiments/results/third_sentinel_with_folds"
+    "s3://drivendata-competition-nasa-cyanobacteria/experiments/results/filter_water_distance_550"
 )
 
 
@@ -85,55 +87,85 @@ grid_search = GridSearchCV(
 get_ipython().run_cell_magic('time', '', 'grid_search.fit(\n    train_features,\n    train.loc[train_features.index].log_density\n)\n')
 
 
-# If we don't specify 'scoring' in `grid_search`, I think score is the `lgb_model.score` method, which is R^2. Unclear whether specifying `metric="rmse"` makes the score that is returned RMSE.
-
-grid_search.best_estimator_.get_params()
-
-
 results = pd.DataFrame(grid_search.cv_results_).sort_values(by='mean_test_score', ascending=False)
 results.head(2)
 
 
-results.mean_test_score.head()
+save_to = AnyPath(
+    's3://drivendata-competition-nasa-cyanobacteria/experiments/grid_search.csv'
+)
+with save_to.open('w') as fp:
+    results.to_csv(fp, index=False)
+
+print(f'Grid search results saved to {save_to}')
 
 
-# first four are all the same. what are the params?
-results.head(4).filter(regex='param_')
+# do we have multiple tied for first?
+# yes, two are tied
+results.rank_test_score.value_counts().sort_index().head()
 
 
-results.sort_values(by='mean_test_score', ascending=False)
+results[results.rank_test_score == 1].filter(regex='param_')
 
 
-results.iloc[0]
+# The only difference is param_bagging_fraction
 
+# **Are there different other top params for different n_estimators?**
+# 
+# Our n_estimators doesn't exactly match the real process because we don't have a valid set and can't use early stopping. We are more interested in grid search's results for other parameters.
 
-# is the best model for each `n_estimators` the same?
-
-
-grid_search.best_estimator_.params
-
-
-n_est = 1000
-
+# Are there different other top params for different n_estimators?
+by_estimator = []
+include_cols = results.filter(regex='param_').columns.tolist() + ['mean_test_score']
 
 for n_est in results.param_n_estimators.unique():
-    best_params = (results[results.param_n_estimators == n_est]
-     .sort_values(by='mean_test_score', ascending=False)
-     .iloc[0]['params']
-    )
-    print(f'Best params for {n_est} estimators: {best_params}') 
+    sub = results[results.param_n_estimators == n_est]
+    sub = sub[sub.rank_test_score == sub.rank_test_score.min()][include_cols]
+    by_estimator.append(sub)
+
+pd.concat(by_estimator).set_index('param_n_estimators').T
+
+
+# how much worse is the 100 estimator model with 0.3 feature fractions?
+# not much
+results[
+    (results.param_n_estimators == 100) & (results.param_feature_fraction == 0.3)
+].mean_test_score.max()
+
+
+# how much worse is the 470 estimator model with 0.3 feature fractions?
+# noticeably worse
+results[
+    (results.param_n_estimators == 100) & (results.param_feature_fraction == 1.0)
+].mean_test_score.max()
+
+
+param_grid
+
+
+# **Takeaways**
+# 
+# Best set of LGB params based on grid search:
+# 
+# - `max_depth` = -1. This is the same as what we're already using (3rd place)
+# 
+# - `learning_rate` = 0.1. This is the same as what we're already using (3rd place)
+# 
+# - `bagging_fraction` = 1.0. The bagging fraction does not change the performance, and 1.0 is the default
+# 
+# - `feature_fraction` = 0.3. Feature fraction of 1.0 is best when we have only 100 boosting iterations, but 0.3 is best with either 470 or 1000. This makes sense because it helps deal with overfitting. When n_estimators is 470 using a feature_fraction of 1.0 instead of 0.3 has a more noticeable impact on the model than using a feature_fraction of 0.3 instead of 1.0 when n_estimators is 100 --> the risk of poor performance is greater is we stick with 1.0. From lightGBM:
+#     > LightGBM will randomly select a subset of features on each iteration (tree) if feature_fraction is smaller than 1.0. For example, if you set it to 0.8, LightGBM will select 80% of features before training each tree
+#     > 
+#     > can be used to speed up training
+#     > 
+#     > can be used to deal with over-fitting
+# 
+# - `min_split_gain` = 0.0. This is the lightGBM default and the same as what we're already using (3rd place)
 
 
 
 
 
-(results[results.param_n_estimators == n_est]
- .sort_values(by='mean_test_score', ascending=False)
- .iloc[0]['params']
-)
-
-
-results.to_csv('grid_search_results.csv', index=False)
 
 
 
