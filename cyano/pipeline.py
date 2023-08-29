@@ -161,8 +161,8 @@ class CyanoModelPipeline:
                 trained_model = lgb.train(
                     self.model_training_config.params.model_dump(),
                     lgb_train_data,
-                    valid_sets=[lgb_train_data, lgb_valid_data],
-                    valid_names=["train", "valid"],
+                    valid_sets=[lgb_valid_data],
+                    valid_names=["valid"],
                     num_boost_round=self.model_training_config.num_boost_round,
                 )
                 trained_models.append(trained_model)
