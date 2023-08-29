@@ -1,6 +1,0 @@
-train_csv: tests/assets/evaluate_data.csv
-predict_csv: tests/assets/evaluate_data.csv
-save_dir: tests/assets/experiment/
-target_col: log_density
-model_training_config:
-  n_folds: 2
