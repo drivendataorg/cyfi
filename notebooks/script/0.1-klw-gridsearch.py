@@ -56,11 +56,11 @@ train.loc[train_features.index].log_density
 param_grid = {
     'max_depth': [-1, 8],
     # 'num_leaves': [31],
-    # 'learning_rate': [0.005, 0.1],
-    # 'bagging_fraction': [0.3, 1.0],
-    # 'feature_fraction': [0.3, 1.0],
+    'learning_rate': [0.005, 0.1],
+    'bagging_fraction': [0.3, 1.0],
+    'feature_fraction': [0.3, 1.0],
     'min_split_gain': [0.0, 0.1],
-    # 'n_estimators': [1000, 100000, 470], # same as num_boost_round
+    'n_estimators': [1000, 100000, 470], # same as num_boost_round
 }
 
 
@@ -72,42 +72,22 @@ grid_search = GridSearchCV(
     param_grid=param_grid,
     cv=5,
     n_jobs=-1,
-    scoring='r2'
+    scoring='neg_root_mean_squared_error'
 )
 
 
-grid_search.fit(
-    train_features,
-    train.loc[train_features.index].log_density
-)
+# Note that grid search CV always tries to maximize the score, so root mean squared error has to be negative
+
+get_ipython().run_cell_magic('time', '', 'grid_search.fit(\n    train_features,\n    train.loc[train_features.index].log_density\n)\n')
 
 
 # If we don't specify 'scoring' in `grid_search`, I think score is the `lgb_model.score` method, which is R^2. Unclear whether specifying `metric="rmse"` makes the score that is returned RMSE.
 
-# with scoring specified in grid_search
-pd.DataFrame(grid_search.cv_results_).sort_values(by='mean_test_score')
-
-
-# without scoring specified in grid_search
-pd.DataFrame(grid_search.cv_results_).sort_values(by='mean_test_score')
-
-
-lgb_model.score
-
-
-get_ipython().run_line_magic('pinfo', 'lgb_model.score')
-
-
-grid_search.get_params()
-
-
 grid_search.best_estimator_.get_params()
 
 
-lgb_data = lgb.Dataset(
-    train_features,
-    train.loc[train_features.index].log_density,
-)
+# with scoring specified in grid_search
+pd.DataFrame(grid_search.cv_results_).sort_values(by='mean_test_score', ascending=False)
 
 
 
