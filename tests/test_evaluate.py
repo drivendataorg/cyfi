@@ -31,6 +31,20 @@ def test_evaluate_preds(experiment_config, tmp_path):
         assert (col in ep.y_true_df.columns) & (col in ep.y_pred_df.columns)
 
 
+def test_calculate_feature_importances(experiment_config, ensembled_model_path, tmp_path):
+    ep = EvaluatePreds(
+        y_true_csv=experiment_config.predict_csv,
+        y_pred_csv=experiment_config.save_dir / "preds.csv",
+        model_path=ensembled_model_path,
+        save_dir=tmp_path / "metrics",
+    )
+    ep.calculate_feature_importances()
+
+    # Check that we have feature importance saved out for both ensembled models
+    feature_importances = [p for p in (tmp_path / "metrics").iterdir()]
+    assert len(feature_importances) == 2
+
+
 def test_calculate_all_and_save(experiment_config, tmp_path):
     ep = EvaluatePreds(
         y_true_csv=experiment_config.predict_csv,

@@ -200,7 +200,7 @@ class EvaluatePreds:
         """
         archive = ZipFile(self.model_path, "r")
         model_files = sorted([name for name in archive.namelist() if "lgb_model" in name])
-        logger.info(f"Calculating feature importances for {len(model_files)} ensembled models")
+        logger.info(f"Calculating feature importances for {len(model_files)} model(s)")
 
         for idx, model_file in enumerate(model_files):
             # Load model

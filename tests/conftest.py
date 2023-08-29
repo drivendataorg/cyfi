@@ -49,6 +49,11 @@ def evaluate_data_path() -> Path:
     return ASSETS_DIR / "evaluate_data.csv"
 
 
+@pytest.fixture(scope="session")
+def ensembled_model_path() -> Path:
+    return ASSETS_DIR / "ensembled_model.zip"
+
+
 @pytest.fixture
 def features_config():
     return FeaturesConfig(
