@@ -6,7 +6,7 @@
 # We'll use the features that a have already been generated for our current best experiment (third sentinel + land cover features, trained with folds). Compare the results to that best experiment: `s3://drivendata-competition-nasa-cyanobacteria/experiments/results/filter_water_distance_550
 # `
 
-# %load_ext lab_black
+get_ipython().run_line_magic('load_ext', 'lab_black')
 get_ipython().run_line_magic('load_ext', 'autoreload')
 get_ipython().run_line_magic('autoreload', '2')
 
@@ -24,6 +24,8 @@ from cyano.experiment.experiment import ExperimentConfig
 from cyano.pipeline import CyanoModelPipeline
 from cyano.settings import RANDOM_STATE
 
+
+# ### Load data
 
 tmp_dir = AnyPath("tmp_dir")
 tmp_dir.mkdir(exist_ok=True)
@@ -51,57 +53,56 @@ train.shape
 train.head(2)
 
 
-train.loc[train_features.index].log_density
-
-
+# ### Grid search
+# 
 # Try params from each of the winners
 
 param_grid = {
-    'max_depth': [-1, 8],
-    'num_leaves': [31],
-    'learning_rate': [0.005, 0.1],
-    'bagging_fraction': [0.3, 1.0],
-    'feature_fraction': [0.3, 1.0],
-    'min_split_gain': [0.0, 0.1],
-    'n_estimators': [100, 1000, 470], # same as num_boost_round
+    "max_depth": [-1, 8],
+    "num_leaves": [31],
+    "learning_rate": [0.005, 0.1],
+    "bagging_fraction": [0.3, 1.0],
+    "feature_fraction": [0.3, 1.0],
+    "min_split_gain": [0.0, 0.1],
+    "n_estimators": [100, 1000, 470],  # same as num_boost_round
 }
 
 
 # Note that this is slightly different than our process because we use LGB.Booster, which we cannot input to the GridSearch. With our grid search, we are not using a valid set or early stopping.
 
-lgb_model = lgb.LGBMModel(
-    objective='regression', metric='rmse'
-)
+lgb_model = lgb.LGBMModel(objective="regression", metric="rmse")
 
 
 grid_search = GridSearchCV(
-    estimator = lgb_model,
+    estimator=lgb_model,
     param_grid=param_grid,
     cv=5,
     n_jobs=-1,
-    scoring='neg_root_mean_squared_error'
+    scoring="neg_root_mean_squared_error",
 )
 
 
-# Note that grid search CV always tries to maximize the score, so root mean squared error has to be negative
+# Grid search CV always tries to maximize the score, so root mean squared error has to be negative
 
 # Load past grid search results if we can
 grid_search_results_path = AnyPath(
-    's3://drivendata-competition-nasa-cyanobacteria/experiments/grid_search.csv'
+    "s3://drivendata-competition-nasa-cyanobacteria/experiments/grid_search.csv"
 )
 if grid_search_results_path.exists():
-    logger.info('Loading existing grid search results')
+    logger.info("Loading existing grid search results")
     results = pd.read_csv(grid_search_results_path)
-    results = results.sort_values(by='mean_test_score', ascending=False)
+    results = results.sort_values(by="mean_test_score", ascending=False)
+
+# Otherwise run grid search -- takes ~30 min
 else:
-    logger.info('Running grid search')
-    grid_search.fit(
-    train_features,
-    train.loc[train_features.index].log_density
-)
-    results = pd.DataFrame(grid_search.cv_results_).sort_values(by='mean_test_score', ascending=False)
-    with grid_search_results_path.open('w') as fp:
+    logger.info("Running grid search")
+    grid_search.fit(train_features, train.loc[train_features.index].log_density)
+    results = pd.DataFrame(grid_search.cv_results_).sort_values(
+        by="mean_test_score", ascending=False
+    )
+    with grid_search_results_path.open("w") as fp:
         results.to_csv(fp, index=False)
+    logger.success(f"Grid search results saved to {grid_search_results_path}")
 
 
 results.shape
@@ -110,25 +111,12 @@ results.shape
 results.head()
 
 
-results = pd.DataFrame(grid_search.cv_results_).sort_values(by='mean_test_score', ascending=False)
-results.head(2)
-
-
-save_to = AnyPath(
-    's3://drivendata-competition-nasa-cyanobacteria/experiments/grid_search.csv'
-)
-with save_to.open('w') as fp:
-    results.to_csv(fp, index=False)
-
-print(f'Grid search results saved to {save_to}')
-
-
 # do we have multiple tied for first?
 # yes, two are tied
 results.rank_test_score.value_counts().sort_index().head()
 
 
-results[results.rank_test_score == 1].filter(regex='param_')
+results[results.rank_test_score == 1].filter(regex="param_")
 
 
 # The only difference is param_bagging_fraction
@@ -139,14 +127,14 @@ results[results.rank_test_score == 1].filter(regex='param_')
 
 # Are there different other top params for different n_estimators?
 by_estimator = []
-include_cols = results.filter(regex='param_').columns.tolist() + ['mean_test_score']
+include_cols = results.filter(regex="param_").columns.tolist() + ["mean_test_score"]
 
 for n_est in results.param_n_estimators.unique():
     sub = results[results.param_n_estimators == n_est]
     sub = sub[sub.rank_test_score == sub.rank_test_score.min()][include_cols]
     by_estimator.append(sub)
 
-pd.concat(by_estimator).set_index('param_n_estimators').T
+pd.concat(by_estimator).set_index("param_n_estimators").T
 
 
 # how much worse is the 100 estimator model with 0.3 feature fractions?
