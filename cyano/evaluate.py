@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 import lightgbm as lgb
@@ -14,6 +15,7 @@ from sklearn.metrics import (
     mean_absolute_percentage_error,
     r2_score,
 )
+from zipfile import ZipFile
 
 from cyano.data.utils import add_unique_identifier
 
@@ -110,13 +112,14 @@ def generate_regional_barplot(regional_rmse):
 
 class EvaluatePreds:
     def __init__(
-        self, y_true_csv: Path, y_pred_csv: Path, save_dir: Path, model: lgb.Booster = None
+        self, y_true_csv: Path, y_pred_csv: Path, save_dir: Path, model_path: Optional[Path] = None
     ):
         """Instantate EvaluatePreds class. To automatically generate all key visualizations, run
         cls.calculate_all_and_save() after instantiation.
         """
-        self.model = model
+        self.model_path = model_path
 
+        # Load preds and ground truth
         all_preds = pd.read_csv(y_pred_csv).set_index("sample_id")
 
         self.missing_predictions_mask = all_preds.severity.isna()
@@ -190,17 +193,28 @@ class EvaluatePreds:
 
         return results
 
-    @staticmethod
-    def calculate_feature_importance(model):
-        feature_importances = pd.DataFrame(
-            {
-                "feature": model.feature_name(),
-                "importance_gain": model.feature_importance(importance_type="gain"),
-                "importance_split": model.feature_importance(importance_type="split"),
-            }
-        ).sort_values(by="importance_gain", ascending=False)
+    def calculate_feature_importances(self):
+        """Calculate feature importances for each model. Feature importances are saved
+        out with the same index as the original model file. Eg. Importances for
+        `lgb_model_0.txt` will be saved to `self.save_dir / feature_importance_0.txt`
+        """
+        archive = ZipFile(self.model_path, "r")
+        model_files = sorted([name for name in archive.namelist() if "lgb_model" in name])
+        logger.info(f"Calculating feature importances for {len(model_files)} ensembled models")
 
-        return feature_importances
+        for idx, model_file in enumerate(model_files):
+            # Load model
+            model = lgb.Booster(model_str=archive.read(model_file).decode())
+
+            # Calculate and save feature importance
+            feature_importance = pd.DataFrame(
+                {
+                    "feature": model.feature_name(),
+                    "importance_gain": model.feature_importance(importance_type="gain"),
+                    "importance_split": model.feature_importance(importance_type="split"),
+                }
+            ).sort_values(by="importance_gain", ascending=False)
+            feature_importance.to_csv(self.save_dir / f"feature_importance_{idx}.csv", index=False)
 
     def calculate_all_and_save(self):
         results = dict()
@@ -241,9 +255,8 @@ class EvaluatePreds:
         with (self.save_dir / "results.json").open("w") as f:
             json.dump(results, f, indent=4)
 
-        if self.model is not None:
-            feature_importance = self.calculate_feature_importance(self.model)
-            feature_importance.to_csv(self.save_dir / "feature_importance.csv", index=False)
+        if self.model_path is not None:
+            self.calculate_feature_importances()
 
         crosstab_plot = generate_and_plot_crosstab(
             self.y_true_df.severity, self.y_pred_df.severity
