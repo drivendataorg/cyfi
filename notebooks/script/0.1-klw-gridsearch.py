@@ -55,16 +55,20 @@ train.loc[train_features.index].log_density
 
 param_grid = {
     'max_depth': [-1, 8],
-    # 'num_leaves': [31],
+    'num_leaves': [31],
     'learning_rate': [0.005, 0.1],
     'bagging_fraction': [0.3, 1.0],
     'feature_fraction': [0.3, 1.0],
     'min_split_gain': [0.0, 0.1],
-    'n_estimators': [1000, 100000, 470], # same as num_boost_round
+    'n_estimators': [100, 1000, 470], # same as num_boost_round
 }
 
 
-lgb_model = lgb.LGBMRegressor(objective='regression', metric='rmse')
+# Note that this is slightly different than our process because we use LGB.Booster, which we cannot input to the GridSearch. With our grid search, we are not using a valid set or early stopping.
+
+lgb_model = lgb.LGBMModel(
+    objective='regression', metric='rmse'
+)
 
 
 grid_search = GridSearchCV(
@@ -86,8 +90,30 @@ get_ipython().run_cell_magic('time', '', 'grid_search.fit(\n    train_features,\
 grid_search.best_estimator_.get_params()
 
 
-# with scoring specified in grid_search
-pd.DataFrame(grid_search.cv_results_).sort_values(by='mean_test_score', ascending=False)
+
+
+
+# is the best model for each `n_estimators` the same?
+
+
+n_est = 1000
+
+
+for n_est in results.param_n_estimators.unique():
+    print(f'Best params for {n_est} estiamtors 
+
+
+(results[results.param_n_estimators == n_est]
+ .sort_values(by='mean_test_score', ascending=False)
+ .iloc[0]['params']
+)
+
+
+results.to_csv('grid_search_results.csv', index=False)
+
+
+results = pd.DataFrame(grid_search.cv_results_).sort_values(by='mean_test_score', ascending=False)
+results.head()
 
 
 
