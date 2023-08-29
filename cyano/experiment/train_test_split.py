@@ -41,23 +41,41 @@ def make_train_test_competition_split(split_dir="competition"):
 
 @app.command()
 def make_train_test_competition_water_distance_split(
-    split_dir: str = "competition_train_near_water", filter_distance_m: int = 1000
+    split_dir: str = "competition_near_water",
+    filter_distance_m: int = 1000,
+    filter_test: bool = False,
 ):
-    """Write out train and test files using the competition split for use in experiments. Filter the train set to samples within filter_distance_m
-    meters of water based on Google Earth Engine.
+    """Write out train and test files using the competition split for use in
+    experiments. Filter the to samples within filter_distance_m meters of water
+    based on Google Earth Engine.
+
+    Args:
+        split_dir (str, optional): Directory name to save splits to.
+            Defaults to "competition_near_water".
+        filter_distance_m (int, optional): Distance from water to include, in meters.
+            Defaults to 1000.
+        filter_test (bool, optional): Whether to also filter and write out a modified
+            test set. Defaults to False.
     """
-    # Update train set
-    with (SPLITS_PARENT_DIR / "competition/train.csv").open("r") as f:
-        train = pd.read_csv(f)
-        logger.info(f"Loaded {train.shape[0]:,} competition train samples")
+    if filter_test:
+        splits = ["train", "test"]
+    else:
+        splits = ["train"]
 
-    train = train[train.distance_to_water_m < filter_distance_m]
-    logger.info(f"Filtered to {train.shape[0]:,} samples within {filter_distance_m:,} m of water")
+    for split in splits:
+        # Load competition data
+        with (SPLITS_PARENT_DIR / f"competition/{split}.csv").open("r") as f:
+            df = pd.read_csv(f)
+            logger.info(f"Loaded {df.shape[0]:,} competition {split} samples")
 
-    save_to = SPLITS_PARENT_DIR / f"{split_dir}_{filter_distance_m}m/train.csv"
-    logger.info(f"Writing out train samples to {save_to}")
-    with (save_to).open("w") as f:
-        train.to_csv(f, index=False)
+        # Filter and save
+        df = df[df.distance_to_water_m < filter_distance_m]
+        logger.info(f"Filtered to {df.shape[0]:,} samples within {filter_distance_m:,} m of water")
+
+        save_to = SPLITS_PARENT_DIR / f"{split_dir}_{filter_distance_m}m/{split}.csv"
+        logger.info(f"Saving to {save_to}")
+        with (save_to).open("w") as f:
+            df.to_csv(f, index=False)
 
 
 if __name__ == "__main__":
