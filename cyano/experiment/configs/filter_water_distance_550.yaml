@@ -111,6 +111,6 @@ model_training_config:
     seed: 40
     verbosity: -1
     early_stopping_round: 100
-save_dir: experiments/results/third_sentinel_with_folds
+save_dir: experiments/results/filter_water_distance_550
 train_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition_near_water_550m/train.csv
 predict_csv: s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition_near_water_550m/test.csv
