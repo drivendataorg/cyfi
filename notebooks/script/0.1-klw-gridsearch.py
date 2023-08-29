@@ -90,17 +90,41 @@ get_ipython().run_cell_magic('time', '', 'grid_search.fit(\n    train_features,\
 grid_search.best_estimator_.get_params()
 
 
+results = pd.DataFrame(grid_search.cv_results_).sort_values(by='mean_test_score', ascending=False)
+results.head(2)
 
+
+results.mean_test_score.head()
+
+
+# first four are all the same. what are the params?
+results.head(4).filter(regex='param_')
+
+
+results.sort_values(by='mean_test_score', ascending=False)
+
+
+results.iloc[0]
 
 
 # is the best model for each `n_estimators` the same?
+
+
+grid_search.best_estimator_.params
 
 
 n_est = 1000
 
 
 for n_est in results.param_n_estimators.unique():
-    print(f'Best params for {n_est} estiamtors 
+    best_params = (results[results.param_n_estimators == n_est]
+     .sort_values(by='mean_test_score', ascending=False)
+     .iloc[0]['params']
+    )
+    print(f'Best params for {n_est} estimators: {best_params}') 
+
+
+
 
 
 (results[results.param_n_estimators == n_est]
@@ -110,10 +134,6 @@ for n_est in results.param_n_estimators.unique():
 
 
 results.to_csv('grid_search_results.csv', index=False)
-
-
-results = pd.DataFrame(grid_search.cv_results_).sort_values(by='mean_test_score', ascending=False)
-results.head()
 
 
 
