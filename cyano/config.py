@@ -12,6 +12,7 @@ class LGBParams(BaseModel):
     num_leaves: Optional[int] = 31
     learning_rate: Optional[float] = 0.1
     verbosity: Optional[int] = -1
+    early_stopping_round: Optional[int] = None
     bagging_seed: Optional[int] = RANDOM_STATE
     seed: Optional[int] = RANDOM_STATE
 
@@ -42,6 +43,7 @@ class FeaturesConfig(BaseModel):
 class ModelTrainingConfig(BaseModel):
     params: Optional[LGBParams] = LGBParams()
     num_boost_round: Optional[int] = 1000
+    n_folds: Optional[int] = 1
 
     # Silence warning for conflict with pydantic protected namespace
     model_config = ConfigDict(protected_namespaces=())

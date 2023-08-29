@@ -30,6 +30,11 @@ def experiment_config_path() -> Path:
 
 
 @pytest.fixture(scope="session")
+def experiment_config_with_folds_path() -> Path:
+    return ASSETS_DIR / "experiment_config_with_folds.yaml"
+
+
+@pytest.fixture(scope="session")
 def predict_data_path() -> Path:
     return ASSETS_DIR / "predict_data.csv"
 
