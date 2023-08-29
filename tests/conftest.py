@@ -44,6 +44,11 @@ def predict_data(predict_data_path) -> pd.DataFrame:
     return pd.read_csv(predict_data_path)
 
 
+@pytest.fixture(scope="session")
+def evaluate_data_path() -> Path:
+    return ASSETS_DIR / "evaluate_data.csv"
+
+
 @pytest.fixture
 def features_config():
     return FeaturesConfig(
