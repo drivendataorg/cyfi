@@ -17,7 +17,7 @@ import xarray as xr
 from cyano.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
 
 
-def all_satellite_features(
+def calculate_satellite_features(
     satellite_meta: pd.DataFrame,
     config: FeaturesConfig,
     cache_dir: Union[str, Path],
@@ -52,7 +52,9 @@ def all_satellite_features(
 
     # Iterate over selected sample / item combinations
     satellite_features = process_map(
-        functools.partial(sample_item_satellite_features, config=config, cache_dir=cache_dir),
+        functools.partial(
+            _calculate_satellite_features_for_sample_item, config=config, cache_dir=cache_dir
+        ),
         satellite_meta.sample_id,
         satellite_meta.item_id,
         chunksize=1,
@@ -79,7 +81,7 @@ def all_satellite_features(
     return satellite_features.set_index("sample_id").drop(columns=["item_id"]).astype(float)
 
 
-def sample_item_satellite_features(
+def _calculate_satellite_features_for_sample_item(
     sample_id: str, item_id: str, config: FeaturesConfig, cache_dir: AnyPath
 ):
     """Generate the satellite features for specific combination of
@@ -111,7 +113,7 @@ def sample_item_satellite_features(
     return sample_item_features
 
 
-def all_sample_meta_features(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
+def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
     """Generate features from sample metadata
 
     Args:
@@ -149,7 +151,7 @@ def all_sample_meta_features(samples: pd.DataFrame, config: FeaturesConfig) -> p
             lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
         )
         land_covers = process_map(
-            functools.partial(sample_land_cover, land_cover_data=land_cover_data),
+            functools.partial(lookup_land_cover, land_cover_data=land_cover_data),
             sample_meta_features.latitude,
             sample_meta_features.longitude,
             chunksize=1,
@@ -167,7 +169,7 @@ def all_sample_meta_features(samples: pd.DataFrame, config: FeaturesConfig) -> p
     return sample_meta_features[config.sample_meta_features]
 
 
-def sample_land_cover(latitude: float, longitude: float, land_cover_data: xr.Dataset) -> int:
+def lookup_land_cover(latitude: float, longitude: float, land_cover_data: xr.Dataset) -> int:
     """Get the land cover classification value for a specific location
 
     Args:
@@ -178,7 +180,7 @@ def sample_land_cover(latitude: float, longitude: float, land_cover_data: xr.Dat
     return land_cover_data.sel(lat=latitude, lon=longitude, method="nearest").lccs_class.data[0]
 
 
-def generate_features(
+def generate_all_features(
     samples: pd.DataFrame,
     satellite_meta: pd.DataFrame,
     config: FeaturesConfig,
@@ -206,7 +208,7 @@ def generate_features(
     """
     # Generate satellite features
     # May be >1 row per sample, only includes samples with imagery
-    satellite_features = all_satellite_features(satellite_meta, config, cache_dir)
+    satellite_features = calculate_satellite_features(satellite_meta, config, cache_dir)
     logger.info(
         f"Generated {satellite_features.shape[1]} satellite features for {satellite_features.index.nunique():,} samples, {satellite_features.shape[0]:,} item/sample combinations."
     )
@@ -215,7 +217,7 @@ def generate_features(
     features = satellite_features.copy()
 
     if config.sample_meta_features:
-        sample_meta_features = all_sample_meta_features(samples, config)
+        sample_meta_features = calculate_metadata_features(samples, config)
         logger.info(
             f"Generated {sample_meta_features.shape[1]} metadata features for {sample_meta_features.shape[0]:,} samples"
         )

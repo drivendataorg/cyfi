@@ -11,7 +11,7 @@ import pandas as pd
 from sklearn.model_selection import StratifiedGroupKFold
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
-from cyano.data.features import generate_features
+from cyano.data.features import generate_all_features
 from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
 from cyano.data.utils import (
     add_unique_identifier,
@@ -94,7 +94,9 @@ class CyanoModelPipeline:
         logger.success(f"Raw satellite imagery saved to {self.cache_dir}")
 
         ## Generate features
-        features = generate_features(samples, satellite_meta, self.features_config, self.cache_dir)
+        features = generate_all_features(
+            samples, satellite_meta, self.features_config, self.cache_dir
+        )
         save_features_to = self.cache_dir / f"features_{split}.csv"
         features.to_csv(save_features_to, index=True)
 
