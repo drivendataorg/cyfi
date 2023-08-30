@@ -37,9 +37,14 @@ class CyanoModelPipeline:
                 training configuration. Defaults to None.
             cache_dir (Optional[Path], optional): Cache directory. Defaults to None.
             model (Optional[lgb.Booster], optional): Trained LGB model. Defaults to None.
-            target_col (Optional[str], optional): Target column to predict. Must be one of
-                "severity", "log_density", or "density_cells_per_ml". Defaults to "log_density".
+            target_col (Optional[str], optional): Target column to predict. Defaults to "log_density".
         """
+        target_col_options = ["severity", "log_density", "density_cells_per_ml"]
+        if target_col not in target_col_options:
+            raise ValueError(
+                f"Unrecognized value for `target_col`. Possible target columns are: {target_col_options}"
+            )
+
         self.features_config = features_config
         self.model_training_config = model_training_config
         self.models = models
