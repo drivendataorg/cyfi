@@ -34,7 +34,6 @@ class LGBParams(BaseModel):
 
 
 class FeaturesConfig(BaseModel):
-    pc_collections: Optional[List] = ["sentinel-2-l2a"]
     pc_days_search_window: Optional[int] = 30
     pc_meters_search_window: Optional[int] = 1000
     use_sentinel_bands: Optional[List] = ["B02", "B03", "B04"]
@@ -50,14 +49,10 @@ class FeaturesConfig(BaseModel):
         "B04_mean",
     ]
     satellite_meta_features: Optional[List] = []
-    climate_features: Optional[List] = []
-    elevation_features: Optional[List] = []
-    metadata_features: Optional[List] = ["rounded_longitude"]
+    metadata_features: Optional[List] = []
     """Features configuration
 
     Args:
-        pc_collections (Optional[List], optional): Collections within the planetary computer to
-            search for satellite imagery. Defaults to ["sentinel-2-l2a"].
         pc_days_search_window (Optional[int], optional): Number of days before a given sample was
             collected to include when searching the planetary computer. Defaults to 30.
         pc_meters_search_window (Optional[int], optional): Buffer in meters to add on each side
@@ -75,10 +70,6 @@ class FeaturesConfig(BaseModel):
             "B03_max", "B04_mean", ].
         satellite_meta_features (Optional[List], optional): List of satellite metadata features to
             include. Defaults to [].
-        climate_features (Optional[List], optional): List of climate features to include.
-            Defaults to [].
-        elevation_features (Optional[List], optional): List of elevation features to include.
-            Defaults to [].
         metadata_features (Optional[List], optional): List of metadata features to include. Defaults
             to ["rounded_longitude"].
     """
