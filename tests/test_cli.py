@@ -30,7 +30,7 @@ def test_cli_experiment(experiment_config_path):
         "crosstab.png",
         "density_kde.png",
         "density_scatterplot.png",
-        "feature_importance.csv",
+        "feature_importance_model_0.csv",
         "results.json",
     ]:
         assert (Path(config.save_dir) / "metrics" / file).exists()

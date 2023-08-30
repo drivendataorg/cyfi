@@ -11,15 +11,12 @@ import pandas as pd
 from sklearn.model_selection import StratifiedGroupKFold
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
-from cyano.data.climate_data import download_climate_data
-from cyano.data.elevation_data import download_elevation_data
-from cyano.data.features import generate_features
+from cyano.data.features import generate_all_features
 from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
 from cyano.data.utils import (
     add_unique_identifier,
     convert_density_to_severity,
 )
-from cyano.settings import RANDOM_STATE
 
 
 class CyanoModelPipeline:
@@ -39,9 +36,15 @@ class CyanoModelPipeline:
                 training configuration. Defaults to None.
             cache_dir (Optional[Path], optional): Cache directory. Defaults to None.
             model (Optional[lgb.Booster], optional): Trained LGB model. Defaults to None.
-            target_col (Optional[str], optional): Target column to predict. Must be
-                either "severity" or "density_cells_per_ml". Defaults to "severity".
+            target_col (Optional[str], optional): Target column to predict. For possible
+                values, see AVAILABLE_TARGET_COLS. Defaults to "log_density".
         """
+        AVAILABLE_TARGET_COLS = ["severity", "log_density", "density_cells_per_ml"]
+        if target_col not in AVAILABLE_TARGET_COLS:
+            raise ValueError(
+                f"Unrecognized value for `target_col`. Possible target columns are: {AVAILABLE_TARGET_COLS}"
+            )
+
         self.features_config = features_config
         self.model_training_config = model_training_config
         self.models = models
@@ -88,16 +91,12 @@ class CyanoModelPipeline:
 
         ## Download satellite data
         download_satellite_data(satellite_meta, samples, self.features_config, self.cache_dir)
-
-        ## Download non-satellite data
-        if self.features_config.climate_features:
-            download_climate_data(samples, self.features_config, self.cache_dir)
-        if self.features_config.elevation_features:
-            download_elevation_data(samples, self.features_config, self.cache_dir)
-        logger.success(f"Raw source data saved to {self.cache_dir}")
+        logger.success(f"Raw satellite imagery saved to {self.cache_dir}")
 
         ## Generate features
-        features = generate_features(samples, satellite_meta, self.features_config, self.cache_dir)
+        features = generate_all_features(
+            samples, satellite_meta, self.features_config, self.cache_dir
+        )
         save_features_to = self.cache_dir / f"features_{split}.csv"
         features.to_csv(save_features_to, index=True)
 
@@ -126,7 +125,7 @@ class CyanoModelPipeline:
         kf = StratifiedGroupKFold(
             n_splits=self.model_training_config.n_folds,
             shuffle=True,
-            random_state=RANDOM_STATE,
+            random_state=40,
         )
         splits = kf.split(
             train_features,

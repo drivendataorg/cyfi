@@ -3,7 +3,8 @@ import hashlib
 import numpy as np
 import pandas as pd
 
-from cyano.settings import SEVERITY_LEFT_EDGES
+# Dictionary mapping severity levels to the minimum cells/mL in that level
+SEVERITY_LEFT_EDGES = {1: 0, 2: 20000, 3: 100000, 4: 1000000, 5: 10000000}
 
 
 def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
@@ -41,10 +42,10 @@ def convert_density_to_severity(density_series: pd.Series) -> pd.Series:
     """
     density = pd.cut(
         density_series,
-        SEVERITY_LEFT_EDGES + [np.inf],
+        list(SEVERITY_LEFT_EDGES.values()) + [np.inf],
         include_lowest=True,
         right=False,
-        labels=np.arange(1, 6),
+        labels=SEVERITY_LEFT_EDGES.keys(),
     ).astype(float)
 
     return density

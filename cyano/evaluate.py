@@ -214,7 +214,9 @@ class EvaluatePreds:
                     "importance_split": model.feature_importance(importance_type="split"),
                 }
             ).sort_values(by="importance_gain", ascending=False)
-            feature_importance.to_csv(self.save_dir / f"feature_importance_{idx}.csv", index=False)
+            feature_importance.to_csv(
+                self.save_dir / f"feature_importance_model_{idx}.csv", index=False
+            )
 
     def calculate_all_and_save(self):
         results = dict()

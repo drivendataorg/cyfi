@@ -65,6 +65,11 @@ def features_config():
         use_sentinel_bands=["B02"],
         image_feature_meter_window=500,
         satellite_image_features=["B02_mean", "B02_min", "B02_max"],
+        pc_days_search_window=30,
+        pc_meters_search_window=1000,
+        n_sentinel_items=1,
+        satellite_meta_features=[],
+        sample_meta_features=[],
     )
 
 

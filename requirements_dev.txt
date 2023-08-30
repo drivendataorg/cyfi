@@ -12,7 +12,6 @@ loguru
 matplotlib
 numpy
 odc-stac
-opencv-python
 pandas
 pathlib
 planetary-computer
