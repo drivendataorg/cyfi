@@ -5,8 +5,7 @@ features_config:
   n_sentinel_items: 15
   pc_days_search_window: 15
   pc_meters_search_window: 5000
-  sample_meta_features:
-  - land_cover
+  sample_meta_features: []
   satellite_image_features:
   - B02_min
   - B02_mean
@@ -16,7 +15,7 @@ features_config:
   - days_before_sample
   use_sentinel_bands:
   - B02
-last_commit_hash: 06ce7266fbbb7775c9d1afd0cbc4054f656562b8
+last_commit_hash: f2dd9733553abefe0f57714e5ce7ff314af15beb
 model_training_config:
   n_folds: 1
   num_boost_round: 100

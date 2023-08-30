@@ -15,5 +15,4 @@ features_config:
   satellite_meta_features:
   - month
   - days_before_sample
-  sample_meta_features:
-  - land_cover
+  sample_meta_features: []
