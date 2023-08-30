@@ -17,39 +17,7 @@ import xarray as xr
 from cyano.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
 
 
-def generate_features_for_sample_item(
-    sample_id: str, item_id: str, config: FeaturesConfig, cache_dir: AnyPath
-):
-    """Generate the satellite features for specific combination of
-    sample and pystac item ID
-    """
-    sample_item_dir = (
-        Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}/{sample_id}/{item_id}"
-    )
-
-    # Skip combos we were not able to download
-    if not sample_item_dir.exists():
-        return None
-
-    # Load band arrays into a dictionary with band names for keys
-    band_arrays = {}
-    # If we want to mask image data with water boundaries in some way, add here
-    for band in config.use_sentinel_bands:
-        if not (sample_item_dir / f"{band}.npy").exists():
-            raise FileNotFoundError(
-                f"Band {band} is missing from pystac item directory {sample_item_dir}"
-            )
-        band_arrays[band] = np.load(sample_item_dir / f"{band}.npy")
-
-    # Iterate over features to generate
-    sample_item_features = {"sample_id": sample_id, "item_id": item_id}
-    for feature in config.satellite_image_features:
-        sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
-
-    return sample_item_features
-
-
-def generate_satellite_features(
+def all_satellite_features(
     satellite_meta: pd.DataFrame,
     config: FeaturesConfig,
     cache_dir: Union[str, Path],
@@ -84,7 +52,7 @@ def generate_satellite_features(
 
     # Iterate over selected sample / item combinations
     satellite_features = process_map(
-        functools.partial(generate_features_for_sample_item, config=config, cache_dir=cache_dir),
+        functools.partial(sample_item_satellite_features, config=config, cache_dir=cache_dir),
         satellite_meta.sample_id,
         satellite_meta.item_id,
         chunksize=1,
@@ -111,18 +79,39 @@ def generate_satellite_features(
     return satellite_features.set_index("sample_id").drop(columns=["item_id"]).astype(float)
 
 
-def land_cover_for_sample(latitude: float, longitude: float, land_cover_data: xr.Dataset) -> int:
-    """Get the land cover classification value for a specific location
-
-    Args:
-        latitude (float): Latitude
-        longitude (Longitude): Longitude
-        land_cover_data (xr.Dataset): xarray Dataset with land cover information
+def sample_item_satellite_features(
+    sample_id: str, item_id: str, config: FeaturesConfig, cache_dir: AnyPath
+):
+    """Generate the satellite features for specific combination of
+    sample and pystac item ID
     """
-    return land_cover_data.sel(lat=latitude, lon=longitude, method="nearest").lccs_class.data[0]
+    sample_item_dir = (
+        Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}/{sample_id}/{item_id}"
+    )
+
+    # Skip combos we were not able to download
+    if not sample_item_dir.exists():
+        return None
+
+    # Load band arrays into a dictionary with band names for keys
+    band_arrays = {}
+    # If we want to mask image data with water boundaries in some way, add here
+    for band in config.use_sentinel_bands:
+        if not (sample_item_dir / f"{band}.npy").exists():
+            raise FileNotFoundError(
+                f"Band {band} is missing from pystac item directory {sample_item_dir}"
+            )
+        band_arrays[band] = np.load(sample_item_dir / f"{band}.npy")
+
+    # Iterate over features to generate
+    sample_item_features = {"sample_id": sample_id, "item_id": item_id}
+    for feature in config.satellite_image_features:
+        sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
+
+    return sample_item_features
 
 
-def generate_sample_meta_features(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
+def all_sample_meta_features(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
     """Generate features from sample metadata
 
     Args:
@@ -160,7 +149,7 @@ def generate_sample_meta_features(samples: pd.DataFrame, config: FeaturesConfig)
             lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
         )
         land_covers = process_map(
-            functools.partial(land_cover_for_sample, land_cover_data=land_cover_data),
+            functools.partial(sample_land_cover, land_cover_data=land_cover_data),
             sample_meta_features.latitude,
             sample_meta_features.longitude,
             chunksize=1,
@@ -176,6 +165,17 @@ def generate_sample_meta_features(samples: pd.DataFrame, config: FeaturesConfig)
         sample_meta_features["rounded_latitude"] = (sample_meta_features.latitude / 10).round(0)
 
     return sample_meta_features[config.sample_meta_features]
+
+
+def sample_land_cover(latitude: float, longitude: float, land_cover_data: xr.Dataset) -> int:
+    """Get the land cover classification value for a specific location
+
+    Args:
+        latitude (float): Latitude
+        longitude (Longitude): Longitude
+        land_cover_data (xr.Dataset): xarray Dataset with land cover information
+    """
+    return land_cover_data.sel(lat=latitude, lon=longitude, method="nearest").lccs_class.data[0]
 
 
 def generate_features(
@@ -206,7 +206,7 @@ def generate_features(
     """
     # Generate satellite features
     # May be >1 row per sample, only includes samples with imagery
-    satellite_features = generate_satellite_features(satellite_meta, config, cache_dir)
+    satellite_features = all_satellite_features(satellite_meta, config, cache_dir)
     logger.info(
         f"Generated {satellite_features.shape[1]} satellite features for {satellite_features.index.nunique():,} samples, {satellite_features.shape[0]:,} item/sample combinations."
     )
@@ -215,7 +215,7 @@ def generate_features(
     features = satellite_features.copy()
 
     if config.sample_meta_features:
-        sample_meta_features = generate_sample_meta_features(samples, config)
+        sample_meta_features = all_sample_meta_features(samples, config)
         logger.info(
             f"Generated {sample_meta_features.shape[1]} metadata features for {sample_meta_features.shape[0]:,} samples"
         )
