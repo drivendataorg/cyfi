@@ -1,7 +1,7 @@
 from pathlib import Path
 from zipfile import ZipFile
 
-from cyano.config import FeaturesConfig, ModelTrainingConfig
+from cyano.config import ModelTrainingConfig
 from cyano.pipeline import CyanoModelPipeline
 
 ASSETS_DIR = Path(__file__).parent / "assets"
