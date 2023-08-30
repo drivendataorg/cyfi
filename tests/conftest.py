@@ -44,6 +44,21 @@ def predict_data(predict_data_path) -> pd.DataFrame:
     return pd.read_csv(predict_data_path)
 
 
+@pytest.fixture(scope="session")
+def evaluate_data_path() -> Path:
+    return ASSETS_DIR / "evaluate_data.csv"
+
+
+@pytest.fixture(scope="session")
+def evaluate_data_features() -> pd.DataFrame:
+    return pd.read_csv(ASSETS_DIR / "evaluate_data_features.csv", index_col=0)
+
+
+@pytest.fixture(scope="session")
+def ensembled_model_path() -> Path:
+    return ASSETS_DIR / "ensembled_model.zip"
+
+
 @pytest.fixture
 def features_config():
     return FeaturesConfig(
