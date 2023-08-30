@@ -1,3 +1,4 @@
+import numpy as np
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parents[0].resolve()
@@ -5,3 +6,103 @@ REPO_ROOT = Path(__file__).parents[0].resolve()
 RANDOM_STATE = 40
 
 SEVERITY_LEFT_EDGES = [0, 20000, 100000, 1000000, 10000000]
+
+AVAILABLE_SENTINEL_BANDS = [
+    "AOT",
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "B06",
+    "B07",
+    "B08",
+    "B8A",
+    "B09",
+    "B10",
+    "B11",
+    "B12",
+    "SCL",
+    "WVP",
+]
+
+# Create a dictionary mapping feature names to feature generator
+# functions, which take a dictionary of band arrays as input
+SATELLITE_FEATURE_CALCULATORS = {
+    "NDVI_B04": lambda x: (x["B08"].mean() - x["B04"].mean())
+    / (x["B08"].mean() + x["B04"].mean() + 1),
+    "NDVI_B05": lambda x: (x["B08"].mean() - x["B05"].mean())
+    / (x["B08"].mean() + x["B05"].mean() + 1),
+    "NDVI_B06": lambda x: (x["B08"].mean() - x["B06"].mean())
+    / (x["B08"].mean() + x["B06"].mean() + 1),
+    "NDVI_B07": lambda x: (x["B08"].mean() - x["B07"].mean())
+    / (x["B08"].mean() + x["B07"].mean() + 1),
+    "green_red_ratio": lambda x: x["B03"].mean() / (x["B04"].mean() + 1),
+    "green_blue_ratio": lambda x: x["B03"].mean() / (x["B02"].mean() + 1),
+    "red_blue_ratio": lambda x: x["B04"].mean() / (x["B02"].mean() + 1),
+    "green95th_blue_ratio": lambda x: np.percentile(x["B03"], 95) / (x["B02"].mean() + 1),
+    "green5th_blue_ratio": lambda x: np.percentile(x["B03"], 5) / (x["B02"].mean() + 1),
+    "prop_water": lambda x: (x["SCL"] == 6).mean(),
+    "AOT_mean": lambda x: x["AOT"].mean(),
+    "AOT_min": lambda x: x["AOT"].min(),
+    "AOT_max": lambda x: x["AOT"].max(),
+    "AOT_range": lambda x: x["AOT"].max() - x["AOT"].min(),
+    "B01_mean": lambda x: x["B01"].mean(),
+    "B01_min": lambda x: x["B01"].min(),
+    "B01_max": lambda x: x["B01"].max(),
+    "B01_range": lambda x: x["B01"].max() - x["B01"].min(),
+    "B02_mean": lambda x: x["B02"].mean(),
+    "B02_min": lambda x: x["B02"].min(),
+    "B02_max": lambda x: x["B02"].max(),
+    "B02_range": lambda x: x["B02"].max() - x["B02"].min(),
+    "B03_mean": lambda x: x["B03"].mean(),
+    "B03_min": lambda x: x["B03"].min(),
+    "B03_max": lambda x: x["B03"].max(),
+    "B03_range": lambda x: x["B03"].max() - x["B03"].min(),
+    "B03_95th": lambda x: np.percentile(x["B03"], 95),
+    "B03_5th": lambda x: np.percentile(x["B03"], 5),
+    "B04_mean": lambda x: x["B04"].mean(),
+    "B04_min": lambda x: x["B04"].min(),
+    "B04_max": lambda x: x["B04"].max(),
+    "B04_range": lambda x: x["B04"].max() - x["B04"].min(),
+    "B05_mean": lambda x: x["B05"].mean(),
+    "B05_min": lambda x: x["B05"].min(),
+    "B05_max": lambda x: x["B05"].max(),
+    "B05_range": lambda x: x["B05"].max() - x["B05"].min(),
+    "B06_mean": lambda x: x["B06"].mean(),
+    "B06_min": lambda x: x["B06"].min(),
+    "B06_max": lambda x: x["B06"].max(),
+    "B06_range": lambda x: x["B06"].max() - x["B06"].min(),
+    "B07_mean": lambda x: x["B07"].mean(),
+    "B07_min": lambda x: x["B07"].min(),
+    "B07_max": lambda x: x["B07"].max(),
+    "B07_range": lambda x: x["B07"].max() - x["B07"].min(),
+    "B08_mean": lambda x: x["B08"].mean(),
+    "B08_min": lambda x: x["B08"].min(),
+    "B08_max": lambda x: x["B08"].max(),
+    "B08_range": lambda x: x["B08"].max() - x["B08"].min(),
+    "B09_mean": lambda x: x["B09"].mean(),
+    "B09_min": lambda x: x["B09"].min(),
+    "B09_max": lambda x: x["B09"].max(),
+    "B09_range": lambda x: x["B09"].max() - x["B09"].min(),
+    "B11_mean": lambda x: x["B11"].mean(),
+    "B11_min": lambda x: x["B11"].min(),
+    "B11_max": lambda x: x["B11"].max(),
+    "B11_range": lambda x: x["B11"].max() - x["B11"].min(),
+    "B12_mean": lambda x: x["B12"].mean(),
+    "B12_min": lambda x: x["B12"].min(),
+    "B12_max": lambda x: x["B12"].max(),
+    "B12_range": lambda x: x["B12"].max() - x["B12"].min(),
+    "B8A_mean": lambda x: x["B8A"].mean(),
+    "B8A_min": lambda x: x["B8A"].min(),
+    "B8A_max": lambda x: x["B8A"].max(),
+    "B8A_range": lambda x: x["B8A"].max() - x["B8A"].min(),
+    "SCL_mean": lambda x: x["SCL"].mean(),
+    "SCL_min": lambda x: x["SCL"].min(),
+    "SCL_max": lambda x: x["SCL"].max(),
+    "SCL_range": lambda x: x["SCL"].max() - x["SCL"].min(),
+    "WVP_mean": lambda x: x["WVP"].mean(),
+    "WVP_min": lambda x: x["WVP"].min(),
+    "WVP_max": lambda x: x["WVP"].max(),
+    "WVP_range": lambda x: x["WVP"].max() - x["WVP"].min(),
+}

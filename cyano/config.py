@@ -1,8 +1,9 @@
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict
+import numpy as np
+from pydantic import BaseModel, ConfigDict, field_validator
 
-from cyano.settings import RANDOM_STATE
+from cyano.settings import RANDOM_STATE, AVAILABLE_SENTINEL_BANDS, SATELLITE_FEATURE_CALCULATORS
 
 
 class LGBParams(BaseModel):
@@ -32,6 +33,22 @@ class LGBParams(BaseModel):
     early_stopping_round: Optional[int] = None
     bagging_seed: Optional[int] = RANDOM_STATE
     seed: Optional[int] = RANDOM_STATE
+
+
+def check_field_is_subset(field_value: List, accepted_values: List) -> List:
+    """Check that a list-list field value is a subset of the accepted values
+
+    Args:
+        field_value (List): Field value
+        accepted_values (list): Accepted values for the given field
+    """
+    unrecognized = np.setdiff1d(field_value, accepted_values)
+    if unrecognized:
+        raise ValueError(
+            f"Unrecognized value(s): {list(unrecognized)}. Possible values are: {accepted_values}"
+        )
+
+    return field_value
 
 
 class FeaturesConfig(BaseModel):
@@ -76,6 +93,36 @@ class FeaturesConfig(BaseModel):
     ]
     satellite_meta_features: Optional[List] = []
     metadata_features: Optional[List] = []
+
+    @field_validator("use_sentinel_bands")
+    def validate_sentinel_bands(cls, path_field):
+        return check_field_is_subset(path_field, AVAILABLE_SENTINEL_BANDS)
+
+    @field_validator("satellite_image_features")
+    def validate_satellite_image_features(cls, path_field):
+        return check_field_is_subset(path_field, list(SATELLITE_FEATURE_CALCULATORS.keys()))
+
+    @field_validator("satellite_meta_features")
+    def validate_satellite_meta_features(cls, path_field):
+        return check_field_is_subset(
+            path_field,
+            [
+                "month",
+                "days_before_sample",
+                "eo:cloud_cover",
+                "s2:nodata_pixel_percentage",
+                "min_long",
+                "max_long",
+                "min_lat",
+                "max_lat",
+            ],
+        )
+
+    @field_validator("metadata_features")
+    def validate_metadata_features(cls, path_field):
+        return check_field_is_subset(
+            path_field, ["land_cover", "rounded_latitude", "rounded_longitude"]
+        )
 
 
 class ModelTrainingConfig(BaseModel):
