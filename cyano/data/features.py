@@ -14,8 +14,7 @@ from tqdm.contrib.concurrent import process_map
 import xarray as xr
 
 
-from cyano.config import FeaturesConfig
-from cyano.settings import SATELLITE_FEATURE_CALCULATORS
+from cyano.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
 
 
 def generate_features_for_sample_item(
@@ -123,7 +122,7 @@ def land_cover_for_sample(latitude: float, longitude: float, land_cover_data: xr
     return land_cover_data.sel(lat=latitude, lon=longitude, method="nearest").lccs_class.data[0]
 
 
-def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
+def generate_sample_meta_features(samples: pd.DataFrame, config: FeaturesConfig) -> pd.DataFrame:
     """Generate features from sample metadata
 
     Args:
@@ -139,10 +138,10 @@ def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) ->
     NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
 
     # Generate features for each sample
-    metadata_features = samples.copy()
+    sample_meta_features = samples.copy()
 
     # Pull in land cover classification from CDRP
-    if "land_cover" in config.metadata_features:
+    if "land_cover" in config.sample_meta_features:
         lc_cache_dir = Path(appdirs.user_cache_dir()) / "cyano"
         lc_cache_dir.mkdir(exist_ok=True)
         land_cover_map_filepath = lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
@@ -162,21 +161,21 @@ def generate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) ->
         )
         land_covers = process_map(
             functools.partial(land_cover_for_sample, land_cover_data=land_cover_data),
-            metadata_features.latitude,
-            metadata_features.longitude,
+            sample_meta_features.latitude,
+            sample_meta_features.longitude,
             chunksize=1,
-            total=len(metadata_features),
+            total=len(sample_meta_features),
             max_workers=NUM_PROCESSES,
         )
 
-        metadata_features["land_cover"] = land_covers
+        sample_meta_features["land_cover"] = land_covers
 
-    if "rounded_longitude" in config.metadata_features:
-        metadata_features["rounded_longitude"] = (metadata_features.longitude / 10).round(0)
-    if "rounded_latitude" in config.metadata_features:
-        metadata_features["rounded_latitude"] = (metadata_features.latitude / 10).round(0)
+    if "rounded_longitude" in config.sample_meta_features:
+        sample_meta_features["rounded_longitude"] = (sample_meta_features.longitude / 10).round(0)
+    if "rounded_latitude" in config.sample_meta_features:
+        sample_meta_features["rounded_latitude"] = (sample_meta_features.latitude / 10).round(0)
 
-    return metadata_features[config.metadata_features]
+    return sample_meta_features[config.sample_meta_features]
 
 
 def generate_features(
@@ -186,7 +185,7 @@ def generate_features(
     cache_dir: Union[str, Path],
 ) -> pd.DataFrame:
     """Generate a dataframe of features for the given set of samples.
-    Requires that the raw satellite data for the give samples are
+    Requires that the raw satellite data for the given samples are
     already saved in cache_dir
 
     Args:
@@ -215,14 +214,14 @@ def generate_features(
     # Generate non-satellite features. Each has only one row per sample
     features = satellite_features.copy()
 
-    if config.metadata_features:
-        metadata_features = generate_metadata_features(samples, config)
+    if config.sample_meta_features:
+        sample_meta_features = generate_sample_meta_features(samples, config)
         logger.info(
-            f"Generated {metadata_features.shape[1]} metadata features for {metadata_features.shape[0]:,} samples"
+            f"Generated {sample_meta_features.shape[1]} metadata features for {sample_meta_features.shape[0]:,} samples"
         )
         # Don't include samples for which we only have metadata
         features = features.merge(
-            metadata_features, left_index=True, right_index=True, how="left", validate="m:1"
+            sample_meta_features, left_index=True, right_index=True, how="left", validate="m:1"
         )
 
     pct_with_features = features.index.nunique() / samples.shape[0]
@@ -231,7 +230,9 @@ def generate_features(
     )
 
     all_feature_cols = (
-        config.satellite_image_features + config.satellite_meta_features + config.metadata_features
+        config.satellite_image_features
+        + config.satellite_meta_features
+        + config.sample_meta_features
     )
     features = features[all_feature_cols]
 

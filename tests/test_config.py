@@ -9,11 +9,18 @@ def test_lgbparams():
     assert params.early_stopping_round is None
     assert params.num_leaves == 31
 
+    params = LGBParams(num_leaves="12")
+    assert params.num_leaves == 12
+
 
 def test_features_config():
     config = FeaturesConfig()
-    assert config.metadata_features == []
+    assert config.sample_meta_features == []
     assert config.pc_days_search_window == 30
+
+    config = FeaturesConfig(pc_meters_search_window=100, image_feature_meter_window="200")
+    assert config.pc_meters_search_window == 100
+    assert config.image_feature_meter_window == 200
 
 
 def test_features_config_errors():
@@ -31,10 +38,13 @@ def test_features_config_errors():
 
     # Unrecognized metadata feature
     with pytest.raises(ValueError):
-        FeaturesConfig(metadata_features=["surprise_feature"])
+        FeaturesConfig(sample_meta_features=["surprise_feature"])
 
 
 def test_model_training_config():
     config = ModelTrainingConfig()
     assert config.n_folds == 1
     assert isinstance(config.params, LGBParams)
+
+    config = ModelTrainingConfig(n_folds="5")
+    assert config.n_folds == 5

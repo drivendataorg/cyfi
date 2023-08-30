@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from cyano.config import FeaturesConfig
-from cyano.data.features import generate_features, generate_metadata_features
+from cyano.data.features import generate_features, generate_sample_meta_features
 from cyano.data.satellite_data import download_satellite_data, generate_candidate_metadata
 from cyano.data.utils import add_unique_identifier
 
@@ -86,9 +86,9 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
 
 @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Entails ~2GB download of land cover map")
 def test_land_cover_features(train_data):
-    feature_config = FeaturesConfig(metadata_features=["land_cover"])
+    feature_config = FeaturesConfig(sample_meta_features=["land_cover"])
     train_data = add_unique_identifier(train_data)
-    features = generate_metadata_features(
+    features = generate_sample_meta_features(
         train_data,
         feature_config,
     )
