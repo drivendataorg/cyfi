@@ -214,7 +214,7 @@ def generate_candidate_metadata(
 
     # Otherwise, search the planetary computer
     logger.info(
-        f"Searching {config.pc_collections} within {config.pc_days_search_window} days and {config.pc_meters_search_window} meters"
+        f"Searching Sentinel-2 within {config.pc_days_search_window} days and {config.pc_meters_search_window} meters"
     )
     sentinel_meta = []
     sample_item_map = {}
@@ -224,7 +224,7 @@ def generate_candidate_metadata(
             sample.date,
             sample.latitude,
             sample.longitude,
-            collections=config.pc_collections,
+            collections=["sentinel-2-l2a"],
             days_search_window=config.pc_days_search_window,
             meters_search_window=config.pc_meters_search_window,
         )
