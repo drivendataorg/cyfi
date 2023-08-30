@@ -99,6 +99,7 @@ class ExperimentConfig(BaseModel):
                 y_true_csv=self.predict_csv,
                 y_pred_csv=self.save_dir / "preds.csv",
                 save_dir=self.save_dir / "metrics",
+                model_path=self.save_dir / "model.zip",
             ).calculate_all_and_save()
 
             logger.success(f"Wrote out metrics to {self.save_dir}/metrics")
