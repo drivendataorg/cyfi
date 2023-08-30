@@ -12,7 +12,7 @@ def check_field_is_subset(field_value: List, accepted_values: List) -> List:
         accepted_values (list): Accepted values for the given field
     """
     unrecognized = np.setdiff1d(field_value, accepted_values)
-    if unrecognized:
+    if unrecognized.size > 0:
         raise ValueError(
             f"Unrecognized value(s): {list(unrecognized)}. Possible values are: {accepted_values}"
         )
