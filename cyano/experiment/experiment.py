@@ -11,7 +11,8 @@ from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 from cyano.config import FeaturesConfig, ModelTrainingConfig
 from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
-from cyano.settings import REPO_ROOT
+
+REPO_ROOT = Path(__file__).parents[2].resolve()
 
 
 class ExperimentConfig(BaseModel):
@@ -76,7 +77,7 @@ class ExperimentConfig(BaseModel):
         )
 
         # Get last commit hash to save in artifact
-        repo = git.Repo(REPO_ROOT.parent)
+        repo = git.Repo(REPO_ROOT)
         self.last_commit_hash = repo.head.commit.hexsha
         with (self.save_dir / "config_artifact.yaml").open("w") as fp:
             yaml.dump(self.model_dump(), fp)

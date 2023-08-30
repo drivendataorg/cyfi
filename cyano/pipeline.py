@@ -17,7 +17,7 @@ from cyano.data.utils import (
     add_unique_identifier,
     convert_density_to_severity,
 )
-from cyano.settings import RANDOM_STATE
+from cyano.config import RANDOM_STATE
 
 
 class CyanoModelPipeline:
