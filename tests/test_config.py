@@ -6,7 +6,7 @@ from cyano.config import LGBParams, FeaturesConfig, ModelTrainingConfig
 
 def test_lgbparams():
     params = LGBParams()
-    assert params.early_stopping_round is None
+    assert params.early_stopping_round == 100
     assert params.num_leaves == 31
 
     params = LGBParams(num_leaves="12")
