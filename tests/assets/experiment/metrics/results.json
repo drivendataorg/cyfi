@@ -1,16 +1,16 @@
 {
     "severity": {
-        "overall_rmse": 1.8027756377319946,
-        "overall_mae": 1.75,
-        "overall_mape": 1.625,
+        "overall_rmse": 0.8660254037844386,
+        "overall_mae": 0.75,
+        "overall_mape": 0.75,
         "regional_rmse": {
-            "northeast": 2.0,
-            "south": 1.5811388300841898
+            "northeast": 1.0,
+            "south": 0.7071067811865476
         },
-        "region_averaged_rmse": 1.790569415042095,
+        "region_averaged_rmse": 0.8535533905932737,
         "regional_mae": {
-            "northeast": 2.0,
-            "south": 1.5
+            "northeast": 1.0,
+            "south": 0.5
         },
         "classification_report": {
             "1": {
@@ -20,9 +20,9 @@
                 "support": 3.0
             },
             "2": {
-                "precision": 0.0,
-                "recall": 0.0,
-                "f1-score": 0.0,
+                "precision": 0.25,
+                "recall": 1.0,
+                "f1-score": 0.4,
                 "support": 1.0
             },
             "3": {
@@ -44,21 +44,21 @@
                 "support": 0.0
             },
             "micro avg": {
-                "precision": 0.0,
-                "recall": 0.0,
-                "f1-score": 0.0,
+                "precision": 0.25,
+                "recall": 0.25,
+                "f1-score": 0.25,
                 "support": 4.0
             },
             "macro avg": {
-                "precision": 0.0,
-                "recall": 0.0,
-                "f1-score": 0.0,
+                "precision": 0.05,
+                "recall": 0.2,
+                "f1-score": 0.08,
                 "support": 4.0
             },
             "weighted avg": {
-                "precision": 0.0,
-                "recall": 0.0,
-                "f1-score": 0.0,
+                "precision": 0.0625,
+                "recall": 0.25,
+                "f1-score": 0.1,
                 "support": 4.0
             }
         }
@@ -68,11 +68,11 @@
         "percent": 0.2
     },
     "log_density": {
-        "overall_r_squared": -1.9929469684978414,
-        "overall_mape": 1.3363448754733056e+16,
+        "overall_r_squared": -1.7430675101369073,
+        "overall_mape": 1.2939162625769472e+16,
         "regional_r_squared": {
-            "northeast": -2.334006347092704,
-            "south": -2.419640152841982
+            "northeast": -2.095227961631893,
+            "south": -2.0279554310276433
         }
     }
 }
