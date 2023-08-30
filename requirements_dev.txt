@@ -7,7 +7,6 @@ flake8
 geopandas
 geopy
 GitPython
-jupyter
 loguru
 matplotlib
 numpy
