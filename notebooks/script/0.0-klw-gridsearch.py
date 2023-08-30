@@ -145,9 +145,15 @@ results[
 
 
 # how much worse is the 470 estimator model with 0.3 feature fractions?
-# noticeably worse
+# also not much
 results[
-    (results.param_n_estimators == 100) & (results.param_feature_fraction == 1.0)
+    (results.param_n_estimators == 470) & (results.param_feature_fraction == 1.0)
+].mean_test_score.max()
+
+
+# n_estimators = 1000 also doesn't change much with feature_fraction
+results[
+    (results.param_n_estimators == 1000) & (results.param_feature_fraction == 1.0)
 ].mean_test_score.max()
 
 
