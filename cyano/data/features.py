@@ -2,7 +2,7 @@
 import functools
 import os
 import tarfile
-from typing import List, Union
+from typing import Union
 
 import appdirs
 from cloudpathlib import AnyPath, S3Path
@@ -293,7 +293,6 @@ def generate_features(
     )
 
     # Generate non-satellite features. Each has only one row per sample
-    sample_ids = samples.index
     features = satellite_features.copy()
 
     if config.metadata_features:
