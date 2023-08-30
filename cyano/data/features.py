@@ -6,7 +6,6 @@ from typing import List, Union
 
 import appdirs
 from cloudpathlib import AnyPath, S3Path
-import cv2
 from loguru import logger
 import numpy as np
 import pandas as pd
@@ -112,15 +111,6 @@ def generate_features_for_sample_item(
     # Skip combos we were not able to download
     if not sample_item_dir.exists():
         return None
-    # Filter by water pixels from SCL band
-    if config.scl_filter:
-        scl_band_path = sample_item_dir / "SCL.npy"
-        if not scl_band_path.exists():
-            return None
-        scl_array = np.load(scl_band_path)
-        # Skip if there is not enough water
-        if (scl_array == 6).mean() < 0.01:
-            return None
 
     # Load band arrays into a dictionary with band names for keys
     band_arrays = {}
@@ -130,14 +120,7 @@ def generate_features_for_sample_item(
             raise FileNotFoundError(
                 f"Band {band} is missing from pystac item directory {sample_item_dir}"
             )
-        # Rescale SCL band based on image size
-        band_arr = np.load(sample_item_dir / f"{band}.npy")
-        if config.scl_filter and (band != "SCL"):
-            scaled_scl = cv2.resize(scl_array[0], (band_arr.shape[2], band_arr.shape[1]))
-            # Filter array to water area
-            band_arrays[band] = band_arr[0][scaled_scl == 6]
-        else:
-            band_arrays[band] = band_arr
+        band_arrays[band] = np.load(sample_item_dir / f"{band}.npy")
 
     # Iterate over features to generate
     sample_item_features = {"sample_id": sample_id, "item_id": item_id}
