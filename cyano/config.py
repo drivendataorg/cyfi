@@ -17,10 +17,15 @@ class LGBParams(BaseModel):
         num_leaves (Optional[int], optional): Max number of tree leaves. Defaults to 31.
         learning_rate (Optional[float], optional): Learning rate. Defaults to 0.1.
         verbosity (Optional[int], optional): Level of LightGBM's verbosity. Defaults to -1.
+        feature_fraction (Optional[float], optional): If smaller than 1.0, LightGBM will
+            randomly select this percentage subset of features on each iteration before
+            training. Defaults to 1.0.
+        early_stopping_round (Optional[int], optional): If provided, stop training if one
+            metric of one validation data doesn't improve in the last `early_stopping_round`
+            rounds. Defaults to None.
         bagging_seed (Optional[int], optional): Random seed for bagging. Defaults to RANDOM_STATE.
         seed (Optional[int], optional): Seed used to generate other random seeds. Defaults
             to RANDOM_STATE.
-
     """
 
     application: Optional[str] = "regression"
