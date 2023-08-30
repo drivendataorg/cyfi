@@ -28,42 +28,126 @@ class FeaturesConfig(BaseModel):
     Args:
         pc_days_search_window (Optional[int], optional): Number of days before a given sample was
             collected to include when searching the planetary computer for satellite imagery.
-            Defaults to 30.
+            Defaults to 15.
         pc_meters_search_window (Optional[int], optional): Buffer in meters to add on each side
             of a given sample's location when searching the planetary computer for satellite imagery.
-            Defaults to 1000.
+            Defaults to 5000.
         use_sentinel_bands (Optional[List], optional): All Sentinel-2 bands that are needed to
-            generate satellite imagery featues. Defaults to ["B02", "B03", "B04"].
+            generate satellite imagery featues. For all options see AVAILABLE_SENTINEL_BANDS.
+            Defaults to ['AOT', 'B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09',
+            'B11', 'B12', 'B8A', 'SCL', 'WVP'].
         image_feature_meter_window (Optional[int], optional): Buffer in meters to add on each side of a
             given sample's location when creating the bounding box for the subset of a satellite image
-            that will be used to generate features. Defaults to 500.
+            that will be used to generate features. Defaults to 200.
         n_sentinel_items (Optional[int], optional): Maximum number of Sentinel-2 items to use for each
-            sample. Defaults to 1.
+            sample. Defaults to 15.
         satellite_image_features (Optional[List], optional): List of satellite imagery features to
-            include. Defaults to [ "B02_mean", "B02_min", "B02_max", "B03_mean", "B03_min",
-            "B03_max", "B04_mean"].
+            include. For all options see SATELLITE_FEATURE_CALCULATORS. Defaults to ['AOT_mean',
+            'AOT_min', 'AOT_max', 'AOT_range', 'B01_mean', 'B01_min', 'B01_max', 'B01_range',
+            'B02_mean', 'B02_min', 'B02_max', 'B02_range', 'B03_mean', 'B03_min', 'B03_max',
+            'B03_range', 'B04_mean', 'B04_min', 'B04_max', 'B04_range', 'B05_mean', 'B05_min',
+            'B05_max', 'B05_range', 'B06_mean', 'B06_min', 'B06_max', 'B06_range', 'B07_mean',
+            'B07_min', 'B07_max', 'B07_range', 'B08_mean', 'B08_min', 'B08_max', 'B08_range',
+            'B09_mean', 'B09_min', 'B09_max', 'B09_range', 'B11_mean', 'B11_min', 'B11_max',
+            'B11_range', 'B12_mean', 'B12_min', 'B12_max', 'B12_range', 'B8A_mean', 'B8A_min',
+            'B8A_max', 'B8A_range', 'SCL_mean', 'SCL_min', 'SCL_max', 'SCL_range', 'WVP_mean',
+            'WVP_min', 'WVP_max', 'WVP_range', 'NDVI_B04', 'NDVI_B05', 'NDVI_B06', 'NDVI_B07'].
         satellite_meta_features (Optional[List], optional): List of satellite metadata features to
-            include. Defaults to [].
-        sample_meta_features (Optional[List], optional): List of metadata features to include. Defaults
-            to [].
+            include. For all options see AVAILABLE_SATELLITE_META_FEATURSE. Defaults to ['month',
+            'days_before_sample'].
+        sample_meta_features (Optional[List], optional): List of metadata features to include. For all
+            options see AVAILABLE_SAMPLE_META_FEATURES. Defaults to ['land_cover'].
     """
 
-    pc_days_search_window: Optional[int] = 30
-    pc_meters_search_window: Optional[int] = 1000
-    use_sentinel_bands: Optional[List] = ["B02", "B03", "B04"]
-    image_feature_meter_window: Optional[int] = 500
-    n_sentinel_items: Optional[int] = 1
+    pc_days_search_window: Optional[int] = 15
+    pc_meters_search_window: Optional[int] = 5000
+    use_sentinel_bands: Optional[List] = [
+        "AOT",
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B07",
+        "B08",
+        "B09",
+        "B11",
+        "B12",
+        "B8A",
+        "SCL",
+        "WVP",
+    ]
+    image_feature_meter_window: Optional[int] = 200
+    n_sentinel_items: Optional[int] = 15
+    satellite_meta_features: Optional[List] = ["month", "days_before_sample"]
+    sample_meta_features: Optional[List] = ["land_cover"]
     satellite_image_features: Optional[List] = [
+        "AOT_mean",
+        "AOT_min",
+        "AOT_max",
+        "AOT_range",
+        "B01_mean",
+        "B01_min",
+        "B01_max",
+        "B01_range",
         "B02_mean",
         "B02_min",
         "B02_max",
+        "B02_range",
         "B03_mean",
         "B03_min",
         "B03_max",
+        "B03_range",
         "B04_mean",
+        "B04_min",
+        "B04_max",
+        "B04_range",
+        "B05_mean",
+        "B05_min",
+        "B05_max",
+        "B05_range",
+        "B06_mean",
+        "B06_min",
+        "B06_max",
+        "B06_range",
+        "B07_mean",
+        "B07_min",
+        "B07_max",
+        "B07_range",
+        "B08_mean",
+        "B08_min",
+        "B08_max",
+        "B08_range",
+        "B09_mean",
+        "B09_min",
+        "B09_max",
+        "B09_range",
+        "B11_mean",
+        "B11_min",
+        "B11_max",
+        "B11_range",
+        "B12_mean",
+        "B12_min",
+        "B12_max",
+        "B12_range",
+        "B8A_mean",
+        "B8A_min",
+        "B8A_max",
+        "B8A_range",
+        "SCL_mean",
+        "SCL_min",
+        "SCL_max",
+        "SCL_range",
+        "WVP_mean",
+        "WVP_min",
+        "WVP_max",
+        "WVP_range",
+        "NDVI_B04",
+        "NDVI_B05",
+        "NDVI_B06",
+        "NDVI_B07",
     ]
-    satellite_meta_features: Optional[List] = []
-    sample_meta_features: Optional[List] = []
 
     @field_validator("use_sentinel_bands")
     def validate_sentinel_bands(cls, path_field):
@@ -98,7 +182,7 @@ class LGBParams(BaseModel):
             training. Defaults to 1.0.
         early_stopping_round (Optional[int], optional): If provided, stop training if one
             metric of one validation data doesn't improve in the last `early_stopping_round`
-            rounds. Defaults to None.
+            rounds. Defaults to 100.
         bagging_seed (Optional[int], optional): Random seed for bagging. Defaults to RANDOM_STATE.
         seed (Optional[int], optional): Seed used to generate other random seeds. Defaults
             to RANDOM_STATE.
@@ -111,7 +195,7 @@ class LGBParams(BaseModel):
     learning_rate: Optional[float] = 0.1
     verbosity: Optional[int] = -1
     feature_fraction: Optional[float] = 1.0
-    early_stopping_round: Optional[int] = None
+    early_stopping_round: Optional[int] = 100
     bagging_seed: Optional[int] = RANDOM_STATE
     seed: Optional[int] = RANDOM_STATE
 
@@ -123,14 +207,14 @@ class ModelTrainingConfig(BaseModel):
         params (Optional[LGBParams], optional): Parameters for LightGBM training. For details
             see [LightGBM's documentation](https://lightgbm.readthedocs.io/en/latest/Parameters.html).
             Defaults to LGBParams().
-        num_boost_round (Optional[int], optional): Number of boosting iterations. Defaults to 1000.
+        num_boost_round (Optional[int], optional): Number of boosting iterations. Defaults to 100000.
         n_folds (Optional[int], optional): Number of different model folds to train. If greater than
-            1, the models will be ensembled for a final prediction. Defaults to 1.
+            5, the models will be ensembled for a final prediction. Defaults to 1.
     """
 
     params: Optional[LGBParams] = LGBParams()
-    num_boost_round: Optional[int] = 1000
-    n_folds: Optional[int] = 1
+    num_boost_round: Optional[int] = 100000
+    n_folds: Optional[int] = 5
 
     # Silence warning for conflict with pydantic protected namespace
     model_config = ConfigDict(protected_namespaces=())

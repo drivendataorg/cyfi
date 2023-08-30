@@ -15,8 +15,8 @@ def test_lgbparams():
 
 def test_features_config():
     config = FeaturesConfig()
-    assert config.sample_meta_features == []
-    assert config.pc_days_search_window == 30
+    assert config.sample_meta_features == ["land_cover"]
+    assert config.pc_days_search_window == 15
 
     config = FeaturesConfig(pc_meters_search_window=100, image_feature_meter_window="200")
     assert config.pc_meters_search_window == 100
@@ -43,8 +43,8 @@ def test_features_config_errors():
 
 def test_model_training_config():
     config = ModelTrainingConfig()
-    assert config.n_folds == 1
+    assert config.n_folds == 5
     assert isinstance(config.params, LGBParams)
 
-    config = ModelTrainingConfig(n_folds="5")
-    assert config.n_folds == 5
+    config = ModelTrainingConfig(n_folds="1")
+    assert config.n_folds == 1
