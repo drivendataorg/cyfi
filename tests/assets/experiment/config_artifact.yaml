@@ -16,13 +16,12 @@ features_config:
   - days_before_sample
   use_sentinel_bands:
   - B02
-last_commit_hash: 87f73a3e63cb88e3927bc26ff3b8d41559238815
+last_commit_hash: b0dd6d566b211572cfe6a5be6ce8ef417d6dc89a
 model_training_config:
   n_folds: 1
   num_boost_round: 100
   params:
     application: regression
-    bagging_seed: 40
     early_stopping_round: null
     feature_fraction: 1.0
     learning_rate: 0.1
