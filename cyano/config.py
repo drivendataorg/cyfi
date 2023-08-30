@@ -3,8 +3,6 @@ from typing import List, Optional
 import numpy as np
 from pydantic import BaseModel, ConfigDict, field_validator
 
-RANDOM_STATE = 40
-
 
 def check_field_is_subset(field_value: List, accepted_values: List) -> List:
     """Check that a list-list field value is a subset of the accepted values
@@ -183,9 +181,8 @@ class LGBParams(BaseModel):
         early_stopping_round (Optional[int], optional): If provided, stop training if one
             metric of one validation data doesn't improve in the last `early_stopping_round`
             rounds. Defaults to 100.
-        bagging_seed (Optional[int], optional): Random seed for bagging. Defaults to RANDOM_STATE.
         seed (Optional[int], optional): Seed used to generate other random seeds. Defaults
-            to RANDOM_STATE.
+            to 40.
     """
 
     application: Optional[str] = "regression"
@@ -196,8 +193,7 @@ class LGBParams(BaseModel):
     verbosity: Optional[int] = -1
     feature_fraction: Optional[float] = 1.0
     early_stopping_round: Optional[int] = 100
-    bagging_seed: Optional[int] = RANDOM_STATE
-    seed: Optional[int] = RANDOM_STATE
+    seed: Optional[int] = 40
 
 
 class ModelTrainingConfig(BaseModel):
@@ -252,8 +248,6 @@ AVAILABLE_SATELLITE_META_FEATURES = [
 
 AVAILABLE_SAMPLE_META_FEATURES = ["land_cover", "rounded_latitude", "rounded_longitude"]
 
-# Create a dictionary mapping feature names to feature generator
-# functions, which take a dictionary of band arrays as input
 SATELLITE_FEATURE_CALCULATORS = {
     "NDVI_B04": lambda x: (x["B08"].mean() - x["B04"].mean())
     / (x["B08"].mean() + x["B04"].mean() + 1),

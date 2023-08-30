@@ -17,7 +17,6 @@ from cyano.data.utils import (
     add_unique_identifier,
     convert_density_to_severity,
 )
-from cyano.config import RANDOM_STATE
 
 
 class CyanoModelPipeline:
@@ -124,7 +123,7 @@ class CyanoModelPipeline:
         kf = StratifiedGroupKFold(
             n_splits=self.model_training_config.n_folds,
             shuffle=True,
-            random_state=RANDOM_STATE,
+            random_state=40,
         )
         splits = kf.split(
             train_features,
