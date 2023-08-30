@@ -4,3 +4,16 @@ save_dir: tests/assets/experiment/
 target_col: log_density
 model_training_config:
   n_folds: 1
+  num_boost_round: 100
+features_config:
+  use_sentinel_bands:
+  - B02
+  satellite_image_features:
+  - B02_min
+  - B02_mean
+  - B02_max
+  satellite_meta_features:
+  - month
+  - days_before_sample
+  sample_meta_features:
+  - land_cover
