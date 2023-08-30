@@ -11,7 +11,6 @@ import pandas as pd
 from sklearn.model_selection import StratifiedGroupKFold
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
-from cyano.data.climate_data import download_climate_data
 from cyano.data.elevation_data import download_elevation_data
 from cyano.data.features import generate_features
 from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
@@ -90,8 +89,6 @@ class CyanoModelPipeline:
         download_satellite_data(satellite_meta, samples, self.features_config, self.cache_dir)
 
         ## Download non-satellite data
-        if self.features_config.climate_features:
-            download_climate_data(samples, self.features_config, self.cache_dir)
         if self.features_config.elevation_features:
             download_elevation_data(samples, self.features_config, self.cache_dir)
         logger.success(f"Raw source data saved to {self.cache_dir}")

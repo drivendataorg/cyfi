@@ -192,29 +192,6 @@ def generate_satellite_features(
     return satellite_features.set_index("sample_id").drop(columns=["item_id"]).astype(float)
 
 
-def generate_climate_features(
-    sample_ids: Union[List[str], pd.Index], config: FeaturesConfig
-) -> pd.DataFrame:
-    """Generate features from climate data
-
-    Args:
-        sample_ids (Union[List[str], pd.Index]): List of unique indices for each sample
-        config (FeaturesConfig): Configuration, including
-            directory where raw source data is saved
-
-    Returns:
-        pd.DataFrame: Dataframe where the index is sample_id. There is
-            one columns for each climate feature and one row
-            for each sample
-    """
-    # Load files
-    # - filter to those containing '_climate' in the name or other pattern
-    # - identify data for each sample based on uid
-
-    # Generate features for each sample
-    pass
-
-
 def generate_elevation_features(
     sample_ids: Union[List[str], pd.Index], config: FeaturesConfig
 ) -> pd.DataFrame:
@@ -312,7 +289,7 @@ def generate_features(
     cache_dir: Union[str, Path],
 ) -> pd.DataFrame:
     """Generate a dataframe of features for the given set of samples.
-    Requires that the raw satellite, climate, and elevation data for
+    Requires that the raw satellite and elevation data for
     the given samples are already saved in cache_dir
 
     Args:
@@ -341,14 +318,6 @@ def generate_features(
     # Generate non-satellite features. Each has only one row per sample
     sample_ids = samples.index
     features = satellite_features.copy()
-    if config.climate_features:
-        climate_features = generate_climate_features(sample_ids, config, cache_dir)
-        logger.info(
-            f"Generated {climate_features.shape[1]} climate features for {climate_features.shape[0]:,} samples"
-        )
-        features = features.merge(
-            climate_features, left_index=True, right_index=True, how="outer", validate="m:1"
-        )
 
     if config.elevation_features:
         elevation_features = generate_elevation_features(sample_ids, config, cache_dir)
@@ -377,7 +346,6 @@ def generate_features(
     all_feature_cols = (
         config.satellite_image_features
         + config.satellite_meta_features
-        + config.climate_features
         + config.elevation_features
         + config.metadata_features
     )
