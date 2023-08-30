@@ -11,6 +11,7 @@ def test_train_model_with_folds(
     evaluate_data_path, evaluate_data_features, features_config, tmp_path
 ):
     # Test that multiple models are trained
+    # Use evaluate_data because it has a column for region
     n_folds = 2
     pipeline = CyanoModelPipeline(
         features_config=features_config,
