@@ -213,7 +213,7 @@ class ModelTrainingConfig(BaseModel):
     """
 
     params: Optional[LGBParams] = LGBParams()
-    num_boost_round: Optional[int] = 100000
+    num_boost_round: Optional[int] = 100_000
     n_folds: Optional[int] = 5
 
     # Silence warning for conflict with pydantic protected namespace
