@@ -192,29 +192,6 @@ def generate_satellite_features(
     return satellite_features.set_index("sample_id").drop(columns=["item_id"]).astype(float)
 
 
-def generate_elevation_features(
-    sample_ids: Union[List[str], pd.Index], config: FeaturesConfig
-) -> pd.DataFrame:
-    """Generate features from elevation data
-
-    Args:
-        sample_ids (Union[List[str], pd.Index]): List of unique indices for each sample
-        config (FeaturesConfig): Configuration, including
-            directory where raw source data is saved
-
-    Returns:
-        pd.DataFrame: Dataframe where the index is sample_id. There is
-            one columns for each elevation feature and one row
-            for each sample
-    """
-    # Load files
-    # - filter to those containing '_elevation' in the name or other pattern
-    # - identify data for each sample based on uid
-
-    # Generate features for each sample
-    pass
-
-
 def land_cover_for_sample(latitude: float, longitude: float, land_cover_data: xr.Dataset) -> int:
     """Get the land cover classification value for a specific location
 
@@ -289,8 +266,8 @@ def generate_features(
     cache_dir: Union[str, Path],
 ) -> pd.DataFrame:
     """Generate a dataframe of features for the given set of samples.
-    Requires that the raw satellite and elevation data for
-    the given samples are already saved in cache_dir
+    Requires that the raw satellite data for the give samples are
+    already saved in cache_dir
 
     Args:
         samples (pd.DataFrame): Dataframe where the index is sample_id and there are
@@ -319,15 +296,6 @@ def generate_features(
     sample_ids = samples.index
     features = satellite_features.copy()
 
-    if config.elevation_features:
-        elevation_features = generate_elevation_features(sample_ids, config, cache_dir)
-        logger.info(
-            f"Generated {elevation_features.shape[1]} elevation features for {elevation_features.shape[0]:,} samples"
-        )
-        features = features.merge(
-            elevation_features, left_index=True, right_index=True, how="outer", validate="m:1"
-        )
-
     if config.metadata_features:
         metadata_features = generate_metadata_features(samples, config)
         logger.info(
@@ -344,10 +312,7 @@ def generate_features(
     )
 
     all_feature_cols = (
-        config.satellite_image_features
-        + config.satellite_meta_features
-        + config.elevation_features
-        + config.metadata_features
+        config.satellite_image_features + config.satellite_meta_features + config.metadata_features
     )
 
     return features[all_feature_cols]
