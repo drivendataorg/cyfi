@@ -121,75 +121,85 @@ class CyanoModelPipeline:
             )
         ]
 
+    def _train_model_with_folds(self):
+        train_features = self.train_features.copy().reset_index(drop=False)
+        kf = StratifiedGroupKFold(
+            n_splits=self.model_training_config.n_folds,
+            shuffle=True,
+            random_state=RANDOM_STATE,
+        )
+        splits = kf.split(
+            train_features,
+            self.train_samples.loc[train_features.sample_id].region,
+            groups=train_features.sample_id,
+        )
+
+        trained_models = []
+        for train_idx, valid_idx in splits:
+            # Train model on fold
+            train_split_features = train_features.loc[train_idx].set_index("sample_id")
+            valid_split_features = train_features.loc[valid_idx].set_index("sample_id")
+
+            lgb_train_data = lgb.Dataset(
+                train_split_features,
+                label=self.train_labels.loc[train_split_features.index],
+            )
+            lgb_valid_data = lgb.Dataset(
+                valid_split_features,
+                label=self.train_labels.loc[valid_split_features.index],
+                reference=lgb_train_data,
+            )
+
+            trained_model = lgb.train(
+                self.model_training_config.params.model_dump(),
+                lgb_train_data,
+                valid_sets=[lgb_valid_data],
+                valid_names=["valid"],
+                num_boost_round=self.model_training_config.num_boost_round,
+            )
+            trained_models.append(trained_model)
+
+        self.models = trained_models
+
+    def _validate_training_with_folds(self):
+        """Determine whether a model will be trained with folds. Returns True if training with folds has been specified and is supported."""
+        if self.model_training_config.n_folds == 1:
+            return False
+
+        # Training with folds requires region, check if region has been provided
+        elif "region" not in self.train_samples:
+            logger.warning(
+                f"Ignoring n_folds = {self.model_training_config.n_folds} and training without folds because `region` is not in the labels dataframe."
+            )
+            return False
+
+        # Check if there are not enough samples
+        elif self.train_features.index.nunique() <= self.model_training_config.n_folds:
+            logger.warning(
+                f"Ignoring n_folds = {self.model_training_config.n_folds} and training without folds because there are not enough samples."
+            )
+            return False
+
+        # Check if any reion has fewer samples than the number of folds
+        elif (
+            self.train_samples.loc[self.train_features.index].region.value_counts().min()
+            < self.model_training_config.n_folds
+        ):
+            logger.warning(
+                f"Ignoring n_folds = {self.model_training_config.n_folds} and training without folds because at least one region has fewer than n_folds samples."
+            )
+            return False
+
+        else:
+            return True
+
     def _train_model(self):
-        # Training with folds
-        if self.model_training_config.n_folds > 1:
-            if "region" not in self.train_samples:
-                logger.warning(
-                    f"Ignoring n_folds = {self.model_training_config.n_folds} and training without folds because `region` is not in the labels dataframe."
-                )
-                self._train_model_without_folds()
+        train_with_folds = self._validate_training_with_folds()
 
-            # Check if there are not enough samples
-            elif self.train_features.index.nunique() <= self.model_training_config.n_folds:
-                logger.warning(
-                    f"Ignoring n_folds = {self.model_training_config.n_folds} and training without folds because there are not enough samples."
-                )
-                self._train_model_without_folds()
-
-            # Check if any region has fewer samples than the number of folds
-            elif (
-                self.train_samples.loc[self.train_features.index].region.value_counts().min()
-                < self.model_training_config.n_folds
-            ):
-                logger.warning(
-                    f"Ignoring n_folds = {self.model_training_config.n_folds} and training without folds because at least one region has fewer than n_folds samples."
-                )
-                self._train_model_without_folds()
-
+        if train_with_folds:
             # Train with folds, distributing regions evenly between folds
-            else:
-                logger.info(f"Training LGB model with {self.model_training_config.n_folds} folds")
-                train_features = self.train_features.copy().reset_index(drop=False)
-                kf = StratifiedGroupKFold(
-                    n_splits=self.model_training_config.n_folds,
-                    shuffle=True,
-                    random_state=RANDOM_STATE,
-                )
-                splits = kf.split(
-                    train_features,
-                    self.train_samples.loc[train_features.sample_id].region,
-                    groups=train_features.sample_id,
-                )
-
-                trained_models = []
-                for train_idx, valid_idx in splits:
-                    # Train model on fold
-                    train_split_features = train_features.loc[train_idx].set_index("sample_id")
-                    valid_split_features = train_features.loc[valid_idx].set_index("sample_id")
-
-                    lgb_train_data = lgb.Dataset(
-                        train_split_features,
-                        label=self.train_labels.loc[train_split_features.index],
-                    )
-                    lgb_valid_data = lgb.Dataset(
-                        valid_split_features,
-                        label=self.train_labels.loc[valid_split_features.index],
-                        reference=lgb_train_data,
-                    )
-
-                    trained_model = lgb.train(
-                        self.model_training_config.params.model_dump(),
-                        lgb_train_data,
-                        valid_sets=[lgb_valid_data],
-                        valid_names=["valid"],
-                        num_boost_round=self.model_training_config.num_boost_round,
-                    )
-                    trained_models.append(trained_model)
-
-                self.models = trained_models
-
-        # Training without folds
+            logger.info(f"Training LGB model with {self.model_training_config.n_folds} folds")
+            self._train_model_with_folds()
         else:
             logger.info("Training single LGB model")
             self._train_model_without_folds()
