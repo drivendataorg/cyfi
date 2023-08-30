@@ -53,7 +53,6 @@ class FeaturesConfig(BaseModel):
     climate_features: Optional[List] = []
     elevation_features: Optional[List] = []
     metadata_features: Optional[List] = ["rounded_longitude"]
-    scl_filter: Optional[bool] = False
     """Features configuration
 
     Args:
@@ -82,8 +81,6 @@ class FeaturesConfig(BaseModel):
             Defaults to [].
         metadata_features (Optional[List], optional): List of metadata features to include. Defaults
             to ["rounded_longitude"].
-        scl_filter (Optional[bool], optional): Whether to filter satellite imagery during feature
-            generation to pixels labeled as water by Sentinel-2's SCL band. Defaults to False.
     """
 
 
