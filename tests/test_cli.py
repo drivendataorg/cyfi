@@ -4,37 +4,10 @@ from typer.testing import CliRunner
 
 from cyano.cli import app
 from cyano.data.utils import add_unique_identifier
-from cyano.experiment.experiment import ExperimentConfig
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 runner = CliRunner()
-
-
-def test_cli_experiment(experiment_config_path):
-    # Run CLI command
-    result = runner.invoke(
-        app,
-        ["experiment", str(experiment_config_path)],
-    )
-    assert result.exit_code == 0
-
-    config = ExperimentConfig.from_file(experiment_config_path)
-
-    # Check that artifact config, model zip, and predictions got saved out
-    for file in ["config_artifact.yaml", "model.zip", "preds.csv"]:
-        assert (Path(config.save_dir) / file).exists()
-
-    # Check the appropriate files are in the metrics directory
-    for file in [
-        "actual_density_boxplot.png",
-        "crosstab.png",
-        "density_kde.png",
-        "density_scatterplot.png",
-        "feature_importance_model_0.csv",
-        "results.json",
-    ]:
-        assert (Path(config.save_dir) / "metrics" / file).exists()
 
 
 def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_path):

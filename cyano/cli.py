@@ -5,7 +5,6 @@ from loguru import logger
 from pathlib import Path
 import typer
 
-from cyano.experiment.experiment import ExperimentConfig
 from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
 
@@ -18,16 +17,6 @@ DEFAULT_MODEL_PATH = str(Path(__file__).parent / "assets/model_v0.zip")
 # Set logger to only log info or higher
 logger.remove()
 logger.add(sys.stderr, level="INFO")
-
-
-@app.command()
-def experiment(
-    config_path: Path = typer.Argument(exists=True, help="Path to an experiment configuration")
-):
-    """Run an experiment"""
-    config = ExperimentConfig.from_file(config_path)
-    logger.add(config.save_dir / "experiment.log", level="DEBUG")
-    config.run_experiment()
 
 
 @app.command()

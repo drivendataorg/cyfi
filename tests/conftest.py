@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from cyano.config import FeaturesConfig
-from cyano.experiment.experiment import ExperimentConfig
+from cyano.experiment import ExperimentConfig
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
