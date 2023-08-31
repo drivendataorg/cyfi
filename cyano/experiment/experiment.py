@@ -47,8 +47,7 @@ class ExperimentConfig(BaseModel):
     target_col: str = "log_density"
     debug: bool = False
 
-    # Do not allow extra fields
-    # Silence warning for conflict with pydantic protected namespace
+    # Do not allow extra fields and silence warning for conflict with pydantic protected namespace
     model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @field_validator("train_csv", "predict_csv")
