@@ -147,6 +147,9 @@ class FeaturesConfig(BaseModel):
         "NDVI_B07",
     ]
 
+    # Do not allow extra fields
+    model_config = ConfigDict(extra="forbid")
+
     @field_validator("use_sentinel_bands")
     def validate_sentinel_bands(cls, path_field):
         return check_field_is_subset(path_field, AVAILABLE_SENTINEL_BANDS)
@@ -195,6 +198,9 @@ class LGBParams(BaseModel):
     early_stopping_round: Optional[int] = 100
     seed: Optional[int] = 40
 
+    # Do not allow extra fields
+    model_config = ConfigDict(extra="forbid")
+
 
 class ModelTrainingConfig(BaseModel):
     """Model training configuration
@@ -212,8 +218,9 @@ class ModelTrainingConfig(BaseModel):
     num_boost_round: Optional[int] = 100_000
     n_folds: Optional[int] = 5
 
+    # Do not allow extra fields
     # Silence warning for conflict with pydantic protected namespace
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
 
 AVAILABLE_SENTINEL_BANDS = [

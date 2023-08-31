@@ -1,3 +1,4 @@
+from pydantic import ValidationError
 import pytest
 
 
@@ -12,6 +13,10 @@ def test_lgbparams():
     params = LGBParams(num_leaves="12")
     assert params.num_leaves == 12
 
+    # Errors with extra field
+    with pytest.raises(ValidationError):
+        LGBParams(extra_field="surprise_extra_field")
+
 
 def test_features_config():
     config = FeaturesConfig()
@@ -22,21 +27,23 @@ def test_features_config():
     assert config.pc_meters_search_window == 100
     assert config.image_feature_meter_window == 200
 
+    # Errors with extra field
+    with pytest.raises(ValidationError):
+        FeaturesConfig(extra_field="surprise_extra_field")
 
-def test_features_config_errors():
-    # Unrecognized sentinel band
+    # Errors with unrecognized sentinel band
     with pytest.raises(ValueError):
         FeaturesConfig(use_sentinel_bands=["surprise_band"])
 
-    # Unrecognized satellite image feature
+    # Errors with unrecognized satellite image feature
     with pytest.raises(ValueError):
         FeaturesConfig(satellite_image_features=["surprise_feature"])
 
-    # Unrecognized satellite meta feature
+    # Errors with unrecognized satellite meta feature
     with pytest.raises(ValueError):
         FeaturesConfig(satellite_meta_features=["surprise_feature"])
 
-    # Unrecognized metadata feature
+    # Errors with unrecognized metadata feature
     with pytest.raises(ValueError):
         FeaturesConfig(sample_meta_features=["surprise_feature"])
 
@@ -48,3 +55,7 @@ def test_model_training_config():
 
     config = ModelTrainingConfig(n_folds="1")
     assert config.n_folds == 1
+
+    # Errors with extra field
+    with pytest.raises(ValidationError):
+        ModelTrainingConfig(extra_field="surprise_extra_field")
