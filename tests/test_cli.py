@@ -45,6 +45,7 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data):
         [
             "predict",
             str(predict_data_path),
+            "--model-path",
             str(ASSETS_DIR / "experiment/model.zip"),
             "--output-path",
             str(preds_path),
@@ -61,3 +62,20 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data):
     missing_sample_mask = preds.sample_id == "e66ea0c31ba500d5d4ac4c610b8cf508"
     assert preds[~missing_sample_mask].severity.notna().all()
     assert preds[missing_sample_mask].severity.isna().all()
+
+
+def test_cli_predict_invalid_files(tmp_path):
+    # Raises an error when samples_path does not exist
+    result = runner.invoke(
+        app,
+        [
+            "predict",
+            "not_a_path",
+            "--model-path",
+            str(ASSETS_DIR / "experiment/model.zip"),
+            "--output-path",
+            str(tmp_path / "preds.csv"),
+        ],
+    )
+    assert result.exit_code == 1
+    assert isinstance(result.exception, FileNotFoundError)
