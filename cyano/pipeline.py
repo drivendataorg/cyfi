@@ -2,7 +2,7 @@ from pathlib import Path
 import tempfile
 from typing import List, Optional
 import yaml
-from zipfile import ZipFile
+from repro_zipfile import ReproducibleZipFile as ZipFile
 
 import lightgbm as lgb
 from loguru import logger
