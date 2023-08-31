@@ -46,12 +46,13 @@ class ExperimentConfig(BaseModel):
         debug (bool, optional): Run in debug mode. Defaults to False.
     """
 
+    # Do not allow extra fields
+    # Silence warning for conflict with pydantic protected namespace
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
     @field_validator("train_csv", "predict_csv")
     def convert_filepaths(cls, path_field):
         return AnyPath(path_field)
-
-    # Avoid conflict with pydantic protected namespace
-    model_config = ConfigDict(protected_namespaces=())
 
     @field_serializer("train_csv", "predict_csv", "cache_dir", "save_dir")
     def serialize_path_to_str(self, x, _info):
