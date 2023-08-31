@@ -79,3 +79,32 @@ def test_cli_predict_invalid_files(tmp_path):
     )
     assert result.exit_code == 1
     assert isinstance(result.exception, FileNotFoundError)
+
+
+def test_cli_evaluate(tmp_path, data_with_sample_id_path):
+    # Check that evaluate runs with the default model path
+    eval_dir = tmp_path / "evals"
+
+    # Run CLI command
+    result = runner.invoke(
+        app,
+        [
+            "evaluate",
+            str(data_with_sample_id_path),
+            str(data_with_sample_id_path),
+            "--save-dir",
+            str(eval_dir),
+        ],
+    )
+    assert result.exit_code == 0
+
+    # Check that appropriate files are in the eval_dir
+    for file in [
+        "actual_density_boxplot.png",
+        "crosstab.png",
+        "density_kde.png",
+        "density_scatterplot.png",
+        "feature_importance_model_0.csv",
+        "results.json",
+    ]:
+        assert (eval_dir / file).exists()
