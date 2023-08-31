@@ -14,7 +14,7 @@ app = typer.Typer(pretty_exceptions_show_locals=False)
 
 load_dotenv(find_dotenv())
 
-REPO_ROOT = Path(__file__).parents[1].resolve()
+BEST_MODEL_PATH = str(Path(__file__).parent / "assets/model.zip")
 
 # Set logger to only log info or higher
 logger.remove()
@@ -51,7 +51,7 @@ def predict(
         help="Path to a csv of samples with columns for date, longitude, and latitude"
     ),
     model_path: str = typer.Option(
-        default=str(REPO_ROOT / "cyano/assets/model.zip"),
+        default=BEST_MODEL_PATH,
         help="Path to the zipfile of a trained LGB model",
     ),
     output_path: Path = typer.Option(
@@ -64,7 +64,6 @@ def predict(
     samples_path = convert_anypath("SAMPLES_PATH", samples_path)
     model_path = convert_anypath("MODEL_PATH", model_path)
 
-    logger.info(f"Loading trained model from {model_path}")
     pipeline = CyanoModelPipeline.from_disk(model_path, cache_dir=cache_dir)
     pipeline.run_prediction(samples_path, output_path)
 
@@ -78,7 +77,7 @@ def evaluate(
         help="Path to a csv of samples with columns for date, longitude, latitude, and actual density, with optional metadata columns",
     ),
     model_path: str = typer.Option(
-        default=str(REPO_ROOT / "cyano/assets/model.zip"),
+        default=BEST_MODEL_PATH,
         help="Path to the zipfile of a trained LGB model",
     ),
     save_dir: Path = typer.Option(
