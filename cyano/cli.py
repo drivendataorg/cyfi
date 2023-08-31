@@ -29,16 +29,40 @@ def predict(
         exists=True,
         help="Path to the zipfile of a trained cyanobacteria prediction model. If no model is specified, the default model will be used",
     ),
-    output_path: Path = typer.Option(
+    output_file: Path = typer.Option(
         default="preds.csv", help="Destination to save predictions csv"
     ),
+    output_directory: Path = typer.Option(
+        default=".",
+        help="Directory to save prediction outputs. `output_file` will be interpreted relative to `output_directory`",
+    ),
+    keep_features: bool = typer.Option(
+        default=False, help="Whether to save sample features to `output_directory`"
+    ),
+    overwrite: bool = typer.Option(default=False, help="Whether to overwrite existing files"),
 ):
     """Generate cyanobacteria predictions for a set of samples using an existing cyanobacteria prediction model"""
+    output_path = output_directory / output_file
+    if not overwrite and output_path.exists():
+        raise FileExistsError(
+            f"Not generating predictions because overwrite is False and {output_path} exists. To overwrite existing predictions, add `--overwrite`."
+        )
+
+    features_path = output_directory / "sample_features.csv"
+    if not overwrite and keep_features and features_path.exists():
+        raise FileExistsError(
+            f"Not generating predictions because overwrite is False and {features_path} exists. To overwrite existing features, add `--overwrite`."
+        )
+
     if model_path is None:
         model_path = DEFAULT_MODEL_PATH
-
     pipeline = CyanoModelPipeline.from_disk(model_path)
+
     pipeline.run_prediction(samples_path, output_path)
+
+    if keep_features:
+        pipeline.predict_features.to_csv(features_path, index=True)
+        logger.success(f"Features saved to {features_path}")
 
 
 @app.command()
