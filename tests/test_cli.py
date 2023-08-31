@@ -3,6 +3,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from cyano.cli import app
+from cyano.data.utils import add_unique_identifier
 from cyano.experiment.experiment import ExperimentConfig
 
 ASSETS_DIR = Path(__file__).parent / "assets"
@@ -36,7 +37,7 @@ def test_cli_experiment(experiment_config_path):
         assert (Path(config.save_dir) / "metrics" / file).exists()
 
 
-def test_cli_predict(tmp_path, predict_data_path, predict_data):
+def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_path):
     preds_path = tmp_path / "preds.csv"
 
     # Run CLI command
@@ -45,7 +46,8 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data):
         [
             "predict",
             str(predict_data_path),
-            str(ASSETS_DIR / "experiment/model.zip"),
+            "--model-path",
+            str(ensembled_model_path),
             "--output-path",
             str(preds_path),
         ],
@@ -61,3 +63,52 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data):
     missing_sample_mask = preds.sample_id == "e66ea0c31ba500d5d4ac4c610b8cf508"
     assert preds[~missing_sample_mask].severity.notna().all()
     assert preds[missing_sample_mask].severity.isna().all()
+
+
+def test_cli_predict_invalid_files(tmp_path):
+    # Raises an error when samples_path does not exist
+    result = runner.invoke(
+        app,
+        [
+            "predict",
+            "not_a_path",
+            "--model-path",
+            str(ASSETS_DIR / "experiment/model.zip"),
+            "--output-path",
+            str(tmp_path / "preds.csv"),
+        ],
+    )
+    assert result.exit_code == 2
+    assert "does not exist" in result.stdout
+
+
+def test_cli_evaluate(tmp_path, evaluate_data_path):
+    df = pd.read_csv(evaluate_data_path)
+    df = add_unique_identifier(df)
+    data_path = tmp_path / "data.csv"
+    df.to_csv(data_path, index=True)
+
+    eval_dir = tmp_path / "evals"
+
+    # Run CLI command
+    result = runner.invoke(
+        app,
+        [
+            "evaluate",
+            str(data_path),
+            str(data_path),
+            "--save-dir",
+            str(eval_dir),
+        ],
+    )
+    assert result.exit_code == 0
+
+    # Check that appropriate files are in the eval_dir
+    for file in [
+        "actual_density_boxplot.png",
+        "crosstab.png",
+        "density_kde.png",
+        "density_scatterplot.png",
+        "results.json",
+    ]:
+        assert (eval_dir / file).exists()

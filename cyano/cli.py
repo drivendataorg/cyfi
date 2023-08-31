@@ -1,9 +1,6 @@
 import sys
-from zipfile import ZipFile
 
-from cloudpathlib import AnyPath
 from dotenv import load_dotenv, find_dotenv
-import lightgbm as lgb
 from loguru import logger
 from pathlib import Path
 import typer
@@ -15,6 +12,8 @@ from cyano.evaluate import EvaluatePreds
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
 load_dotenv(find_dotenv())
+
+DEFAULT_MODEL_PATH = str(Path(__file__).parent / "assets/model_v0.zip")
 
 # Set logger to only log info or higher
 logger.remove()
@@ -36,42 +35,40 @@ def predict(
     samples_path: Path = typer.Argument(
         exists=True, help="Path to a csv of samples with columns for date, longitude, and latitude"
     ),
-    model_zip: Path = typer.Argument(exists=True, help="Path to a trained model zip"),
+    model_path: Path = typer.Option(
+        default=None,
+        exists=True,
+        help="Path to the zipfile of a trained cyanobacteria prediction model. If no model is specified, the default model will be used",
+    ),
     output_path: Path = typer.Option(
         default="preds.csv", help="Destination to save predictions csv"
     ),
 ):
-    """Load an existing cyanobacteria prediction model and generate
-    severity level predictions for a set of samples.
-    """
-    samples_path = AnyPath(samples_path)
+    """Generate cyanobacteria predictions for a set of samples using an existing cyanobacteria prediction model"""
+    if model_path is None:
+        model_path = DEFAULT_MODEL_PATH
 
-    pipeline = CyanoModelPipeline.from_disk(model_zip)
+    pipeline = CyanoModelPipeline.from_disk(model_path)
     pipeline.run_prediction(samples_path, output_path)
 
 
 @app.command()
 def evaluate(
-    y_pred_csv: str = typer.Argument(
-        help="Path to a csv of samples with columns for date, longitude, latitude, and predicted severity",
+    y_pred_csv: Path = typer.Argument(
+        exists=True,
+        help="Path to a csv of samples with columns for date, longitude, latitude, and predicted density",
     ),
-    y_true_csv: str = typer.Argument(
-        help="Path to a csv of samples with columns for date, longitude, latitude, and actual severity, with optional metadata columns",
+    y_true_csv: Path = typer.Argument(
+        exists=True,
+        help="Path to a csv of samples with columns for date, longitude, latitude, and actual density, with optional metadata columns",
     ),
-    model_path: Path = typer.Argument(exists=True, help="Path to trained LGB model"),
     save_dir: Path = typer.Option(
         default=Path.cwd() / "metrics", help="Folder in which to save out metrics and plots."
     ),
 ):
-    y_pred_csv = AnyPath(y_pred_csv)
-    y_true_csv = AnyPath(y_true_csv)
-
-    # Load model from model zipfile
-    archive = ZipFile(model_path, "r")
-    model = lgb.Booster(model_str=archive.read("lgb_model.txt").decode())
-
+    """Evaluate cyanobacteria model predictions"""
     EvaluatePreds(
-        y_pred_csv=y_pred_csv, y_true_csv=y_true_csv, save_dir=save_dir, model=model
+        y_pred_csv=y_pred_csv, y_true_csv=y_true_csv, save_dir=save_dir
     ).calculate_all_and_save()
 
 
