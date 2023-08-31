@@ -3,6 +3,7 @@ import pytest
 
 
 from cyano.config import LGBParams, FeaturesConfig, ModelTrainingConfig
+from cyano.experiment.experiment import ExperimentConfig
 
 
 def test_lgbparams():
@@ -59,3 +60,12 @@ def test_model_training_config():
     # Errors with extra field
     with pytest.raises(ValidationError):
         ModelTrainingConfig(extra_field="surprise_extra_field")
+
+
+def test_experiment_config():
+    config = ExperimentConfig(features_config=FeaturesConfig(n_sentinel_items=10))
+    assert config.features_config.n_sentinel_items == 10
+
+    # Errors with extra field
+    with pytest.raises(ValidationError):
+        ExperimentConfig(extra_field="surprise_extra_field")
