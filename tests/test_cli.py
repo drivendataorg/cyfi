@@ -38,7 +38,6 @@ def test_cli_experiment(experiment_config_path):
 
 
 def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_path):
-    # Test prediction with default model
     preds_path = tmp_path / "preds.csv"
 
     # Run CLI command
@@ -84,7 +83,6 @@ def test_cli_predict_invalid_files(tmp_path):
 
 
 def test_cli_evaluate(tmp_path, evaluate_data_path):
-    # Check that evaluate runs with the default model path
     df = pd.read_csv(evaluate_data_path)
     df = add_unique_identifier(df)
     data_path = tmp_path / "data.csv"
