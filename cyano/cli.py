@@ -39,9 +39,11 @@ def predict(
     keep_features: bool = typer.Option(
         default=False, help="Whether to save sample features to `output_directory`"
     ),
-    overwrite: bool = typer.Option(default=False, help="Whether to overwrite existing files"),
+    overwrite: bool = typer.Option(default=False, help="Overwrite existing files"),
 ):
-    """Generate cyanobacteria predictions for a set of samples using an existing cyanobacteria prediction model"""
+    """Generate cyanobacteria predictions for a set of samples saved at `samples_path`. By default,
+    predictions will be saved to `preds.csv` in the current directory.
+    """
     output_path = output_directory / output_file
     if not overwrite and output_path.exists():
         raise FileExistsError(
@@ -79,7 +81,7 @@ def evaluate(
         default=Path.cwd() / "metrics", help="Folder in which to save out metrics and plots."
     ),
     overwrite: bool = typer.Option(
-        default=False, help="Overwriting any existing files in `save_dir`"
+        default=False, help="Overwrite any existing files in `save_dir`"
     ),
 ):
     """Evaluate cyanobacteria model predictions"""
