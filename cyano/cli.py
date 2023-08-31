@@ -62,18 +62,13 @@ def evaluate(
         exists=True,
         help="Path to a csv of samples with columns for date, longitude, latitude, and actual density, with optional metadata columns",
     ),
-    model_path: Path = typer.Option(
-        default=None,
-        exists=True,
-        help="Path to the zipfile of a trained LGB model. Must be provided to include feature importances in the output metrics",
-    ),
     save_dir: Path = typer.Option(
         default=Path.cwd() / "metrics", help="Folder in which to save out metrics and plots."
     ),
 ):
     """Evaluate cyanobacteria model predictions"""
     EvaluatePreds(
-        y_pred_csv=y_pred_csv, y_true_csv=y_true_csv, save_dir=save_dir, model_path=model_path
+        y_pred_csv=y_pred_csv, y_true_csv=y_true_csv, save_dir=save_dir
     ).calculate_all_and_save()
 
 
