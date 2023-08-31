@@ -21,6 +21,20 @@ logger.remove()
 logger.add(sys.stderr, level="INFO")
 
 
+def convert_anypath(var_name: str, filepath: str) -> AnyPath:
+    """Convert a string to AnyPath and check that the path exists
+
+    Args:
+        var_name (str): Name of the filepath variable for logging errors
+        filepath (str): File path
+    """
+    filepath = AnyPath(filepath)
+    if not filepath.exists():
+        raise FileNotFoundError(f"Invalid value for {var_name}: {filepath} does not exist.")
+
+    return filepath
+
+
 @app.command()
 def experiment(
     config_path: Path = typer.Argument(exists=True, help="Path to an experiment configuration")
@@ -36,48 +50,46 @@ def predict(
     samples_path: str = typer.Argument(
         help="Path to a csv of samples with columns for date, longitude, and latitude"
     ),
-    model_zip: str = typer.Option(
+    model_path: str = typer.Option(
         default=str(REPO_ROOT / "cyano/assets/model.zip"),
-        help="Path to a trained model zip",
+        help="Path to the zipfile of a trained LGB model",
     ),
     output_path: Path = typer.Option(
         default="preds.csv", help="Destination to save predictions csv"
     ),
     cache_dir: Path = typer.Option(default=None, help="Cache directory to save raw feature data"),
 ):
-    """Load an existing cyanobacteria prediction model and generate
-    severity level predictions for a set of samples.
-    """
-    samples_path = AnyPath(samples_path)
-    model_zip = AnyPath(model_zip)
+    """Generate cyanobacteria predictions for a set of samples using an existing cyanobacteria prediction model"""
+    # Convert strings to AnyPath and check that they exist
+    samples_path = convert_anypath("SAMPLES_PATH", samples_path)
+    model_path = convert_anypath("MODEL_PATH", model_path)
 
-    if not samples_path.exists():
-        raise FileNotFoundError(
-            f"Invalid valid for 'SAMPLES_PATH': {samples_path} does not exist."
-        )
-    if not model_zip.exists():
-        raise FileNotFoundError(f"Invalid value for 'MODEL_ZIP': {model_zip} does not exist.")
-
-    logger.info(f"Loading trained model from {model_zip}")
-    pipeline = CyanoModelPipeline.from_disk(model_zip, cache_dir=cache_dir)
+    logger.info(f"Loading trained model from {model_path}")
+    pipeline = CyanoModelPipeline.from_disk(model_path, cache_dir=cache_dir)
     pipeline.run_prediction(samples_path, output_path)
 
 
 @app.command()
 def evaluate(
     y_pred_csv: str = typer.Argument(
-        help="Path to a csv of samples with columns for date, longitude, latitude, and predicted severity",
+        help="Path to a csv of samples with columns for date, longitude, latitude, and predicted density",
     ),
     y_true_csv: str = typer.Argument(
-        help="Path to a csv of samples with columns for date, longitude, latitude, and actual severity, with optional metadata columns",
+        help="Path to a csv of samples with columns for date, longitude, latitude, and actual density, with optional metadata columns",
     ),
-    model_path: Path = typer.Argument(exists=True, help="Path to trained LGB model"),
+    model_path: str = typer.Option(
+        default=str(REPO_ROOT / "cyano/assets/model.zip"),
+        help="Path to the zipfile of a trained LGB model",
+    ),
     save_dir: Path = typer.Option(
         default=Path.cwd() / "metrics", help="Folder in which to save out metrics and plots."
     ),
 ):
-    y_pred_csv = AnyPath(y_pred_csv)
-    y_true_csv = AnyPath(y_true_csv)
+    """Evaluate cyanobacteria model predictions"""
+    # Convert strings to AnyPath and check that they exist
+    y_pred_csv = convert_anypath("Y_PRED_CSV", y_pred_csv)
+    y_true_csv = convert_anypath("Y_TRUE_CSV", y_true_csv)
+    model_path = convert_anypath("MODEL_PATH", model_path)
 
     EvaluatePreds(
         y_pred_csv=y_pred_csv, y_true_csv=y_true_csv, save_dir=save_dir, model_path=model_path
