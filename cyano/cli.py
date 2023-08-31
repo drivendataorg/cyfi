@@ -57,7 +57,9 @@ def predict(
     output_path: Path = typer.Option(
         default="preds.csv", help="Destination to save predictions csv"
     ),
-    cache_dir: Path = typer.Option(default=None, help="Cache directory to save raw feature data"),
+    cache_dir: Path = typer.Option(
+        default=None, help="Cache directory to save raw feature data and other interim files"
+    ),
 ):
     """Generate cyanobacteria predictions for a set of samples using an existing cyanobacteria prediction model"""
     # Convert strings to AnyPath and check that they exist
