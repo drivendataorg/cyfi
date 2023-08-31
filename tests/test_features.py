@@ -59,6 +59,8 @@ def test_generate_candidate_metadata(train_data, features_config):
         "S2B_MSIL2A_20190819T154819_R054_T18TVL_20201005T022720" in candidate_meta.item_id.values
     )
 
+    assert "visual_href" in candidate_meta.columns
+
 
 def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_config):
     # Download imagery

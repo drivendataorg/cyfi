@@ -15,7 +15,7 @@ features_config:
   - days_before_sample
   use_sentinel_bands:
   - B02
-last_commit_hash: f2dd9733553abefe0f57714e5ce7ff314af15beb
+last_commit_hash: e40f03d5a38e8d27c95c1d9d5005696888912e5e
 model_training_config:
   n_folds: 1
   num_boost_round: 100
