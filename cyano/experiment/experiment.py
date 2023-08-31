@@ -16,26 +16,17 @@ REPO_ROOT = Path(__file__).parents[2].resolve()
 
 
 class ExperimentConfig(BaseModel):
-    features_config: FeaturesConfig = FeaturesConfig()
-    model_training_config: ModelTrainingConfig = ModelTrainingConfig()
-    train_csv: Union[str, Path]
-    predict_csv: Union[str, Path]
-    cache_dir: Path = None
-    save_dir: Path = Path.cwd()
-    last_commit_hash: str = None
-    target_col: str = "log_density"
-    debug: bool = False
     """Configuration containing parameters to be used for an end-to-end experiment
 
     Args:
-        features_config (FeaturesConfig, optional): Features configuration. Defaults to
-            FeaturesConfig().
-        model_training_config (ModelTrainingConfig, optional): Model training configuration.
-            Defaults to ModelTrainingConfig().
         train_csv (Union[str, Path]): Path to a training CSV with columns for date, latitude,
             longitude, and severity.
         predict_csv (Union[str, Path]): Path to a CSV for prediction and evaluation with
             columns for date, latitude, longitude, and severity.
+        features_config (FeaturesConfig, optional): Features configuration. Defaults to
+            FeaturesConfig().
+        model_training_config (ModelTrainingConfig, optional): Model training configuration.
+            Defaults to ModelTrainingConfig().
         cache_dir (Path, optional): Cache directory. Defaults to None.
         save_dir (Path, optional): Directory to save experiment results. Defaults to
             Path.cwd().
@@ -45,6 +36,16 @@ class ExperimentConfig(BaseModel):
             "density_cells_per_ml", or "log_density". Defaults to "log_density".
         debug (bool, optional): Run in debug mode. Defaults to False.
     """
+
+    train_csv: Union[str, Path]
+    predict_csv: Union[str, Path]
+    features_config: FeaturesConfig = FeaturesConfig()
+    model_training_config: ModelTrainingConfig = ModelTrainingConfig()
+    cache_dir: Path = None
+    save_dir: Path = Path.cwd()
+    last_commit_hash: str = None
+    target_col: str = "log_density"
+    debug: bool = False
 
     # Do not allow extra fields
     # Silence warning for conflict with pydantic protected namespace
