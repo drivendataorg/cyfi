@@ -45,16 +45,16 @@ def predict(
     predictions will be saved to `preds.csv` in the current directory.
     """
     output_path = output_directory / output_file
-    if not overwrite and output_path.exists():
-        raise FileExistsError(
-            f"Not generating predictions because overwrite is False and {output_path} exists. To overwrite existing predictions, add `--overwrite`."
-        )
-
     features_path = output_directory / "sample_features.csv"
-    if not overwrite and keep_features and features_path.exists():
-        raise FileExistsError(
-            f"Not generating predictions because overwrite is False and {features_path} exists. To overwrite existing features, add `--overwrite`."
-        )
+    if not overwrite:
+        if output_path.exists():
+            raise FileExistsError(
+                f"Not generating predictions because overwrite is False and {output_path} exists. To overwrite existing predictions, add `--overwrite`."
+            )
+        if keep_features and features_path.exists():
+            raise FileExistsError(
+                f"Not generating predictions because overwrite is False and {features_path} exists. To overwrite existing features, add `--overwrite`."
+            )
 
     if model_path is None:
         model_path = DEFAULT_MODEL_PATH
