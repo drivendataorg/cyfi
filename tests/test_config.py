@@ -62,10 +62,18 @@ def test_model_training_config():
         ModelTrainingConfig(extra_field="surprise_extra_field")
 
 
-def test_experiment_config():
-    config = ExperimentConfig(features_config=FeaturesConfig(n_sentinel_items=10))
+def test_experiment_config(train_data_path):
+    config = ExperimentConfig(
+        train_csv=train_data_path,
+        predict_csv=train_data_path,
+        features_config=FeaturesConfig(n_sentinel_items=10),
+    )
     assert config.features_config.n_sentinel_items == 10
 
     # Errors with extra field
     with pytest.raises(ValidationError):
-        ExperimentConfig(extra_field="surprise_extra_field")
+        ExperimentConfig(
+            train_csv=train_data_path,
+            predict_csv=train_data_path,
+            extra_field="surprise_extra_field",
+        )
