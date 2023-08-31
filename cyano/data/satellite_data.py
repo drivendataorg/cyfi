@@ -159,6 +159,10 @@ def get_items_metadata(
         for optional_item_property in ["eo:cloud_cover", "s2:nodata_pixel_percentage"]:
             if optional_item_property in item.properties:
                 item_meta.update({optional_item_property: item.properties[optional_item_property]})
+
+        # Add link to visual image for display later
+        item_meta.update({"visual_href": item.assets["visual"].href})
+
         # Add links to download each band needed for features
         for band in config.use_sentinel_bands:
             item_meta.update({f"{band}_href": item.assets[band].href})
