@@ -37,7 +37,7 @@ def test_cli_experiment(experiment_config_path):
         assert (Path(config.save_dir) / "metrics" / file).exists()
 
 
-def test_cli_predict(tmp_path, predict_data_path, predict_data):
+def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_path):
     # Test prediction with default model
     preds_path = tmp_path / "preds.csv"
 
@@ -47,6 +47,8 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data):
         [
             "predict",
             str(predict_data_path),
+            "--model-path",
+            str(ensembled_model_path),
             "--output-path",
             str(preds_path),
         ],
