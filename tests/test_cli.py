@@ -66,13 +66,7 @@ def test_cli_evaluate(tmp_path, evaluate_data_path):
     # Run CLI command
     result = runner.invoke(
         app,
-        [
-            "evaluate",
-            str(data_path),
-            str(data_path),
-            "--save-dir",
-            str(eval_dir),
-        ],
+        ["evaluate", str(data_path), str(data_path), "--save-dir", str(eval_dir), "--overwrite"],
     )
     assert result.exit_code == 0
 

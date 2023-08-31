@@ -54,8 +54,17 @@ def evaluate(
     save_dir: Path = typer.Option(
         default=Path.cwd() / "metrics", help="Folder in which to save out metrics and plots."
     ),
+    overwrite: bool = typer.Option(
+        default=False, help="Overwriting any existing files in `save_dir`"
+    ),
 ):
     """Evaluate cyanobacteria model predictions"""
+    if not overwrite and save_dir.exists():
+        logger.warning(
+            f"Not running evaluation because overwrite is False and {save_dir} exists. To overwrite existing files, add `--overwrite`"
+        )
+        return
+
     EvaluatePreds(
         y_pred_csv=y_pred_csv, y_true_csv=y_true_csv, save_dir=save_dir
     ).calculate_all_and_save()
