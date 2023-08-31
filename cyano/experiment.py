@@ -1,18 +1,29 @@
 from pathlib import Path
+import sys
 from typing import Union
 import yaml
 
 from cloudpathlib import AnyPath
+from dotenv import load_dotenv, find_dotenv
 import git
 from loguru import logger
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
+import typer
 
 from cyano.config import FeaturesConfig, ModelTrainingConfig
 from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
 
-REPO_ROOT = Path(__file__).parents[2].resolve()
+REPO_ROOT = Path(__file__).parents[1].resolve()
+
+app = typer.Typer(pretty_exceptions_show_locals=False)
+
+load_dotenv(find_dotenv())
+
+# Set logger to only log info or higher
+logger.remove()
+logger.add(sys.stderr, level="INFO")
 
 
 class ExperimentConfig(BaseModel):
@@ -104,3 +115,17 @@ class ExperimentConfig(BaseModel):
             ).calculate_all_and_save()
 
             logger.success(f"Wrote out metrics to {self.save_dir}/metrics")
+
+
+@app.command()
+def run_experiment(
+    config_path: Path = typer.Argument(exists=True, help="Path to an experiment configuration")
+):
+    """Run an experiment"""
+    config = ExperimentConfig.from_file(config_path)
+    logger.add(config.save_dir / "experiment.log", level="DEBUG")
+    config.run_experiment()
+
+
+if __name__ == "__main__":
+    app()
