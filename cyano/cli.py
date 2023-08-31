@@ -38,7 +38,7 @@ def predict(
     model_path: Path = typer.Option(
         default=None,
         exists=True,
-        help="Path to the zipfile of a trained LGB model. If no model is specified, the default model will be used",
+        help="Path to the zipfile of a trained cyanobacteria prediction model. If no model is specified, the default model will be used",
     ),
     output_path: Path = typer.Option(
         default="preds.csv", help="Destination to save predictions csv"
