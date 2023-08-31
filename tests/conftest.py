@@ -59,11 +59,6 @@ def ensembled_model_path() -> Path:
     return ASSETS_DIR / "ensembled_model.zip"
 
 
-@pytest.fixture(scope="session")
-def data_with_sample_id_path() -> Path:
-    return ASSETS_DIR / "processed_samples.csv"
-
-
 @pytest.fixture
 def features_config():
     return FeaturesConfig(

@@ -3,6 +3,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from cyano.cli import app
+from cyano.data.utils import add_unique_identifier
 from cyano.experiment.experiment import ExperimentConfig
 
 ASSETS_DIR = Path(__file__).parent / "assets"
@@ -37,6 +38,7 @@ def test_cli_experiment(experiment_config_path):
 
 
 def test_cli_predict(tmp_path, predict_data_path, predict_data):
+    # Test prediction with default model
     preds_path = tmp_path / "preds.csv"
 
     # Run CLI command
@@ -45,8 +47,6 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data):
         [
             "predict",
             str(predict_data_path),
-            "--model-path",
-            str(ASSETS_DIR / "experiment/model.zip"),
             "--output-path",
             str(preds_path),
         ],
@@ -77,12 +77,17 @@ def test_cli_predict_invalid_files(tmp_path):
             str(tmp_path / "preds.csv"),
         ],
     )
-    assert result.exit_code == 1
-    assert isinstance(result.exception, FileNotFoundError)
+    assert result.exit_code == 2
+    assert "does not exist" in result.stdout
 
 
-def test_cli_evaluate(tmp_path, data_with_sample_id_path):
+def test_cli_evaluate(tmp_path, evaluate_data_path):
     # Check that evaluate runs with the default model path
+    df = pd.read_csv(evaluate_data_path)
+    df = add_unique_identifier(df)
+    data_path = tmp_path / "data.csv"
+    df.to_csv(data_path, index=True)
+
     eval_dir = tmp_path / "evals"
 
     # Run CLI command
@@ -90,8 +95,8 @@ def test_cli_evaluate(tmp_path, data_with_sample_id_path):
         app,
         [
             "evaluate",
-            str(data_with_sample_id_path),
-            str(data_with_sample_id_path),
+            str(data_path),
+            str(data_path),
             "--save-dir",
             str(eval_dir),
         ],
@@ -104,7 +109,6 @@ def test_cli_evaluate(tmp_path, data_with_sample_id_path):
         "crosstab.png",
         "density_kde.png",
         "density_scatterplot.png",
-        "feature_importance_model_0.csv",
         "results.json",
     ]:
         assert (eval_dir / file).exists()
