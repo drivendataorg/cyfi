@@ -57,9 +57,6 @@ class CyanoModelPipeline:
         m = hashlib.md5()
         m.update(str(self.features_config).encode())
         self.cache_dir = cache_dir / m.hexdigest()
-        logger.info(f"cache dir: {self.cache_dir}")
-        if self.cache_dir.exists():
-            logger.info(f"cache dir has {len(list(self.cache_dir.rglob('*'))):,} files")
 
         self.samples = None
         self.labels = None
