@@ -1,3 +1,4 @@
+import hashlib
 from pathlib import Path
 import tempfile
 from typing import List, Optional
@@ -48,9 +49,18 @@ class CyanoModelPipeline:
         self.features_config = features_config
         self.model_training_config = model_training_config
         self.models = models
-        self.cache_dir = (
-            Path(tempfile.TemporaryDirectory().name) if cache_dir is None else Path(cache_dir)
+
+        # Determine cache dir based on feature config hash
+        cache_dir = (
+            Path(tempfile.gettempdir()) / "cyano_cache" if cache_dir is None else Path(cache_dir)
         )
+        m = hashlib.md5()
+        m.update(str(self.features_config).encode())
+        self.cache_dir = cache_dir / m.hexdigest()
+        logger.info(f"cache dir: {self.cache_dir}")
+        if self.cache_dir.exists():
+            logger.info(f"cache dir has {len(list(self.cache_dir.rglob('*'))):,} files")
+
         self.samples = None
         self.labels = None
         self.target_col = target_col
