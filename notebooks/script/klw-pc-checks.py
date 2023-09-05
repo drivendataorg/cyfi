@@ -82,7 +82,7 @@ def identify_satellite_data_mod(samples: pd.DataFrame,
     return selected_meta
 
 
-# ## Search planetary computer
+# ## Search planetary computer to regenerate results
 
 regenerated_candidate_meta = []
 regenerated_map = {}
@@ -160,7 +160,7 @@ loaded_meta.shape
 loaded_meta.head(2)
 
 
-# ## Compare new results with past results
+# ## Compare regenerated results with loaded results
 
 loaded_meta.shape, regenerated_meta.shape
 
