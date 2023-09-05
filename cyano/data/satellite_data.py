@@ -2,11 +2,9 @@ import os
 
 from datetime import timedelta
 import functools
-import json
 import shutil
 from typing import Dict, List, Tuple, Union
 
-from cloudpathlib import AnyPath
 import geopy.distance as distance
 from loguru import logger
 import numpy as np
@@ -182,6 +180,51 @@ def get_items_metadata(
     return items_meta
 
 
+def _generate_candidate_metadata_for_sample(
+    sample_id: str,
+    date: Union[str, pd.Timestamp],
+    latitude: float,
+    longitude: float,
+    config: FeaturesConfig,
+) -> Tuple[pd.DataFrame, Dict]:
+    """Generate metadata for the satellite item candidates for one sample
+
+    Args:
+        sample_id (str): Sample ID
+        date (Union[str, pd.timestamp]): Sample date
+        latitude (float): Sample latitude
+        longitude (float): Sample longitude
+        config (FeaturesConfig): Features configuration
+
+    Returns:
+        Tuple[pd.DataFrame, Dict]: Tuple of (metadata for sentinel item
+            candidates, dictionary mapping current sample ID to the
+            relevant pystac item IDs)
+    """
+    # Search planetary computer
+    search_results = search_planetary_computer(
+        date,
+        latitude,
+        longitude,
+        collections=["sentinel-2-l2a"],
+        days_search_window=config.pc_days_search_window,
+        meters_search_window=config.pc_meters_search_window,
+    )
+
+    # Get satelite metadata
+    sample_items_meta = get_items_metadata(search_results, latitude, longitude, config)
+
+    sample_map = {
+        sample_id: {
+            "sentinel_item_ids": sample_items_meta.item_id.tolist()
+            if len(sample_items_meta) > 0
+            else []
+        }
+    }
+
+    return sample_items_meta, sample_map
+
+
 def generate_candidate_metadata(
     samples: pd.DataFrame, config: FeaturesConfig
 ) -> Tuple[pd.DataFrame, Dict]:
@@ -198,56 +241,33 @@ def generate_candidate_metadata(
             candidates, dictionary mapping sample IDs to the relevant
             pystac item IDs)
     """
-    logger.info("Generating metadata for all satellite item candidates")
+    # Determine the number of processes to use when parallelizing
+    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
 
-    if len(samples) > 20:
-        # Load from saved directory with search results for all competition data
-        # Remove for final package
-        pc_results_dir = (
-            AnyPath("s3://drivendata-competition-nasa-cyanobacteria")
-            / "data/interim/full_pc_search"
-        )
-        sentinel_meta = pd.read_csv(pc_results_dir / "sentinel_metadata.csv")
-        logger.info(
-            f"Loaded {sentinel_meta.shape[0]:,} rows of Sentinel candidate metadata from {pc_results_dir}"
-        )
-        with open(pc_results_dir / "sample_item_map.json", "r") as fp:
-            sample_item_map = json.load(fp)
-
-        return (sentinel_meta, sample_item_map)
-
-    # Otherwise, search the planetary computer
     logger.info(
-        f"Searching Sentinel-2 within {config.pc_days_search_window} days and {config.pc_meters_search_window} meters"
+        f"Generating metadata for all satellite item candidates. Searching Sentinel-2 within {config.pc_days_search_window} days and {config.pc_meters_search_window} meters"
     )
-    sentinel_meta = []
-    sample_item_map = {}
-    for sample in tqdm(samples.itertuples(), total=len(samples)):
-        # Search planetary computer
-        search_results = search_planetary_computer(
-            sample.date,
-            sample.latitude,
-            sample.longitude,
-            collections=["sentinel-2-l2a"],
-            days_search_window=config.pc_days_search_window,
-            meters_search_window=config.pc_meters_search_window,
-        )
+    results = process_map(
+        functools.partial(_generate_candidate_metadata_for_sample, config=config),
+        samples.index,
+        samples.date,
+        samples.latitude,
+        samples.longitude,
+        max_workers=NUM_PROCESSES,
+        chunksize=1,
+        total=len(samples),
+    )
 
-        # Get satelite metadata
-        sample_items_meta = get_items_metadata(
-            search_results, sample.latitude, sample.longitude, config
-        )
-
-        sample_item_map[sample.Index] = {
-            "sentinel_item_ids": sample_items_meta.item_id.tolist()
-            if len(sample_items_meta) > 0
-            else []
-        }
-        sentinel_meta.append(sample_items_meta)
+    # Consolidate parallel results
+    sentinel_meta = [res[0] for res in results]
     sentinel_meta = (
         pd.concat(sentinel_meta).groupby("item_id", as_index=False).first().reset_index(drop=True)
     )
     logger.info(f"Generated metadata for {sentinel_meta.shape[0]:,} Sentinel item candidates")
+
+    sample_item_map = {}
+    for res in results:
+        sample_item_map.update(res[1])
 
     return (sentinel_meta, sample_item_map)
 
