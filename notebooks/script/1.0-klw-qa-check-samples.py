@@ -12,34 +12,19 @@ from cloudpathlib import AnyPath
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
+from pathlib import Path
 from shapely.geometry import Point
 
 from cyano.data.utils import add_unique_identifier
 
 
-STATES_SHAPEFILE = gpd.GeoDataFrame.from_file(
-    "../../competition-nasa-cyanobacteria/data/raw/cb_2018_us_state_500k/cb_2018_us_state_500k.shp"
-)
-
-
-def plot_map(df, markersize=5, **kwargs):
-    _, ax = plt.subplots()
-
-    STATES_SHAPEFILE.plot(color="ghostwhite", edgecolor="lightgray", ax=ax)
-
-    geometry = [Point(xy) for xy in zip(df.longitude, df.latitude)]
-    gdf = gpd.GeoDataFrame(df, geometry=geometry)
-    gdf.plot(ax=ax, markersize=markersize)
-
-    ax.set_xlim([-125, -65])
-    ax.set_ylim([25, 50])
-
-    return ax
+EXPERIMENT_DIR = Path("../experiments/results/temporal_qa_checks/")
+EXPERIMENT_DIR.mkdir(exist_ok=True, parents=True)
 
 
 df = pd.read_csv(
     AnyPath(
-        "s3://drivendata-competition-nasa-cyanobacteria/data/final/combined_final_release.csv"
+        "s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/test.csv"
     )
 )
 df["date"] = pd.to_datetime(df.date)
@@ -50,29 +35,48 @@ df.head(3)
 
 # subset to points in water bodies
 subset = df[df.distance_to_water_m == 0]
-print(f"{subset.shape[0]} samples in water")
+print(f"Narrowed to {subset.shape[0]:,} samples in water")
 
 # only have max 1 example at each location
 subset = subset.sample(frac=1, random_state=3)
 subset = subset.groupby(["latitude", "longitude"], as_index=False).first()
-print(f"{subset.shape[0]} unique locations")
+print(f"Narrowed to {subset.shape[0]:,} unique locations")
 
-subset = subset.sample(n=5, random_state=3)
-subset.head(1)
+# take some from each region
+subset = pd.concat(
+    [
+        subset[subset.region == region].sample(n=7, random_state=2)
+        for region in subset.region.unique()
+    ]
+)
+subset = add_unique_identifier(subset)
+
+subset.head(3)
 
 
-subset.region.value_counts()
+# see on a map where these samples are
+_, ax = plt.subplots()
+
+STATES_SHAPEFILE = gpd.GeoDataFrame.from_file(
+    "../../competition-nasa-cyanobacteria/data/raw/cb_2018_us_state_500k/cb_2018_us_state_500k.shp"
+)
+STATES_SHAPEFILE.plot(color="ghostwhite", edgecolor="lightgray", ax=ax)
+
+geometry = [Point(xy) for xy in zip(subset.longitude, subset.latitude)]
+gdf = gpd.GeoDataFrame(subset, geometry=geometry)
+gdf.plot(ax=ax, markersize=5)
+
+ax.set_xlim([-125, -65])
+ax.set_ylim([25, 50])
+plt.show()
 
 
 subset.severity.value_counts().sort_index()
 
 
-# see on a map where these samples are
-plot_map(subset)
-plt.show()
-
-
 # ### Add temporal checks
+# 
+# Add additional rows around each sample spanning 4 weeks
 
 predict_df = []
 
@@ -90,6 +94,8 @@ for sample in subset.itertuples():
                     freq="7d",
                     inclusive="both",
                 ),
+                "region": sample.region,
+                "original_sample_id": sample.Index,
             }
         )
     )
@@ -101,23 +107,17 @@ predict_df.shape
 predict_df
 
 
-save_to = AnyPath(
-    "s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/temporal_check_samples.csv"
-)
+save_to = EXPERIMENT_DIR / "samples.csv"
+save_to.parent.mkdir(exist_ok=True, parents=True)
 
-with save_to.open("w+") as f:
-    predict_df.to_csv(f, index=False)
+predict_df.to_csv(save_to, index=False)
 
 print(f"Samples for prediction saved to {save_to}")
 
 
-from pathlib import Path
-
-
-predict_df.to_csv("../temporal_check_samples.csv", index=False)
-
-
-# `python cyano/cli.py predict temporal_check_samples.csv --output-path temporal_check_preds.csv`
+# To generate predictions:
+# 
+# `python cyano/cli.py predict experiments/results/temporal_qa_checks/samples.csv --output-path experiments/results/temporal_qa_checks/preds.csv`
 
 
 
