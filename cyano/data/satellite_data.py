@@ -191,7 +191,7 @@ def _generate_candidate_metadata_for_sample(
 
     Args:
         sample_id (str): Sample ID
-        date (Union[str, pd.timestamp]): Sample date
+        date (Union[str, pd.Timestamp]): Sample date
         latitude (float): Sample latitude
         longitude (float): Sample longitude
         config (FeaturesConfig): Features configuration
