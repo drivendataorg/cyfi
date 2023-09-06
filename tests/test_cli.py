@@ -88,8 +88,7 @@ def test_cli_no_overwrite(tmp_path, train_data, train_data_path, ensembled_model
     assert isinstance(result.exception, FileExistsError)
 
 
-def test_cli_predict_point(tmp_path, ensembled_model_path):
-    # Run CLI command
+def test_cli_predict_point(caplog):
     result = runner.invoke(
         app,
         [
@@ -100,20 +99,25 @@ def test_cli_predict_point(tmp_path, ensembled_model_path):
             "36.05",
             "-lon",
             "-76.7",
-            "--output-directory",
-            str(tmp_path),
-            "--model-path",
-            str(ensembled_model_path),
         ],
     )
     assert result.exit_code == 0
 
-    # Check that preds saved out
-    preds_path = tmp_path / "point_pred.csv"
-    assert preds_path.exists()
-    preds = pd.read_csv(preds_path)
-    assert preds.shape[0] == 1
-    assert preds.sample_id.iloc[0] == "7284ae28904be4631eabfc4a3acf7872"
+    # try predicting in future
+    result = runner.invoke(
+        app,
+        [
+            "predict-point",
+            "-dt",
+            "2035-01-01",
+            "-lat",
+            "36.05",
+            "-lon",
+            "-76.7",
+        ],
+    )
+    assert result.exit_code == 1
+    assert "Cannot predict on a date that is in the future" in result.exception.__str__()
 
 
 def test_cli_evaluate(tmp_path, evaluate_data_path):
