@@ -20,6 +20,7 @@ pystac
 pystac-client
 pytest
 pytest-cov
+pytest_mock
 scikit-learn
 seaborn
 repro-zipfile

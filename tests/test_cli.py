@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+from pytest_mock import mocker  # noqa: F401
 from typer.testing import CliRunner
 
 from cyano.cli import app
@@ -88,7 +89,16 @@ def test_cli_no_overwrite(tmp_path, train_data, train_data_path, ensembled_model
     assert isinstance(result.exception, FileExistsError)
 
 
-def test_cli_predict_point(caplog):
+# mock prediction to just test CLI args
+def pipeline_predict_mock(self, predict_csv, preds_path=None):
+    self.output_df = pd.DataFrame(
+        {"date": ["2021-05-17"], "latitude": ["36.05"], "longitude": ["-76.7"], "severity": [2]}
+    )
+
+
+def test_cli_predict_point(mocker):  # noqa: F811
+    mocker.patch("cyano.cli.CyanoModelPipeline.run_prediction", pipeline_predict_mock)
+
     result = runner.invoke(
         app,
         [
