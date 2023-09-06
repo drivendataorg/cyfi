@@ -1,10 +1,45 @@
 from pathlib import Path
 from zipfile import ZipFile
 
-from cyano.config import ModelTrainingConfig
+from cyano.config import FeaturesConfig, ModelTrainingConfig
 from cyano.pipeline import CyanoModelPipeline
 
 ASSETS_DIR = Path(__file__).parent / "assets"
+
+
+def test_cache_dir(features_config):
+    pipe = CyanoModelPipeline(
+        features_config=FeaturesConfig(image_feature_meter_window=200),
+        model_training_config=ModelTrainingConfig(num_boost_round=1000),
+        target_col="log_density",
+    )
+
+    # Pipeline with same features config should cache to the same place
+    same_features_pipe = CyanoModelPipeline(
+        features_config=FeaturesConfig(image_feature_meter_window=200),
+        model_training_config=ModelTrainingConfig(num_boost_round=2000),
+        target_col="severity",
+    )
+    assert pipe.cache_dir == same_features_pipe.cache_dir
+
+    # Pipeline with different features config should cache to a different place
+    different_features_pipe = CyanoModelPipeline(
+        features_config=FeaturesConfig(image_feature_meter_window=500),
+        model_training_config=ModelTrainingConfig(num_boost_round=1000),
+        target_col="log_density",
+    )
+    assert pipe.cache_dir != different_features_pipe.cache_dir
+
+    # Specified cache dir is used
+    cache_dir = Path("specified_cache_dir")
+    pipe_with_cache = CyanoModelPipeline(
+        cache_dir=cache_dir,
+        features_config=features_config,
+        model_training_config=ModelTrainingConfig(num_boost_round=1000),
+        target_col="log_density",
+    )
+    assert cache_dir == pipe_with_cache.cache_dir.parent
+    assert (cache_dir / features_config.get_cached_path()) == pipe_with_cache.cache_dir
 
 
 def test_train_model_with_folds(

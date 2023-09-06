@@ -48,6 +48,25 @@ def test_features_config():
         FeaturesConfig(sample_meta_features=["surprise_feature"])
 
 
+def test_features_config_cache_path(features_config):
+    # Hash for caching is expected
+    expected_hash = "7ab848d07eebc002140abca6f2e483a4"
+    assert features_config.get_cached_path() == expected_hash
+
+    # Same features in different order have same hash
+    config1 = FeaturesConfig(use_sentinel_bands=["B01", "B02", "B03"], n_sentinel_items=3)
+    config2 = FeaturesConfig(use_sentinel_bands=["B02", "B03", "B01"], n_sentinel_items=3)
+    assert config1.get_cached_path() == config2.get_cached_path()
+
+    # Irrelevant parameters don't change the hash
+    config3 = FeaturesConfig(use_sentinel_bands=["B01", "B02", "B03"], n_sentinel_items=1)
+    assert config1.get_cached_path() == config3.get_cached_path()
+
+    # Different features have different hash
+    config4 = FeaturesConfig(use_sentinel_bands=["B01", "B02"])
+    assert config1.get_cached_path() != config4.get_cached_path()
+
+
 def test_model_training_config():
     config = ModelTrainingConfig()
     assert config.n_folds == 5

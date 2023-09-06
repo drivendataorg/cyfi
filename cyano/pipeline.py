@@ -48,15 +48,17 @@ class CyanoModelPipeline:
         self.features_config = features_config
         self.model_training_config = model_training_config
         self.models = models
-        self.cache_dir = (
-            Path(tempfile.TemporaryDirectory().name) if cache_dir is None else Path(cache_dir)
-        )
-        self.samples = None
-        self.labels = None
-        self.target_col = target_col
+
+        # Determine cache dir based on feature config hash
+        cache_dir = Path(tempfile.gettempdir()) if cache_dir is None else Path(cache_dir)
+        self.cache_dir = cache_dir / self.features_config.get_cached_path()
 
         # make cache dir
         self.cache_dir.mkdir(exist_ok=True, parents=True)
+
+        self.samples = None
+        self.labels = None
+        self.target_col = target_col
 
     def _prep_train_data(self, data, debug: bool):
         """Load labels and save out samples with UIDs"""
