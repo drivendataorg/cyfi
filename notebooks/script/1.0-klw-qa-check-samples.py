@@ -63,7 +63,7 @@ subset.head(3)
 _, ax = plt.subplots()
 
 STATES_SHAPEFILE = gpd.GeoDataFrame.from_file(
-    "../../competition-nasa-cyanobacteria/data/raw/cb_2018_us_state_500k/cb_2018_us_state_500k.shp"
+    "s3://drivendata-competition-nasa-cyanobacteria/data/raw/cb_2018_us_state_500k/cb_2018_us_state_500k.shp"
 )
 STATES_SHAPEFILE.plot(color="ghostwhite", edgecolor="lightgray", ax=ax)
 
@@ -126,7 +126,7 @@ print(f"Samples for prediction saved to {save_to}")
 
 # To generate predictions:
 # 
-# `python cyano/cli.py predict experiments/results/temporal_qa_checks/samples.csv --output-path experiments/results/temporal_qa_checks/preds.csv`
+# `cyano predict experiments/results/temporal_qa_checks/samples.csv --output-path experiments/results/temporal_qa_checks/preds.csv`
 
 
 

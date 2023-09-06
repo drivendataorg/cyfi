@@ -5,7 +5,7 @@
 # 
 # Before this notebook can be run:
 # 1. Run notebook 1.0 to generate `experiments/results/temporal_qa_checks/samples.csv`
-# 2. Run `python cyano/cli.py predict experiments/results/temporal_qa_checks/samples.csv --output-path experiments/results/temporal_qa_checks/preds.csv` to generate predictions
+# 2. Run `cyano predict experiments/results/temporal_qa_checks/samples.csv --output-path experiments/results/temporal_qa_checks/preds.csv` to generate predictions
 
 get_ipython().run_line_magic('load_ext', 'lab_black')
 
@@ -17,7 +17,7 @@ import pandas as pd
 from pathlib import Path
 import seaborn as sns
 
-from cyano.data.utils import add_unique_identifier
+from cyano.data.utils import add_unique_identifier, SEVERITY_LEFT_EDGES
 
 
 EXPERIMENT_DIR = Path("../experiments/results/temporal_qa_checks")
@@ -112,7 +112,6 @@ preds.head(10)[
 
 # **What is the percent change between dates at the same location?**
 # 
-# - Most are pretty small in log densities. In 75% of cases, the predicted log density changes by less than 6% between weeks
 # - With absolute density, the percent change runs the gamut and is large in some cases. It is still generally not huge -- in half of cases, the predicted exact density changes by less than ~30% between weeks.
 
 preds.filter(regex="change").describe()
@@ -136,27 +135,8 @@ plt.suptitle("Predicted log(density) over time at the same location")
 plt.tight_layout()
 
 
-# Log density is fairly consistent at each location and doesn't wildly oscillate.
-
 # See density over time by region
-_, axes = plt.subplots(2, 2, sharex=True, figsize=(9, 7))
-
-for region, ax in zip(preds.region.unique(), axes.flatten()):
-    sns.lineplot(
-        data=preds[preds.region == region],
-        x="week_at_location",
-        y="density",
-        hue="original_sample_id",
-        legend=False,
-        ax=ax,
-    )
-    ax.set_title(region.capitalize())
-
-plt.suptitle("Predicted density over time at the same location")
-plt.tight_layout()
-
-
-# same as above but with a more reasonable scale
+# note this omits some samples with very very high densities
 _, axes = plt.subplots(2, 2, sharex=True, sharey=True, figsize=(9, 7))
 
 for region, ax in zip(preds.region.unique(), axes.flatten()):
@@ -195,7 +175,34 @@ severity_range.groupby(["min_severity", "max_severity"]).size().rename(
 ).sort_index().to_frame()
 
 
+# See densities for samples that change severity bucket
+change_severity_ids = severity_range[severity_range.severity_range > 0].index
+to_plot = preds[preds.original_sample_id.isin(change_severity_ids)]
 
+_, axes = plt.subplots(2, 2, sharex=True, sharey=True, figsize=(9, 7))
+
+for idx, region in enumerate(preds.region.unique()):
+    ax = axes.flatten()[idx]
+    sns.lineplot(
+        data=to_plot[to_plot.region == region],
+        x="week_at_location",
+        y="density",
+        hue="original_sample_id",
+        legend=False,
+        ax=ax,
+    )
+    ax.set_title(region.capitalize())
+    ax.set_ylim([0, 1.5e5])
+    lines = []
+    for edge in SEVERITY_LEFT_EDGES.values():
+        lines.append(ax.axhline(edge, color="gray", linestyle="--", alpha=0.5))
+        if idx == 0:
+            ax.legend([lines[0]], ["Severity bucket edges"])
+
+plt.suptitle(
+    "Predicted density over time at the same location\nSamples with multiple severity levels"
+)
+plt.tight_layout()
 
 
 
