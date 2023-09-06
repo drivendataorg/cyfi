@@ -52,9 +52,7 @@ class CyanoModelPipeline:
 
         # Determine cache dir based on feature config hash
         cache_dir = Path(tempfile.gettempdir()) if cache_dir is None else Path(cache_dir)
-        m = hashlib.md5()
-        m.update(str(self.features_config).encode())
-        self.cache_dir = cache_dir / m.hexdigest()
+        self.cache_dir = cache_dir / self.features_config.get_cached_path()
 
         # make cache dir
         self.cache_dir.mkdir(exist_ok=True, parents=True)

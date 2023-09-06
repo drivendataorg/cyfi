@@ -1,3 +1,4 @@
+import hashlib
 from typing import List, Optional
 
 import numpy as np
@@ -165,6 +166,23 @@ class FeaturesConfig(BaseModel):
     @field_validator("sample_meta_features")
     def validate_sample_meta_features(cls, path_field):
         return check_field_is_subset(path_field, AVAILABLE_SAMPLE_META_FEATURES)
+
+    def get_cached_path(self) -> str:
+        """Get the hash for the features config cache directory"""
+        config_dict = self.model_dump()
+
+        # Only include keys that change the saved image arrays
+        # Apply consistent sorting
+        config_dict_to_hash = {
+            "image_feature_meter_window": config_dict["image_feature_meter_window"],
+            "use_sentinel_bands": sorted(config_dict["use_sentinel_bands"]),
+        }
+
+        # Get hash
+        m = hashlib.md5()
+        m.update(str(config_dict_to_hash).encode())
+
+        return m.hexdigest()
 
 
 class LGBParams(BaseModel):
