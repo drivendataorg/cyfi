@@ -51,11 +51,11 @@ def predict(
     if not overwrite:
         if output_path.exists():
             raise FileExistsError(
-                f"Not generating predictions because overwrite is False and {output_path} exists. To overwrite existing predictions, add `--overwrite`."
+                f"Not generating predictions because overwrite is False and {output_path} exists. To overwrite existing predictions, add `-o`."
             )
         if keep_features and features_path.exists():
             raise FileExistsError(
-                f"Not generating predictions because overwrite is False and {features_path} exists. To overwrite existing features, add `--overwrite`."
+                f"Not generating predictions because overwrite is False and {features_path} exists. To overwrite existing features, add `-o`."
             )
 
     if model_path is None:
@@ -89,7 +89,7 @@ def evaluate(
     """Evaluate cyanobacteria model predictions"""
     if not overwrite and save_dir.exists():
         logger.warning(
-            f"Not running evaluation because overwrite is False and {save_dir} exists. To overwrite existing files, add `--overwrite`"
+            f"Not running evaluation because overwrite is False and {save_dir} exists. To overwrite existing files, add `-o`"
         )
         return
 
