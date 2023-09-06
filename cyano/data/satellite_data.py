@@ -448,7 +448,7 @@ def download_satellite_data(
     exceptions = [e for e in exception_logs if e]
     if len(exceptions) > 0:
         # Log number of exceptions to CLI
-        exceptions_types = list(set([e.split(":")[0] for e in exceptions]))
+        exceptions_types = ",".join(set([e.split(":")[0] for e in exceptions]))
         logger.warning(
             f"{len(exceptions):,} exceptions raised during satellite imagery download. Exceptions encountered: {exceptions_types}"
         )

@@ -133,16 +133,13 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
         lc_cache_dir.mkdir(exist_ok=True)
         land_cover_map_filepath = lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
 
-        if land_cover_map_filepath.exists():
-            logger.debug(f"Using land cover map already downloaded to {lc_cache_dir}")
-        else:
+        if not land_cover_map_filepath.exists():
             logger.debug(f"Downloading ~2GB land cover map to {lc_cache_dir}")
             s3p = S3Path("s3://drivendata-public-assets/land_cover_map.tar.gz")
             s3p.download_to(lc_cache_dir)
             file = tarfile.open(lc_cache_dir / "land_cover_map.tar.gz")
             file.extractall(lc_cache_dir)
 
-        logger.info(f"Loading land cover features with {NUM_PROCESSES} processes")
         land_cover_data = xr.open_dataset(
             lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
         )
@@ -204,28 +201,27 @@ def generate_all_features(
     """
     # Generate satellite features
     # May be >1 row per sample, only includes samples with imagery
-    satellite_features = calculate_satellite_features(satellite_meta, config, cache_dir)
+    features = calculate_satellite_features(satellite_meta, config, cache_dir)
+    ct_with_satellite = features.index.nunique()
+    if ct_with_satellite < samples.shape[0]:
+        logger.warning(
+            f"Could not generate satellite features for some samples. Predictions will only be generated for {ct_with_satellite} samples with satellite imagery ({(ct_with_satellite / samples.shape[0]):.0%})"
+        )
     logger.info(
-        f"Generated {satellite_features.shape[1]} satellite features for {satellite_features.index.nunique():,} samples, {satellite_features.shape[0]:,} item/sample combinations."
+        f"Generated {features.shape[1]} satellite features for {ct_with_satellite:,} samples ({(ct_with_satellite / samples.shape[0]):.0%})"
     )
 
     # Generate non-satellite features. Each has only one row per sample
-    features = satellite_features.copy()
-
     if config.sample_meta_features:
         sample_meta_features = calculate_metadata_features(samples, config)
+        ct_with_meta = sample_meta_features.index.nunique()
         logger.info(
-            f"Generated {sample_meta_features.shape[1]} metadata features for {sample_meta_features.shape[0]:,} samples"
+            f"Generated {sample_meta_features.shape[1]} sample metadata features for {ct_with_meta:,} samples ({(ct_with_meta / samples.shape[0]):.0%})"
         )
         # Don't include samples for which we only have metadata
         features = features.merge(
             sample_meta_features, left_index=True, right_index=True, how="left", validate="m:1"
         )
-
-    pct_with_features = features.index.nunique() / samples.shape[0]
-    logger.success(
-        f"Generated {features.shape[1]:,} features for {features.index.nunique():,} samples ({pct_with_features:.0%})"
-    )
 
     all_feature_cols = (
         config.satellite_image_features

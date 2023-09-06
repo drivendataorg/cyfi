@@ -285,7 +285,6 @@ class CyanoModelPipeline:
         self.predict_features = self._prepare_features(self.predict_samples, train_split=False)
 
     def _predict_model(self):
-        logger.info(f"Ensembling {len(self.models)} models")
         preds = []
         for model in self.models:
             preds.append(
@@ -294,12 +293,10 @@ class CyanoModelPipeline:
                 )
             )
         preds = pd.concat(preds).rename(self.target_col)
+        logger.debug(f"Generated predictions by ensembling {len(self.models)} models")
 
         # Group by sample id if multiple predictions per id
         if not preds.index.is_unique:
-            logger.info(
-                f"Grouping {preds.shape[0]:,} predictions by {preds.index.nunique():,} unique sample IDs"
-            )
             preds = preds.groupby(preds.index).mean()
 
         # do not allow negative values
@@ -327,13 +324,15 @@ class CyanoModelPipeline:
         missing_mask = self.output_df.severity.isna()
         if missing_mask.any():
             logger.warning(
-                f"{missing_mask.sum():,} samples do not have predictions ({missing_mask.mean():.0%})"
+                f"{missing_mask.sum():,} sample(s) do not have predictions ({missing_mask.mean():.0%})"
             )
 
     def _write_predictions(self, preds_path):
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)
         self.output_df.to_csv(preds_path, index=True)
-        logger.success(f"Predictions saved to {preds_path}")
+        logger.success(
+            f"Predictions for {self.output_df.shape[0]:,} samples saved to {preds_path}"
+        )
 
     def run_prediction(self, predict_csv, preds_path=None, debug=False):
         self._prep_predict_data(predict_csv, debug)
