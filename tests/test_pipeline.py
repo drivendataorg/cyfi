@@ -30,6 +30,16 @@ def test_cache_dir():
     )
     assert pipe.cache_dir != different_features_pipe.cache_dir
 
+    # Specified cache dir is used
+    cache_dir = Path("specified_cache_dir")
+    pipe_with_cache = CyanoModelPipeline(
+        cache_dir=cache_dir,
+        features_config=FeaturesConfig(image_feature_meter_window=500),
+        model_training_config=ModelTrainingConfig(num_boost_round=1000),
+        target_col="log_density",
+    )
+    assert cache_dir == pipe_with_cache.cache_dir.parent
+
 
 def test_train_model_with_folds(
     evaluate_data_path, evaluate_data_features, features_config, tmp_path
