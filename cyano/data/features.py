@@ -46,10 +46,6 @@ def calculate_satellite_features(
     if "month" in config.satellite_meta_features:
         satellite_meta["month"] = pd.to_datetime(satellite_meta.datetime).dt.month
 
-    logger.info(
-        f"Generating satellite features for {len(satellite_meta):,} sample/item combos, {satellite_meta.sample_id.nunique():,} samples with {NUM_PROCESSES} processes"
-    )
-
     # Iterate over selected sample / item combinations
     satellite_features = process_map(
         functools.partial(

@@ -20,7 +20,9 @@ DEFAULT_MODEL_PATH = str(Path(__file__).parent / "assets/model_v0.zip")
 def verbose_callback(verbosity: int):
     """Set up logger with level based on --verbose count."""
     logger.remove()
-    if verbosity >= 2:
+    if verbosity >= 3:
+        logger.add(sys.stderr, level="TRACE")
+    elif verbosity == 2:
         logger.add(sys.stderr, level="DEBUG")
     elif verbosity == 1:
         logger.add(sys.stderr, level="INFO")
@@ -34,7 +36,7 @@ verbose_option = typer.Option(
     "-v",
     count=True,
     show_default=False,
-    help="Increase the verbosity/log level. [-v = INFO, -vv = DEBUG]",
+    help="Increase the verbosity/log level. [-v = INFO, -vv = DEBUG, -vvv = TRACE]",
     callback=verbose_callback,
 )
 

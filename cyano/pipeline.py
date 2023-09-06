@@ -104,12 +104,12 @@ class CyanoModelPipeline:
         save_satellite_to = self.cache_dir / f"satellite_metadata_{split}.csv"
         satellite_meta.to_csv(save_satellite_to, index=False)
         logger.info(
-            f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
+            f"Satellite imagery metadata for feature generation saved to {save_satellite_to}"
         )
 
         ## Download satellite data
         download_satellite_data(satellite_meta, samples, self.features_config, self.cache_dir)
-        logger.success(f"Raw satellite imagery saved to {self.cache_dir}")
+        logger.success(f"Saved satellite imagery for feature generation to {self.cache_dir}")
 
         ## Generate features
         features = generate_all_features(
@@ -248,7 +248,6 @@ class CyanoModelPipeline:
         )
         # Determine the number of ensembled models
         model_files = [name for name in archive.namelist() if "lgb_model" in name]
-        logger.info(f"Loading {len(model_files)} ensembled models")
         models = []
         for model_file in model_files:
             models.append(lgb.Booster(model_str=archive.read(model_file).decode()))

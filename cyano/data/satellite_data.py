@@ -244,9 +244,6 @@ def generate_candidate_metadata(
     # Determine the number of processes to use when parallelizing
     NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
 
-    logger.info(
-        f"Generating metadata for all satellite item candidates. Searching Sentinel-2 within {config.pc_days_search_window} days and {config.pc_meters_search_window} meters"
-    )
     results = process_map(
         functools.partial(_generate_candidate_metadata_for_sample, config=config),
         samples.index,
@@ -263,7 +260,6 @@ def generate_candidate_metadata(
     sentinel_meta = (
         pd.concat(sentinel_meta).groupby("item_id", as_index=False).first().reset_index(drop=True)
     )
-    logger.info(f"Generated metadata for {sentinel_meta.shape[0]:,} Sentinel item candidates")
 
     sample_item_map = {}
     for res in results:
@@ -323,9 +319,8 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
     candidate_sentinel_meta, sample_item_map = generate_candidate_metadata(samples, config)
 
     ## Select which items to use for each sample
-    logger.info("Selecting which items to use for feature generation")
     selected_satellite_meta = []
-    for sample in tqdm(samples.itertuples(), total=len(samples)):
+    for sample in samples.itertuples():
         sample_item_ids = sample_item_map[sample.Index]["sentinel_item_ids"]
         if len(sample_item_ids) == 0:
             continue
@@ -342,8 +337,9 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
         selected_satellite_meta.append(sample_items_meta)
 
     selected_satellite_meta = pd.concat(selected_satellite_meta).reset_index(drop=True)
-    logger.info(
-        f"Identified satellite imagery for {selected_satellite_meta.sample_id.nunique():,} samples"
+    samples_with_imagery = selected_satellite_meta.sample_id.nunique()
+    logger.debug(
+        f"Searched Sentinel-2 with buffers of {config.pc_days_search_window} days and {config.pc_meters_search_window} meters. Identified satellite imagery to generate features for {samples_with_imagery:,} samples ({(samples_with_imagery / samples.shape[0]):.0%})"
     )
 
     return selected_satellite_meta
@@ -407,8 +403,9 @@ def download_row(
         # Delete item directory if it has already been created
         if sample_image_dir.exists():
             shutil.rmtree(sample_image_dir)
+        err_type = f"{e.__class__.__module__}.{e.__class__.__name__}"
 
-        return f"{sample_image_dir.parts[-2]}/{sample_image_dir.parts[-1]}: {type(e)} {e}"
+        return f"{err_type}: {e} Sample {sample_image_dir.parts[-2]}, item {sample_image_dir.parts[-1]}"
 
 
 def download_satellite_data(
@@ -431,7 +428,7 @@ def download_satellite_data(
     # Determine the number of processes to use when parallelizing
     NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
 
-    logger.info(f"Downloading bands {config.use_sentinel_bands} with {NUM_PROCESSES} processes")
+    logger.debug(f"Downloading satellite imagery for {satellite_meta.shape[0]:,} items")
 
     imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"
     # Iterate over all rows (item / sample combos)
@@ -447,10 +444,14 @@ def download_satellite_data(
         chunksize=1,
         total=len(satellite_meta),
     )
+
     exceptions = [e for e in exception_logs if e]
     if len(exceptions) > 0:
         # Log number of exceptions to CLI
-        logger.warning(f"{len(exceptions):,} exceptions raised during download")
+        exceptions_types = list(set([e.split(":")[0] for e in exceptions]))
+        logger.warning(
+            f"{len(exceptions):,} exceptions raised during satellite imagery download. Exceptions encountered: {exceptions_types}"
+        )
         # Log full list of exceptions to .log file
         exceptions = "\n".join(exceptions)
-        logger.debug(f"Exceptions:\n{exceptions}")
+        logger.trace(f"Exceptions:\n{exceptions}")
