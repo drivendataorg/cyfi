@@ -45,7 +45,7 @@ print(f"Narrowed to {subset.shape[0]:,} unique locations")
 # take some from each region
 subset = pd.concat(
     [
-        subset[subset.region == region].sample(n=7, random_state=2)
+        subset[subset.region == region].sample(n=8, random_state=2)
         for region in subset.region.unique()
     ]
 )
