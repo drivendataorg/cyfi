@@ -37,6 +37,20 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_
     assert preds[~missing_sample_mask].severity.notna().all()
     assert preds[missing_sample_mask].severity.isna().all()
 
+    # Check that samples_path is required
+    result = runner.invoke(
+        app,
+        [
+            "predict",
+            "--model-path",
+            str(ensembled_model_path),
+            "--output-directory",
+            str(tmp_path),
+        ],
+    )
+    assert result.exit_code == 2
+    assert "Missing argument" in result.output
+
 
 def test_cli_predict_invalid_files(tmp_path):
     # Raises an error when samples_path does not exist
@@ -75,21 +89,19 @@ def test_cli_no_overwrite(tmp_path, train_data, train_data_path, ensembled_model
 
 
 def test_cli_predict_point(tmp_path, ensembled_model_path):
-    preds_path = tmp_path / "preds.csv"
-
     # Run CLI command
     result = runner.invoke(
         app,
         [
             "predict-point",
-            "-d",
+            "-dt",
             "2021-05-17",
             "-lat",
             "36.05",
             "-lon",
             "-76.7",
-            "--output-path",
-            str(preds_path),
+            "--output-directory",
+            str(tmp_path),
             "--model-path",
             str(ensembled_model_path),
         ],
@@ -97,6 +109,7 @@ def test_cli_predict_point(tmp_path, ensembled_model_path):
     assert result.exit_code == 0
 
     # Check that preds saved out
+    preds_path = tmp_path / "point_pred.csv"
     assert preds_path.exists()
     preds = pd.read_csv(preds_path)
     assert preds.shape[0] == 1

@@ -74,7 +74,7 @@ def predict(
 @app.command()
 def predict_point(
     date: str = typer.Option(
-        ..., "--date", "-d", help="Sample date formatted as YYYY-MM-DD, e.g. 2023-09-20"
+        ..., "--date", "-dt", help="Sample date formatted as YYYY-MM-DD, e.g. 2023-09-20"
     ),
     latitude: float = typer.Option(..., "--latitude", "-lat", help="Sample latitude"),
     longitude: float = typer.Option(..., "--longitude", "-lon", help="Sample longitude"),
@@ -83,11 +83,18 @@ def predict_point(
         exists=True,
         help="Path to the zipfile of a trained cyanobacteria prediction model. If no model is specified, the default model will be used",
     ),
-    output_path: Path = typer.Option(
-        default="preds.csv", help="Destination to save predictions csv"
+    output_filename: Path = typer.Option(
+        "point_pred.csv", "--output-filename", "-f", help="Name of the saved out predictions csv"
+    ),
+    output_directory: Path = typer.Option(
+        ".",
+        "--output-directory",
+        "-d",
+        help="Directory to save prediction outputs. `output_filename` will be interpreted relative to `output_directory`",
     ),
 ):
-    """Generate cyanobacteria predictions for a single point using an existing cyanobacteria prediction model"""
+    """Generate cyanobacteria predictions for a single point. By default,
+    predictions will be saved to `point_pred.csv` in the current directory."""
     if model_path is None:
         model_path = DEFAULT_MODEL_PATH
 
@@ -95,6 +102,7 @@ def predict_point(
     samples_path = Path(tempfile.gettempdir()) / "samples.csv"
     samples.to_csv(samples_path, index=False)
 
+    output_path = output_directory / output_filename
     pipeline = CyanoModelPipeline.from_disk(model_path)
     pipeline.run_prediction(samples_path, output_path)
 
