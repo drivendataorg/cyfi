@@ -11,8 +11,6 @@ runner = CliRunner()
 
 
 def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_path):
-    preds_path = tmp_path / "preds.csv"
-
     # Run CLI command
     result = runner.invoke(
         app,
@@ -21,16 +19,18 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_
             str(predict_data_path),
             "--model-path",
             str(ensembled_model_path),
-            "--output-path",
-            str(preds_path),
+            "--output-directory",
+            str(tmp_path),
+            "--keep-features",
         ],
     )
     assert result.exit_code == 0
 
     # Check that preds saved out
-    assert preds_path.exists()
-    preds = pd.read_csv(preds_path)
+    assert (tmp_path / "preds.csv").exists()
+    preds = pd.read_csv(tmp_path / "preds.csv")
     assert (preds.index == predict_data.index).all()
+    assert Path(tmp_path / "sample_features.csv").exists()
 
     # Check that the missing / non missing values are expected
     missing_sample_mask = preds.sample_id == "e66ea0c31ba500d5d4ac4c610b8cf508"
@@ -47,12 +47,31 @@ def test_cli_predict_invalid_files(tmp_path):
             "not_a_path",
             "--model-path",
             str(ASSETS_DIR / "experiment/model.zip"),
-            "--output-path",
-            str(tmp_path / "preds.csv"),
+            "--output-directory",
+            str(tmp_path),
         ],
     )
     assert result.exit_code == 2
     assert "does not exist" in result.stdout
+
+
+def test_cli_no_overwrite(tmp_path, train_data, train_data_path, ensembled_model_path):
+    # Check that existing files aren't overwritten without the --overwrite flag
+    train_data.to_csv(tmp_path / "preds.csv")
+
+    result = runner.invoke(
+        app,
+        [
+            "predict",
+            str(train_data_path),
+            "--model-path",
+            str(ensembled_model_path),
+            "--output-directory",
+            str(tmp_path),
+        ],
+    )
+    assert result.exit_code == 1
+    assert isinstance(result.exception, FileExistsError)
 
 
 def test_cli_evaluate(tmp_path, evaluate_data_path):
@@ -66,13 +85,7 @@ def test_cli_evaluate(tmp_path, evaluate_data_path):
     # Run CLI command
     result = runner.invoke(
         app,
-        [
-            "evaluate",
-            str(data_path),
-            str(data_path),
-            "--save-dir",
-            str(eval_dir),
-        ],
+        ["evaluate", str(data_path), str(data_path), "--save-dir", str(eval_dir)],
     )
     assert result.exit_code == 0
 

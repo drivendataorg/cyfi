@@ -29,16 +29,44 @@ def predict(
         exists=True,
         help="Path to the zipfile of a trained cyanobacteria prediction model. If no model is specified, the default model will be used",
     ),
-    output_path: Path = typer.Option(
-        default="preds.csv", help="Destination to save predictions csv"
+    output_filename: Path = typer.Option(
+        "preds.csv", "--output-filename", "-f", help="Name of the saved out predictions csv"
     ),
+    output_directory: Path = typer.Option(
+        ".",
+        "--output-directory",
+        "-d",
+        help="Directory to save prediction outputs. `output_filename` will be interpreted relative to `output_directory`",
+    ),
+    keep_features: bool = typer.Option(
+        default=False, help="Whether to save sample features to `output_directory`"
+    ),
+    overwrite: bool = typer.Option(False, "--overwrite", "-o", help="Overwrite existing files"),
 ):
-    """Generate cyanobacteria predictions for a set of samples using an existing cyanobacteria prediction model"""
+    """Generate cyanobacteria predictions for a set of samples saved at `samples_path`. By default,
+    predictions will be saved to `preds.csv` in the current directory.
+    """
+    output_path = output_directory / output_filename
+    features_path = output_directory / "sample_features.csv"
+    if not overwrite:
+        if output_path.exists():
+            raise FileExistsError(
+                f"Not generating predictions because overwrite is False and {output_path} exists. To overwrite existing predictions, add `-o`."
+            )
+        if keep_features and features_path.exists():
+            raise FileExistsError(
+                f"Not generating predictions because overwrite is False and {features_path} exists. To overwrite existing features, add `-o`."
+            )
+
     if model_path is None:
         model_path = DEFAULT_MODEL_PATH
-
     pipeline = CyanoModelPipeline.from_disk(model_path)
+
     pipeline.run_prediction(samples_path, output_path)
+
+    if keep_features:
+        pipeline.predict_features.to_csv(features_path, index=True)
+        logger.success(f"Features saved to {features_path}")
 
 
 @app.command()
@@ -54,8 +82,17 @@ def evaluate(
     save_dir: Path = typer.Option(
         default=Path.cwd() / "metrics", help="Folder in which to save out metrics and plots."
     ),
+    overwrite: bool = typer.Option(
+        False, "--overwrite", "-o", help="Overwrite any existing files in `save_dir`"
+    ),
 ):
     """Evaluate cyanobacteria model predictions"""
+    if not overwrite and save_dir.exists():
+        logger.warning(
+            f"Not running evaluation because overwrite is False and {save_dir} exists. To overwrite existing files, add `-o`"
+        )
+        return
+
     EvaluatePreds(
         y_pred_csv=y_pred_csv, y_true_csv=y_true_csv, save_dir=save_dir
     ).calculate_all_and_save()
