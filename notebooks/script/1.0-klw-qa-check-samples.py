@@ -27,14 +27,20 @@ df = pd.read_csv(
         "s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/test.csv"
     )
 )
+df = add_unique_identifier(df)
 df["date"] = pd.to_datetime(df.date)
 df.head(3)
+
+
+# Make sure our sample ids match up with existing imagery
+satmeta = pd.read_csv("../experiments/cache/satellite_metadata_test.csv")
+satmeta.sample_id.drop_duplicates().isin(df.index).value_counts()
 
 
 # ### Select subset of samples
 
 # subset to points in water bodies
-subset = df[df.distance_to_water_m == 0]
+subset = df[df.distance_to_water_m == 0].reset_index(drop=False)
 print(f"Narrowed to {subset.shape[0]:,} samples in water")
 
 # only have max 1 example at each location
@@ -49,7 +55,6 @@ subset = pd.concat(
         for region in subset.region.unique()
     ]
 )
-subset = add_unique_identifier(subset)
 
 subset.head(3)
 
@@ -95,7 +100,7 @@ for sample in subset.itertuples():
                     inclusive="both",
                 ),
                 "region": sample.region,
-                "original_sample_id": sample.Index,
+                "original_sample_id": sample.sample_id,
             }
         )
     )
@@ -105,6 +110,10 @@ predict_df.shape
 
 
 predict_df
+
+
+# some likely won't find satellite imagery
+predict_df.original_sample_id.isin(satmeta.sample_id).value_counts()
 
 
 save_to = EXPERIMENT_DIR / "samples.csv"

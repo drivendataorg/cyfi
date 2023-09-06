@@ -10,6 +10,7 @@
 get_ipython().run_line_magic('load_ext', 'lab_black')
 
 
+from cloudpathlib import AnyPath
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -39,6 +40,18 @@ preds["density"] = np.exp(preds.log_density) - 1
 
 print(preds.shape)
 preds.head()
+
+
+test = pd.read_csv(
+    AnyPath(
+        "s3://drivendata-competition-nasa-cyanobacteria/experiments/splits/competition/test.csv"
+    )
+)
+test = add_unique_identifier(test)
+test["date"] = pd.to_datetime(test.date)
+
+
+true.original_sample_id.isin(test.index).all()
 
 
 # ### Process prediction data
@@ -180,6 +193,9 @@ severity_range.severity_range.value_counts().sort_index()
 severity_range.groupby(["min_severity", "max_severity"]).size().rename(
     "count"
 ).sort_index().to_frame()
+
+
+
 
 
 
