@@ -168,7 +168,7 @@ class FeaturesConfig(BaseModel):
         return check_field_is_subset(path_field, AVAILABLE_SAMPLE_META_FEATURES)
 
     def get_cached_path(self) -> str:
-        """Get the hash for the features config cache directory"""
+        """Get the hash used for the features cache directory name"""
         config_dict = self.model_dump()
 
         # Only include keys that change the saved image arrays
