@@ -83,7 +83,7 @@ def evaluate(
         default=Path.cwd() / "metrics", help="Folder in which to save out metrics and plots."
     ),
     overwrite: bool = typer.Option(
-        default=False, help="Overwrite any existing files in `save_dir`"
+        False, "--overwrite", "-o", help="Overwrite any existing files in `save_dir`"
     ),
 ):
     """Evaluate cyanobacteria model predictions"""
