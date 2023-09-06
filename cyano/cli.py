@@ -1,7 +1,9 @@
 import sys
+import tempfile
 
 from dotenv import load_dotenv, find_dotenv
 from loguru import logger
+import pandas as pd
 from pathlib import Path
 import typer
 
@@ -67,6 +69,37 @@ def predict(
     if keep_features:
         pipeline.predict_features.to_csv(features_path, index=True)
         logger.success(f"Features saved to {features_path}")
+
+
+@app.command()
+def predict_point(
+    date: str = typer.Option(
+        ..., "--date", "-d", help="Sample date formatted as YYYY-MM-DD, e.g. 2023-09-20"
+    ),
+    latitude: float = typer.Option(..., "--latitude", "-lat", help="Sample latitude"),
+    longitude: float = typer.Option(..., "--longitude", "-lon", help="Sample longitude"),
+    model_path: Path = typer.Option(
+        default=None,
+        exists=True,
+        help="Path to the zipfile of a trained cyanobacteria prediction model. If no model is specified, the default model will be used",
+    ),
+    output_path: Path = typer.Option(
+        default="preds.csv", help="Destination to save predictions csv"
+    ),
+):
+    """Generate cyanobacteria predictions for a single point using an existing cyanobacteria prediction model"""
+    if model_path is None:
+        model_path = DEFAULT_MODEL_PATH
+
+    samples = pd.DataFrame({"date": [date], "latitude": [latitude], "longitude": [longitude]})
+    samples_path = Path(tempfile.gettempdir()) / "samples.csv"
+    samples.to_csv(samples_path, index=False)
+
+    pipeline = CyanoModelPipeline.from_disk(model_path)
+    pipeline.run_prediction(samples_path, output_path)
+
+    pred = pd.read_csv(output_path, index_col=0)
+    logger.success(f"Predicted density:\n{pred.iloc[0]}")
 
 
 @app.command()
