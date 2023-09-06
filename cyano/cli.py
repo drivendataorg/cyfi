@@ -16,9 +16,38 @@ load_dotenv(find_dotenv())
 
 DEFAULT_MODEL_PATH = str(Path(__file__).parent / "assets/model_v0.zip")
 
-# Set logger to only log info or higher
-logger.remove()
-logger.add(sys.stderr, level="INFO")
+
+def verbose_callback(verbosity: int):
+    """Set up logger with level based on --verbose count."""
+    logger.remove()
+    if verbosity >= 2:
+        logger.add(sys.stderr, level="DEBUG")
+    elif verbosity == 1:
+        logger.add(sys.stderr, level="INFO")
+    else:
+        logger.add(sys.stderr, level="SUCCESS")
+
+
+verbose_option = typer.Option(
+    0,
+    "--verbose",
+    "-v",
+    count=True,
+    show_default=False,
+    help="Increase the verbosity/log level. [-v = INFO, -vv = DEBUG]",
+    callback=verbose_callback,
+)
+
+
+@app.command()
+def testlog(verbose: int = verbose_option):
+    print(f"verbosity: {verbose}")
+    logger.debug("debug message")
+    logger.info("info message")
+    logger.success("success message")
+    logger.warning("warning message")
+
+    return
 
 
 @app.command()
@@ -44,6 +73,7 @@ def predict(
         default=False, help="Whether to save sample features to `output_directory`"
     ),
     overwrite: bool = typer.Option(False, "--overwrite", "-o", help="Overwrite existing files"),
+    verbose: int = verbose_option,
 ):
     """Generate cyanobacteria predictions for a set of samples saved at `samples_path`. By default,
     predictions will be saved to `preds.csv` in the current directory.
@@ -117,6 +147,7 @@ def evaluate(
     overwrite: bool = typer.Option(
         False, "--overwrite", "-o", help="Overwrite any existing files in `save_dir`"
     ),
+    verbose: int = verbose_option,
 ):
     """Evaluate cyanobacteria model predictions"""
     if not overwrite and save_dir.exists():
