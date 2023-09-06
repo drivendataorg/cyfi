@@ -12,7 +12,7 @@ loguru
 matplotlib
 numpy
 odc-stac
-pandas==2.0.3
+pandas
 pathlib
 planetary-computer
 pydantic
