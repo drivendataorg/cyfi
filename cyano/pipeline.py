@@ -1,4 +1,3 @@
-import hashlib
 from pathlib import Path
 import tempfile
 from typing import List, Optional
