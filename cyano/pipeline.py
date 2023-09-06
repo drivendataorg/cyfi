@@ -67,7 +67,7 @@ class CyanoModelPipeline:
 
         # Save out samples with uids
         labels.to_csv(self.cache_dir / "train_samples_uid_mapping.csv", index=True)
-        logger.info(f"Loaded {labels.shape[0]:,} samples for training")
+        logger.info(f"Loaded {labels.shape[0]:,} sample(s) for training")
 
         expected_cols = ["date", "latitude", "longitude"]
         if "region" in labels.columns:
