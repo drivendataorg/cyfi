@@ -74,7 +74,7 @@ def test_cli_no_overwrite(tmp_path, train_data, train_data_path, ensembled_model
     assert isinstance(result.exception, FileExistsError)
 
 
-def test_cli_predict_point(tmp_path):
+def test_cli_predict_point(tmp_path, ensembled_model_path):
     preds_path = tmp_path / "preds.csv"
 
     # Run CLI command
@@ -90,6 +90,8 @@ def test_cli_predict_point(tmp_path):
             "-76.7",
             "--output-path",
             str(preds_path),
+            "--model-path",
+            str(ensembled_model_path),
         ],
     )
     assert result.exit_code == 0
