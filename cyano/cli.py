@@ -29,12 +29,14 @@ def predict(
         exists=True,
         help="Path to the zipfile of a trained cyanobacteria prediction model. If no model is specified, the default model will be used",
     ),
-    output_file: Path = typer.Option(
-        default="preds.csv", help="Destination to save predictions csv"
+    output_filename: Path = typer.Option(
+        "preds.csv", "--output-filename", "-f", help="Destination to save predictions csv"
     ),
     output_directory: Path = typer.Option(
-        default=".",
-        help="Directory to save prediction outputs. `output_file` will be interpreted relative to `output_directory`",
+        ".",
+        "--output-directory",
+        "-d",
+        help="Directory to save prediction outputs. `output_filename` will be interpreted relative to `output_directory`",
     ),
     keep_features: bool = typer.Option(
         default=False, help="Whether to save sample features to `output_directory`"
@@ -44,7 +46,7 @@ def predict(
     """Generate cyanobacteria predictions for a set of samples saved at `samples_path`. By default,
     predictions will be saved to `preds.csv` in the current directory.
     """
-    output_path = output_directory / output_file
+    output_path = output_directory / output_filename
     features_path = output_directory / "sample_features.csv"
     if not overwrite:
         if output_path.exists():
