@@ -179,10 +179,8 @@ class FeaturesConfig(BaseModel):
         }
 
         # Get hash
-        m = hashlib.md5()
-        m.update(str(config_dict_to_hash).encode())
-
-        return m.hexdigest()
+        hash_str = hashlib.md5(str(config_dict_to_hash).encode()).hexdigest()
+        return hash_str
 
 
 class LGBParams(BaseModel):
