@@ -2,7 +2,7 @@ from pydantic import ValidationError
 import pytest
 
 
-from cyano.config import LGBParams, FeaturesConfig, ModelConfig
+from cyano.config import LGBParams, FeaturesConfig, CyanoModelConfig
 
 
 def test_lgbparams():
@@ -67,14 +67,14 @@ def test_features_config_cache_path(features_config):
     assert config1.get_cached_path() != config4.get_cached_path()
 
 
-def test_model_config():
-    config = ModelConfig()
+def test_cyano_model_config():
+    config = CyanoModelConfig()
     assert config.n_folds == 5
     assert isinstance(config.params, LGBParams)
 
-    config = ModelConfig(n_folds="1")
+    config = CyanoModelConfig(n_folds="1")
     assert config.n_folds == 1
 
     # Errors with extra field
     with pytest.raises(ValidationError):
-        ModelConfig(extra_field="surprise_extra_field")
+        CyanoModelConfig(extra_field="surprise_extra_field")
