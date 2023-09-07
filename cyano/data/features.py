@@ -1,5 +1,6 @@
 ## Code to generate features from raw downloaded source data
 import functools
+import multiprocessing
 import os
 import tarfile
 from typing import Union
@@ -47,16 +48,29 @@ def calculate_satellite_features(
         satellite_meta["month"] = pd.to_datetime(satellite_meta.datetime).dt.month
 
     # Iterate over selected sample / item combinations
-    satellite_features = process_map(
-        functools.partial(
-            _calculate_satellite_features_for_sample_item, config=config, cache_dir=cache_dir
-        ),
-        satellite_meta.sample_id,
-        satellite_meta.item_id,
-        chunksize=1,
-        total=len(satellite_meta),
-        max_workers=NUM_PROCESSES,
-    )
+    logger.debug(f"Generating satellite features for {satellite_meta.shape[0]:,} images")
+    # Only log progress bar if debug message is logged
+    if logger._core.min_level <= 10:
+        satellite_features = process_map(
+            functools.partial(
+                _calculate_satellite_features_for_sample_item, config=config, cache_dir=cache_dir
+            ),
+            satellite_meta.sample_id,
+            satellite_meta.item_id,
+            chunksize=1,
+            total=len(satellite_meta),
+            max_workers=NUM_PROCESSES,
+        )
+    # Otherwise parallelize without progress bar
+    else:
+        pool = multiprocessing.Pool(processes=NUM_PROCESSES)
+        satellite_features = pool.starmap(
+            functools.partial(
+                _calculate_satellite_features_for_sample_item, config=config, cache_dir=cache_dir
+            ),
+            zip(satellite_meta.sample_id, satellite_meta.item_id),
+            chunksize=1,
+        )
 
     satellite_features = pd.DataFrame([features for features in satellite_features if features])
 
@@ -143,14 +157,27 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
         land_cover_data = xr.open_dataset(
             lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
         )
-        land_covers = process_map(
-            functools.partial(lookup_land_cover, land_cover_data=land_cover_data),
-            sample_meta_features.latitude,
-            sample_meta_features.longitude,
-            chunksize=1,
-            total=len(sample_meta_features),
-            max_workers=NUM_PROCESSES,
+        logger.debug(
+            f"Generating land cover features for {sample_meta_features.shape[0]:,} samples"
         )
+        # Only log progress bar if debug message is logged
+        if logger._core.min_level <= 10:
+            land_covers = process_map(
+                functools.partial(lookup_land_cover, land_cover_data=land_cover_data),
+                sample_meta_features.latitude,
+                sample_meta_features.longitude,
+                chunksize=1,
+                total=len(sample_meta_features),
+                max_workers=NUM_PROCESSES,
+            )
+        # Otherwise parallelize without progress bar
+        else:
+            pool = multiprocessing.Pool(processes=NUM_PROCESSES)
+            land_covers = pool.starmap(
+                functools.partial(lookup_land_cover, land_cover_data=land_cover_data),
+                zip(sample_meta_features.latitude, sample_meta_features.longitude),
+                chunksize=1,
+            )
 
         sample_meta_features["land_cover"] = land_covers
 

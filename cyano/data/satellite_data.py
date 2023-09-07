@@ -446,7 +446,6 @@ def download_satellite_data(
     logger.debug(f"Downloading satellite imagery for {satellite_meta.shape[0]:,} items")
     # Only log progress bar if debug message is logged
     if logger._core.min_level <= 10:
-        logger.info("downloading imagery with process_map")
         exception_logs = process_map(
             functools.partial(
                 download_row,
@@ -461,7 +460,6 @@ def download_satellite_data(
         )
     # Otherwise parallelize without progress bar
     else:
-        logger.info("downloading imagery with imap")
         pool = multiprocessing.Pool(processes=NUM_PROCESSES)
         exception_logs = pool.imap(
             functools.partial(
@@ -476,5 +474,5 @@ def download_satellite_data(
         # Log number of exceptions to CLI
         exception_types = ",".join(set(exceptions))
         logger.debug(
-            f"{len(exception_types):,} exceptions raised during satellite imagery download. Exceptions types encountered: {exception_types}"
+            f"{len(exception_types):,} exceptions raised during satellite imagery download. Exception types encountered: {exception_types}"
         )
