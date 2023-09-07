@@ -73,14 +73,14 @@ def predict(
 
 @app.command()
 def predict_point(
+    latitude: float = typer.Option(..., "--latitude", "-lat", help="Latitude"),
+    longitude: float = typer.Option(..., "--longitude", "-lon", help="Longitude"),
     date: str = typer.Option(
         None,
         "--date",
         "-dt",
-        help="Sample date formatted as YYYY-MM-DD, e.g. 2023-09-20. If no date is specified, today's date will be used.",
+        help="Date formatted as YYYY-MM-DD, e.g. 2023-09-20. If no date is specified, today's date will be used.",
     ),
-    latitude: float = typer.Option(..., "--latitude", "-lat", help="Latitude"),
-    longitude: float = typer.Option(..., "--longitude", "-lon", help="Longitude"),
 ):
     """Estimate cyanobacteria density for a single location on a given date"""
 
