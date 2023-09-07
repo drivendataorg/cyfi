@@ -93,8 +93,6 @@ def generate_density_kdeplot(y_true, y_pred):
     to_plot.columns = ["y_true", "y_pred"]
     fig = sns.displot(data=to_plot, y="y_pred", x="y_true", kind="kde", warn_singular=False)
 
-    max_value = max(y_true.max(), y_pred.max()) * 1.1
-    fig.set(xlim=(0, max_value), ylim=(0, max_value))
     fig.set_axis_labels(f"Actual {y_true.name}", f"Predicted {y_pred.name}")
     return fig
 
