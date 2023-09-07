@@ -26,8 +26,8 @@ def test_evaluate_preds(experiment_config, tmp_path):
     assert len(ep.y_pred_df) == 4
 
     assert experiment_config.cyano_model_config.target_col == "log_density"
-    # check we have both log density and severity (which is always predicted)
-    for col in ["log_density", "severity"]:
+    # check we have density_cells_per_ml and severity (which are always predicted)
+    for col in ["density_cells_per_ml", "severity"]:
         assert (col in ep.y_true_df.columns) & (col in ep.y_pred_df.columns)
 
 
