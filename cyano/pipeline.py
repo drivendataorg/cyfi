@@ -6,7 +6,6 @@ from repro_zipfile import ReproducibleZipFile as ZipFile
 
 import lightgbm as lgb
 from loguru import logger
-import numpy as np
 import pandas as pd
 from sklearn.model_selection import StratifiedGroupKFold
 
@@ -16,6 +15,8 @@ from cyano.data.satellite_data import identify_satellite_data, download_satellit
 from cyano.data.utils import (
     add_unique_identifier,
     convert_density_to_severity,
+    convert_density_to_log_density,
+    convert_log_density_to_density,
 )
 
 
@@ -54,9 +55,26 @@ class CyanoModelPipeline:
     def _prep_train_data(self, data, debug: bool):
         """Load labels and save out samples with UIDs"""
         labels = pd.read_csv(data)
+        # Check that we have required columns
+        for col in ["latitude", "longitude", "date"]:
+            if col not in labels:
+                raise ValueError(f"Labels dataframe is missing required column {col}")
+        if ("log_density" not in labels) and ("density_cells_per_ml" not in labels):
+            raise ValueError(
+                f"Labels dataframe must include a column for either `density_cells_per_ml` or `log_density`"
+            )
+
         labels = add_unique_identifier(labels)
         if debug:
             labels = labels.head(10)
+
+        # Add log density if needed
+        if (self.target_col == "log_density") and ("log_density" not in labels):
+            labels["log_density"] = convert_density_to_log_density(labels.density_cells_per_ml)
+        elif (self.target_col == "density_cells_per_ml") and (
+            "density_cells_per_ml" not in labels
+        ):
+            labels["density_cells_per_ml"] = convert_log_density_to_density(labels.log_density)
 
         # Save out samples with uids
         labels.to_csv(self.cache_dir / "train_samples_uid_mapping.csv", index=True)
@@ -277,14 +295,15 @@ class CyanoModelPipeline:
         self.preds = preds
         self.output_df = self.predict_samples.join(self.preds)
 
-        # If predicting log density, exponentiate and then convert to severity
+        # Convert to exact density if not predicted
         if self.target_col == "log_density":
-            self.output_df["severity"] = convert_density_to_severity(
-                np.exp(self.output_df.log_density) - 1
+            self.output_df["density_cells_per_ml"] = convert_log_density_to_density(
+                self.output_df.log_density
             )
+            self.output_df = self.output_df.drop(columns=["log_density"])
 
-        # If predicting exact density, convert to severity
-        elif self.target_col == "density_cells_per_ml":
+        # Add severity level prediction if not already predicted
+        if self.target_col != "severity":
             self.output_df["severity"] = convert_density_to_severity(
                 self.output_df.density_cells_per_ml
             )
