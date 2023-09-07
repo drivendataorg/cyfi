@@ -251,9 +251,14 @@ def generate_all_features(
     )
     features = features[all_feature_cols]
     ct_with_features = features.index.nunique()
-    logger.debug(
-        f"Generated {satellite_features.shape[1]:,} satellite feature(s) and {sample_meta_features.shape[1]:,} sample metadata feature(s) for {ct_with_features:,} samples ({(ct_with_features / samples.shape[0]):.0%} of samples)"
-    )
+    if config.sample_meta_features:
+        logger.debug(
+            f"Generated {satellite_features.shape[1]:,} satellite feature(s) and {sample_meta_features.shape[1]:,} sample metadata feature(s) for {ct_with_features:,} samples ({(ct_with_features / samples.shape[0]):.0%} of samples)"
+        )
+    else:
+        logger.debug(
+            f"Generated {satellite_features.shape[1]:,} satellite feature(s) for {ct_with_features:,} samples ({(ct_with_features / samples.shape[0]):.0%} of samples)"
+        )
 
     # Process string column values (eg replace `:` from satellite meta)
     features.columns = [col.replace(":", "_") for col in features.columns]
