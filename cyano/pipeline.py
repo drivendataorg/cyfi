@@ -61,7 +61,7 @@ class CyanoModelPipeline:
                 raise ValueError(f"Labels dataframe is missing required column {col}")
         if ("log_density" not in labels) and ("density_cells_per_ml" not in labels):
             raise ValueError(
-                f"Labels dataframe must include a column for either `density_cells_per_ml` or `log_density`"
+                "Labels dataframe must include a column for either `density_cells_per_ml` or `log_density`"
             )
 
         labels = add_unique_identifier(labels)
