@@ -75,6 +75,10 @@ def test_cyano_model_config():
     config = CyanoModelConfig(n_folds="1")
     assert config.n_folds == 1
 
+    # Errors with unrecognized target col
+    with pytest.raises(ValueError):
+        CyanoModelConfig(target_col="surprise_target_col")
+
     # Errors with extra field
     with pytest.raises(ValidationError):
         CyanoModelConfig(extra_field="surprise_extra_field")
