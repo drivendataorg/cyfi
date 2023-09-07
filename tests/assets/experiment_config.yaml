@@ -2,7 +2,7 @@ train_csv: tests/assets/train_data.csv
 predict_csv: tests/assets/evaluate_data.csv
 save_dir: tests/assets/experiment/
 target_col: log_density
-model_training_config:
+model_config:
   n_folds: 1
   num_boost_round: 100
 features_config:

@@ -11,7 +11,7 @@ import pandas as pd
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 import typer
 
-from cyano.config import FeaturesConfig, ModelTrainingConfig
+from cyano.config import FeaturesConfig, ModelConfig
 from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
 
@@ -36,8 +36,7 @@ class ExperimentConfig(BaseModel):
             columns for date, latitude, longitude, and severity.
         features_config (FeaturesConfig, optional): Features configuration. Defaults to
             FeaturesConfig().
-        model_training_config (ModelTrainingConfig, optional): Model training configuration.
-            Defaults to ModelTrainingConfig().
+        model_config (ModelConfig, optional): Model configuration. Defaults to ModelConfig().
         cache_dir (Path, optional): Cache directory. Defaults to None.
         save_dir (Path, optional): Directory to save experiment results. Defaults to
             Path.cwd().
@@ -51,7 +50,7 @@ class ExperimentConfig(BaseModel):
     train_csv: Union[str, Path]
     predict_csv: Union[str, Path]
     features_config: FeaturesConfig = FeaturesConfig()
-    model_training_config: ModelTrainingConfig = ModelTrainingConfig()
+    model_config: ModelConfig = ModelConfig()
     cache_dir: Path = None
     save_dir: Path = Path.cwd()
     last_commit_hash: str = None
@@ -78,7 +77,7 @@ class ExperimentConfig(BaseModel):
     def run_experiment(self):
         pipeline = CyanoModelPipeline(
             features_config=self.features_config,
-            model_training_config=self.model_training_config,
+            model_config=self.model_config,
             cache_dir=self.cache_dir,
             target_col=self.target_col,
         )

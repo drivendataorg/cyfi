@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import StratifiedGroupKFold
 
-from cyano.config import FeaturesConfig, ModelTrainingConfig
+from cyano.config import FeaturesConfig, ModelConfig
 from cyano.data.features import generate_all_features
 from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
 from cyano.data.utils import (
@@ -23,7 +23,7 @@ class CyanoModelPipeline:
     def __init__(
         self,
         features_config: FeaturesConfig,
-        model_training_config: Optional[ModelTrainingConfig] = None,
+        model_config: Optional[ModelConfig] = None,
         cache_dir: Optional[Path] = None,
         models: Optional[List[lgb.Booster]] = None,
         target_col: Optional[str] = "log_density",
@@ -32,7 +32,7 @@ class CyanoModelPipeline:
 
         Args:
             features_config (FeaturesConfig): Features configuration
-            model_training_config (Optional[ModelTrainingConfig], optional): Model
+            model_config (Optional[ModelConfig], optional): Model
                 training configuration. Defaults to None.
             cache_dir (Optional[Path], optional): Cache directory. Defaults to None.
             model (Optional[lgb.Booster], optional): Trained LGB model. Defaults to None.
@@ -46,7 +46,7 @@ class CyanoModelPipeline:
             )
 
         self.features_config = features_config
-        self.model_training_config = model_training_config
+        self.model_config = model_config
         self.models = models
 
         # Determine cache dir based on feature config hash
@@ -109,23 +109,23 @@ class CyanoModelPipeline:
 
     def _train_model_without_folds(self):
         # Set early stopping to None since we have no validation set
-        self.model_training_config.params.early_stopping_round = None
+        self.model_config.params.early_stopping_round = None
 
         lgb_data = lgb.Dataset(
             self.train_features, label=self.train_labels.loc[self.train_features.index]
         )
         self.models = [
             lgb.train(
-                self.model_training_config.params.model_dump(),
+                self.model_config.params.model_dump(),
                 lgb_data,
-                num_boost_round=self.model_training_config.num_boost_round,
+                num_boost_round=self.model_config.num_boost_round,
             )
         ]
 
     def _train_model_with_folds(self):
         train_features = self.train_features.copy().reset_index(drop=False)
         kf = StratifiedGroupKFold(
-            n_splits=self.model_training_config.n_folds,
+            n_splits=self.model_config.n_folds,
             shuffle=True,
             random_state=40,
         )
@@ -152,11 +152,11 @@ class CyanoModelPipeline:
             )
 
             trained_model = lgb.train(
-                self.model_training_config.params.model_dump(),
+                self.model_config.params.model_dump(),
                 lgb_train_data,
                 valid_sets=[lgb_valid_data],
                 valid_names=["valid"],
-                num_boost_round=self.model_training_config.num_boost_round,
+                num_boost_round=self.model_config.num_boost_round,
             )
             trained_models.append(trained_model)
 
@@ -164,30 +164,30 @@ class CyanoModelPipeline:
 
     def _validate_training_with_folds(self):
         """Determine whether a model will be trained with folds. Returns True if training with folds has been specified and is supported."""
-        if self.model_training_config.n_folds == 1:
+        if self.model_config.n_folds == 1:
             return False
 
         # Training with folds requires region, check if region has been provided
         elif "region" not in self.train_samples:
             logger.warning(
-                f"Ignoring n_folds = {self.model_training_config.n_folds} and training without folds because `region` is not in the labels dataframe."
+                f"Ignoring n_folds = {self.model_config.n_folds} and training without folds because `region` is not in the labels dataframe."
             )
             return False
 
         # Check if there are not enough samples
-        elif self.train_features.index.nunique() <= self.model_training_config.n_folds:
+        elif self.train_features.index.nunique() <= self.model_config.n_folds:
             logger.warning(
-                f"Ignoring n_folds = {self.model_training_config.n_folds} and training without folds because there are not enough samples."
+                f"Ignoring n_folds = {self.model_config.n_folds} and training without folds because there are not enough samples."
             )
             return False
 
         # Check if any reion has fewer samples than the number of folds
         elif (
             self.train_samples.loc[self.train_features.index].region.value_counts().min()
-            < self.model_training_config.n_folds
+            < self.model_config.n_folds
         ):
             logger.warning(
-                f"Ignoring n_folds = {self.model_training_config.n_folds} and training without folds because at least one region has fewer than n_folds samples."
+                f"Ignoring n_folds = {self.model_config.n_folds} and training without folds because at least one region has fewer than n_folds samples."
             )
             return False
 
@@ -199,7 +199,7 @@ class CyanoModelPipeline:
 
         if train_with_folds:
             # Train with folds, distributing regions evenly between folds
-            logger.info(f"Training LGB model with {self.model_training_config.n_folds} folds")
+            logger.info(f"Training LGB model with {self.model_config.n_folds} folds")
             self._train_model_with_folds()
         else:
             logger.info("Training single LGB model")
