@@ -201,23 +201,17 @@ def generate_all_features(
     """
     # Generate satellite features
     # May be >1 row per sample, only includes samples with imagery
-    features = calculate_satellite_features(satellite_meta, config, cache_dir)
-    ct_with_satellite = features.index.nunique()
+    satellite_features = calculate_satellite_features(satellite_meta, config, cache_dir)
+    ct_with_satellite = satellite_features.index.nunique()
     if ct_with_satellite < samples.shape[0]:
         logger.warning(
-            f"Could not generate satellite features for some samples. Predictions will only be generated for {ct_with_satellite} samples with satellite imagery ({(ct_with_satellite / samples.shape[0]):.0%})"
+            f"Could not generate satellite features for some samples. Predictions will only be generated for {ct_with_satellite} samples with satellite imagery ({(ct_with_satellite / samples.shape[0]):.0%} of samples)"
         )
-    logger.info(
-        f"Generated {features.shape[1]} satellite features for {ct_with_satellite:,} samples ({(ct_with_satellite / samples.shape[0]):.0%})"
-    )
+    features = satellite_features.copy()
 
     # Generate non-satellite features. Each has only one row per sample
     if config.sample_meta_features:
         sample_meta_features = calculate_metadata_features(samples, config)
-        ct_with_meta = sample_meta_features.index.nunique()
-        logger.info(
-            f"Generated {sample_meta_features.shape[1]} sample metadata features for {ct_with_meta:,} samples ({(ct_with_meta / samples.shape[0]):.0%})"
-        )
         # Don't include samples for which we only have metadata
         features = features.merge(
             sample_meta_features, left_index=True, right_index=True, how="left", validate="m:1"
@@ -229,6 +223,10 @@ def generate_all_features(
         + config.sample_meta_features
     )
     features = features[all_feature_cols]
+    ct_with_features = features.index.nunique()
+    logger.debug(
+        f"Generated {satellite_features.shape[1]:,} satellite feature(s) and {sample_meta_features.shape[1]:,} sample metadata feature(s) for {ct_with_features:,} samples ({(ct_with_features / samples.shape[0]):.0%} of samples)"
+    )
 
     # Process string column values (eg replace `:` from satellite meta)
     features.columns = [col.replace(":", "_") for col in features.columns]

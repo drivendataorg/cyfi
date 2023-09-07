@@ -13,7 +13,6 @@ from pathlib import Path
 import planetary_computer as pc
 from pystac_client import Client, ItemSearch
 import rioxarray
-from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from cyano.config import FeaturesConfig
@@ -403,9 +402,9 @@ def download_row(
         # Delete item directory if it has already been created
         if sample_image_dir.exists():
             shutil.rmtree(sample_image_dir)
-        err_type = f"{e.__class__.__module__}.{e.__class__.__name__}"
 
-        return f"{err_type}: {e} Sample {sample_image_dir.parts[-2]}, item {sample_image_dir.parts[-1]}"
+        # Return error type
+        return f"{e.__class__.__module__}.{e.__class__.__name__}"
 
 
 def download_satellite_data(
@@ -448,10 +447,7 @@ def download_satellite_data(
     exceptions = [e for e in exception_logs if e]
     if len(exceptions) > 0:
         # Log number of exceptions to CLI
-        exceptions_types = ",".join(set([e.split(":")[0] for e in exceptions]))
-        logger.warning(
-            f"{len(exceptions):,} exceptions raised during satellite imagery download. Exceptions encountered: {exceptions_types}"
+        exception_types = ",".join(set(exceptions))
+        logger.debug(
+            f"{len(exception_types):,} exceptions raised during satellite imagery download. Exceptions types encountered: {exception_types}"
         )
-        # Log full list of exceptions to .log file
-        exceptions = "\n".join(exceptions)
-        logger.trace(f"Exceptions:\n{exceptions}")

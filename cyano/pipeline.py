@@ -277,7 +277,7 @@ class CyanoModelPipeline:
 
         # Save out samples with uids
         samples.to_csv(self.cache_dir / "predict_samples_uid_mapping.csv", index=True)
-        logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
+        logger.info(f"Loaded {samples.shape[0]:,} sample(s) for prediction")
 
         self.predict_samples = samples
 
@@ -293,7 +293,7 @@ class CyanoModelPipeline:
                 )
             )
         preds = pd.concat(preds).rename(self.target_col)
-        logger.debug(f"Generated predictions by ensembling {len(self.models)} models")
+        logger.debug(f"Ensembled {len(self.models)} models to generate predictions")
 
         # Group by sample id if multiple predictions per id
         if not preds.index.is_unique:
@@ -321,17 +321,11 @@ class CyanoModelPipeline:
         # Round density prediction
         self.output_df["density_cells_per_ml"] = self.output_df["density_cells_per_ml"].round()
 
-        missing_mask = self.output_df.severity.isna()
-        if missing_mask.any():
-            logger.warning(
-                f"{missing_mask.sum():,} sample(s) do not have predictions ({missing_mask.mean():.0%})"
-            )
-
     def _write_predictions(self, preds_path):
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)
         self.output_df.to_csv(preds_path, index=True)
         logger.success(
-            f"Predictions for {self.output_df.shape[0]:,} samples saved to {preds_path}"
+            f"Predictions for {self.output_df.severity.notna().sum():,} samples saved to {preds_path}"
         )
 
     def run_prediction(self, predict_csv, preds_path=None, debug=False):
