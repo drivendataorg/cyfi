@@ -1,7 +1,9 @@
 import sys
+import tempfile
 
 from dotenv import load_dotenv, find_dotenv
 from loguru import logger
+import pandas as pd
 from pathlib import Path
 import typer
 
@@ -67,6 +69,36 @@ def predict(
     if keep_features:
         pipeline.predict_features.to_csv(features_path, index=True)
         logger.success(f"Features saved to {features_path}")
+
+
+@app.command()
+def predict_point(
+    latitude: float = typer.Option(..., "--latitude", "-lat", help="Latitude"),
+    longitude: float = typer.Option(..., "--longitude", "-lon", help="Longitude"),
+    date: str = typer.Option(
+        None,
+        "--date",
+        "-dt",
+        help="Date formatted as YYYY-MM-DD, e.g. 2023-09-20. If no date is specified, today's date will be used.",
+    ),
+):
+    """Estimate cyanobacteria density for a single location on a given date"""
+
+    if date is None:
+        date = pd.to_datetime("today")
+
+    # check provided date is not in the future
+    elif pd.to_datetime(date) > pd.to_datetime("today"):
+        raise ValueError("Cannot predict on a date that is in the future.")
+
+    samples = pd.DataFrame({"date": [date], "latitude": [latitude], "longitude": [longitude]})
+    samples_path = Path(tempfile.gettempdir()) / "samples.csv"
+    samples.to_csv(samples_path, index=False)
+
+    pipeline = CyanoModelPipeline.from_disk(DEFAULT_MODEL_PATH)
+    pipeline.run_prediction(samples_path, preds_path=None)
+
+    logger.success(f"Estimate generated:\n{pipeline.output_df.iloc[0].to_string()}")
 
 
 @app.command()

@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+from pytest_mock import mocker  # noqa: F401
 from typer.testing import CliRunner
 
 from cyano.cli import app
@@ -37,6 +38,20 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_
     assert preds[~missing_sample_mask].severity.notna().all()
     assert preds[missing_sample_mask].severity.isna().all()
 
+    # Check that samples_path is required
+    result = runner.invoke(
+        app,
+        [
+            "predict",
+            "--model-path",
+            str(ensembled_model_path),
+            "--output-directory",
+            str(tmp_path),
+        ],
+    )
+    assert result.exit_code == 2
+    assert "Missing argument" in result.output
+
 
 def test_cli_predict_invalid_files(tmp_path):
     # Raises an error when samples_path does not exist
@@ -72,6 +87,47 @@ def test_cli_no_overwrite(tmp_path, train_data, train_data_path, ensembled_model
     )
     assert result.exit_code == 1
     assert isinstance(result.exception, FileExistsError)
+
+
+# mock prediction to just test CLI args
+def pipeline_predict_mock(self, predict_csv, preds_path=None):
+    self.output_df = pd.DataFrame(
+        {"date": ["2021-05-17"], "latitude": ["36.05"], "longitude": ["-76.7"], "severity": [2]}
+    )
+
+
+def test_cli_predict_point(mocker):  # noqa: F811
+    mocker.patch("cyano.cli.CyanoModelPipeline.run_prediction", pipeline_predict_mock)
+
+    result = runner.invoke(
+        app,
+        [
+            "predict-point",
+            "-dt",
+            "2021-05-17",
+            "-lat",
+            "36.05",
+            "-lon",
+            "-76.7",
+        ],
+    )
+    assert result.exit_code == 0
+
+    # try predicting in future
+    result = runner.invoke(
+        app,
+        [
+            "predict-point",
+            "-dt",
+            "2035-01-01",
+            "-lat",
+            "36.05",
+            "-lon",
+            "-76.7",
+        ],
+    )
+    assert result.exit_code == 1
+    assert "Cannot predict on a date that is in the future" in result.exception.__str__()
 
 
 def test_cli_evaluate(tmp_path, evaluate_data_path):

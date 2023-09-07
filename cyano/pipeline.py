@@ -69,7 +69,7 @@ class CyanoModelPipeline:
 
         # Save out samples with uids
         labels.to_csv(self.cache_dir / "train_samples_uid_mapping.csv", index=True)
-        logger.info(f"Loaded {labels.shape[0]:,} samples for training")
+        logger.info(f"Loaded {labels.shape[0]:,} sample(s) for training")
 
         expected_cols = ["date", "latitude", "longitude"]
         if "region" in labels.columns:
@@ -300,8 +300,9 @@ class CyanoModelPipeline:
         self.output_df.to_csv(preds_path, index=True)
         logger.success(f"Predictions saved to {preds_path}")
 
-    def run_prediction(self, predict_csv, preds_path, debug=False):
+    def run_prediction(self, predict_csv, preds_path=None, debug=False):
         self._prep_predict_data(predict_csv, debug)
         self._prepare_predict_features()
         self._predict_model()
-        self._write_predictions(preds_path)
+        if preds_path is not None:
+            self._write_predictions(preds_path)
