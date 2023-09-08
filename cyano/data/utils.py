@@ -49,3 +49,27 @@ def convert_density_to_severity(density_series: pd.Series) -> pd.Series:
     ).astype(float)
 
     return density
+
+
+def convert_density_to_log_density(density_series: pd.Series) -> pd.Series:
+    """Convert exact density to log density
+
+    Args:
+        density_series (pd.Series): Series containing density values
+
+    Returns:
+        pd.Series: Series containing log density
+    """
+    return np.log(density_series + 1).rename("log_density")
+
+
+def convert_log_density_to_density(log_density_series: pd.Series) -> pd.Series:
+    """Convert log density to exact density
+
+    Args:
+        log_density_series (pd.Series): Series containing log density values
+
+    Returns:
+        pd.Series: Series containing exact density
+    """
+    return (np.exp(log_density_series) - 1).rename("density_cells_per_ml")

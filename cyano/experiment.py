@@ -11,7 +11,7 @@ import pandas as pd
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 import typer
 
-from cyano.config import FeaturesConfig, ModelTrainingConfig
+from cyano.config import FeaturesConfig, CyanoModelConfig
 from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
 
@@ -36,26 +36,22 @@ class ExperimentConfig(BaseModel):
             columns for date, latitude, longitude, and severity.
         features_config (FeaturesConfig, optional): Features configuration. Defaults to
             FeaturesConfig().
-        model_training_config (ModelTrainingConfig, optional): Model training configuration.
-            Defaults to ModelTrainingConfig().
+        cyano_model_config (CyanoModelConfig, optional): Model configuration. Defaults to CyanoModelConfig().
         cache_dir (Path, optional): Cache directory. Defaults to None.
         save_dir (Path, optional): Directory to save experiment results. Defaults to
             Path.cwd().
         last_commit_hash (str, optional): Hash of the most recent commit to track codes
             used to run the experiment. Defaults to None.
-        target_col (str, optional): Target column to predict. Must be either "severity",
-            "density_cells_per_ml", or "log_density". Defaults to "log_density".
         debug (bool, optional): Run in debug mode. Defaults to False.
     """
 
     train_csv: Union[str, Path]
     predict_csv: Union[str, Path]
     features_config: FeaturesConfig = FeaturesConfig()
-    model_training_config: ModelTrainingConfig = ModelTrainingConfig()
+    cyano_model_config: CyanoModelConfig = CyanoModelConfig()
     cache_dir: Path = None
     save_dir: Path = Path.cwd()
     last_commit_hash: str = None
-    target_col: str = "log_density"
     debug: bool = False
 
     # Do not allow extra fields and silence warning for conflict with pydantic protected namespace
@@ -78,9 +74,8 @@ class ExperimentConfig(BaseModel):
     def run_experiment(self):
         pipeline = CyanoModelPipeline(
             features_config=self.features_config,
-            model_training_config=self.model_training_config,
+            cyano_model_config=self.cyano_model_config,
             cache_dir=self.cache_dir,
-            target_col=self.target_col,
         )
         pipeline.run_training(
             train_csv=self.train_csv,

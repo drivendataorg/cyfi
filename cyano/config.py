@@ -218,8 +218,8 @@ class LGBParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class ModelTrainingConfig(BaseModel):
-    """Model training configuration
+class CyanoModelConfig(BaseModel):
+    """Model configuration
 
     Args:
         params (Optional[LGBParams], optional): Parameters for LightGBM training. For details
@@ -228,16 +228,25 @@ class ModelTrainingConfig(BaseModel):
         num_boost_round (Optional[int], optional): Number of boosting iterations. Defaults to 100000.
         n_folds (Optional[int], optional): Number of different model folds to train. If greater than
             5, the models will be ensembled for a final prediction. Defaults to 1.
+        target_col (Optional[str], optional):  Target column to predict. For possible
+            values, see AVAILABLE_TARGET_COLS. Defaults to "log_density".
     """
 
     params: Optional[LGBParams] = LGBParams()
     num_boost_round: Optional[int] = 100_000
     n_folds: Optional[int] = 5
+    target_col: Optional[str] = "log_density"
 
     # Do not allow extra fields
     # Silence warning for conflict with pydantic protected namespace
     model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
+    @field_validator("target_col")
+    def validate_target_col(cls, path_field):
+        return check_field_is_subset(path_field, AVAILABLE_TARGET_COLS)
+
+
+AVAILABLE_TARGET_COLS = ["severity", "log_density", "density_cells_per_ml"]
 
 AVAILABLE_SENTINEL_BANDS = [
     "AOT",

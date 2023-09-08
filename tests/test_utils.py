@@ -1,4 +1,10 @@
-from cyano.data.utils import add_unique_identifier
+import numpy as np
+
+from cyano.data.utils import (
+    add_unique_identifier,
+    convert_density_to_log_density,
+    convert_log_density_to_density,
+)
 
 
 def test_add_unique_identifier(train_data):
@@ -13,3 +19,13 @@ def test_add_unique_identifier(train_data):
             "2543db364f727f17fe4ce7881aa180da",
         ]
     ).all()
+
+
+def test_convert_density_to_log_density(train_data):
+    converted_log_density = convert_density_to_log_density(train_data.density_cells_per_ml)
+    assert np.isclose(converted_log_density.iloc[0], 15.584939377137637)
+
+
+def test_convert_log_density_to_density(train_data):
+    converted_density = convert_log_density_to_density(train_data.log_density)
+    assert np.isclose(converted_density.iloc[0], 5867499.999999985)
