@@ -12,7 +12,7 @@ runner = CliRunner()
 
 
 def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_path):
-    # Run CLI command
+    ## Run CLI command
     result = runner.invoke(
         app,
         [
@@ -38,7 +38,46 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_
     assert preds[~missing_sample_mask].severity.notna().all()
     assert preds[missing_sample_mask].severity.isna().all()
 
-    # Check that samples_path is required
+    # Check that log level is expected
+    assert "SUCCESS" in result.stdout
+    assert "INFO" not in result.stdout
+
+    ## Check that log level increases when specified
+    result = runner.invoke(
+        app,
+        [
+            "predict",
+            str(predict_data_path),
+            "--model-path",
+            str(ensembled_model_path),
+            "--output-directory",
+            str(tmp_path),
+            "--overwrite",
+            "-v",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "INFO" in result.stdout
+    assert "DEBUG" not in result.stdout
+
+    ## Check that we can't overwrite existing preds
+    result = runner.invoke(
+        app,
+        [
+            "predict",
+            str(predict_data_path),
+            "--model-path",
+            str(ensembled_model_path),
+            "--output-directory",
+            str(tmp_path),
+            "--keep-features",
+        ],
+    )
+    assert result.exit_code == 1
+    assert isinstance(result.exception, FileExistsError)
+    assert "overwrite" in result.exception.args[0]
+
+    ## Check that samples_path is required
     result = runner.invoke(
         app,
         [
@@ -47,6 +86,7 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_
             str(ensembled_model_path),
             "--output-directory",
             str(tmp_path),
+            "--overwrite",
         ],
     )
     assert result.exit_code == 2
