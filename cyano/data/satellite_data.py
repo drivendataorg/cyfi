@@ -351,7 +351,7 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
 
     selected_satellite_meta = pd.concat(selected_satellite_meta).reset_index(drop=True)
     samples_with_imagery = selected_satellite_meta.sample_id.nunique()
-    logger.debug(
+    logger.info(
         f"Searched Sentinel-2 with buffers of {config.pc_days_search_window:,} days and {config.pc_meters_search_window:,} meters. Identified satellite imagery to generate features for {samples_with_imagery:,} samples ({(samples_with_imagery / samples.shape[0]):.0%})"
     )
 
