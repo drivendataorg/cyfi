@@ -23,8 +23,8 @@ from cyano.data.utils import (
 class CyanoModelPipeline:
     def __init__(
         self,
-        features_config: Optional[FeaturesConfig] = FeaturesConfig(),
-        cyano_model_config: Optional[CyanoModelConfig] = CyanoModelConfig(),
+        features_config: FeaturesConfig = FeaturesConfig(),
+        cyano_model_config: CyanoModelConfig = CyanoModelConfig(),
         cache_dir: Optional[Path] = None,
         models: Optional[List[lgb.Booster]] = None,
     ):
@@ -307,6 +307,9 @@ class CyanoModelPipeline:
             self.output_df["severity"] = convert_density_to_severity(
                 self.output_df.density_cells_per_ml
             )
+
+        # Round density prediction
+        self.output_df["density_cells_per_ml"] = self.output_df["density_cells_per_ml"].round()
 
         missing_mask = self.output_df.severity.isna()
         if missing_mask.any():

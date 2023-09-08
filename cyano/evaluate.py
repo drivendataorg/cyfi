@@ -80,10 +80,21 @@ def generate_actual_density_boxplot(y_true_density, y_pred):
 
 def generate_density_scatterplot(y_true, y_pred):
     _, ax = plt.subplots()
-    ax.scatter(x=y_true, y=y_pred, s=2, alpha=0.5)
+    ax.axline(
+        (0, 0),
+        slope=1,
+        color="black",
+        linestyle="--",
+        alpha=0.6,
+        linewidth=1,
+        label="Predicted = Actual",
+    )
+    ax.scatter(x=y_true, y=y_pred, s=3, alpha=0.8)
 
     ax.set_xlabel(f"Actual {y_true.name}")
     ax.set_ylabel(f"Predicted {y_pred.name}")
+
+    ax.legend()
 
     return ax
 
@@ -91,10 +102,24 @@ def generate_density_scatterplot(y_true, y_pred):
 def generate_density_kdeplot(y_true, y_pred):
     to_plot = pd.concat([y_true, y_pred.loc[y_true.index]], axis=1)
     to_plot.columns = ["y_true", "y_pred"]
-    fig = sns.displot(data=to_plot, y="y_pred", x="y_true", kind="kde", warn_singular=False)
+    g = sns.displot(data=to_plot, y="y_pred", x="y_true", kind="kde", warn_singular=False)
 
-    fig.set_axis_labels(f"Actual {y_true.name}", f"Predicted {y_pred.name}")
-    return fig
+    axes = g.fig.axes
+    identity_line = axes[0].axline(
+        (0, 0),
+        slope=1,
+        color="black",
+        linestyle="--",
+        alpha=0.6,
+        linewidth=1,
+    )
+
+    g.set_axis_labels(f"Actual {y_true.name}", f"Predicted {y_pred.name}")
+    g.add_legend(
+        {"Predicted = Actual": identity_line}, loc="upper right", bbox_to_anchor=(0.8, 0.9)
+    )
+
+    return g
 
 
 def generate_regional_barplot(regional_rmse):
