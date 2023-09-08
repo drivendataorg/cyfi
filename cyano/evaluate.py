@@ -91,6 +91,10 @@ def generate_density_scatterplot(y_true, y_pred):
     )
     ax.scatter(x=y_true, y=y_pred, s=3, alpha=0.8)
 
+    max_value = max(y_true.max(), y_pred.max()) * 1.1
+    ax.set_xlim(0, max_value)
+    ax.set_ylim(0, max_value)
+
     ax.set_xlabel(f"Actual {y_true.name}")
     ax.set_ylabel(f"Predicted {y_pred.name}")
 
@@ -102,24 +106,14 @@ def generate_density_scatterplot(y_true, y_pred):
 def generate_density_kdeplot(y_true, y_pred):
     to_plot = pd.concat([y_true, y_pred.loc[y_true.index]], axis=1)
     to_plot.columns = ["y_true", "y_pred"]
-    g = sns.displot(data=to_plot, y="y_pred", x="y_true", kind="kde", warn_singular=False)
+    fig = sns.displot(data=to_plot, y="y_pred", x="y_true", kind="kde", warn_singular=False)
 
-    axes = g.fig.axes
-    identity_line = axes[0].axline(
-        (0, 0),
-        slope=1,
-        color="black",
-        linestyle="--",
-        alpha=0.6,
-        linewidth=1,
-    )
+    max_value = max(y_true.max(), y_pred.max()) * 1.1
+    fig.set(xlim=(0, max_value), ylim=(0, max_value))
 
-    g.set_axis_labels(f"Actual {y_true.name}", f"Predicted {y_pred.name}")
-    g.add_legend(
-        {"Predicted = Actual": identity_line}, loc="upper right", bbox_to_anchor=(0.8, 0.9)
-    )
+    fig.set_axis_labels(f"Actual {y_true.name}", f"Predicted {y_pred.name}")
 
-    return g
+    return fig
 
 
 def generate_regional_barplot(regional_rmse):
