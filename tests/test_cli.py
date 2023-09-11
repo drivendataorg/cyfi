@@ -42,42 +42,9 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_
     assert "SUCCESS" in result.stdout
     assert "INFO" not in result.stdout
 
-    ## Check that log level increases when specified
-    result = runner.invoke(
-        app,
-        [
-            "predict",
-            str(predict_data_path),
-            "--model-path",
-            str(ensembled_model_path),
-            "--output-directory",
-            str(tmp_path),
-            "--overwrite",
-            "-v",
-        ],
-    )
-    assert result.exit_code == 0
-    assert "INFO" in result.stdout
-    assert "DEBUG" not in result.stdout
 
-    ## Check that we can't overwrite existing preds
-    result = runner.invoke(
-        app,
-        [
-            "predict",
-            str(predict_data_path),
-            "--model-path",
-            str(ensembled_model_path),
-            "--output-directory",
-            str(tmp_path),
-            "--keep-features",
-        ],
-    )
-    assert result.exit_code == 1
-    assert isinstance(result.exception, FileExistsError)
-    assert "overwrite" in result.exception.args[0]
-
-    ## Check that samples_path is required
+def test_cli_predict_samples_path(tmp_path, ensembled_model_path):
+    ## Errors when samples_path is not provided
     result = runner.invoke(
         app,
         [
@@ -92,9 +59,7 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_
     assert result.exit_code == 2
     assert "Missing argument" in result.output
 
-
-def test_cli_predict_invalid_files(tmp_path):
-    # Raises an error when samples_path does not exist
+    # Errors when samples_path does not exist
     result = runner.invoke(
         app,
         [
@@ -123,10 +88,32 @@ def test_cli_no_overwrite(tmp_path, train_data, train_data_path, ensembled_model
             str(ensembled_model_path),
             "--output-directory",
             str(tmp_path),
+            "--keep-features",
         ],
     )
     assert result.exit_code == 1
     assert isinstance(result.exception, FileExistsError)
+    assert "overwrite" in result.exception.args[0]
+
+
+def test_cli_predict_verbosity(tmp_path, predict_data_path, ensembled_model_path):
+    ## Check that log level increases when specified
+    result = runner.invoke(
+        app,
+        [
+            "predict",
+            str(predict_data_path),
+            "--model-path",
+            str(ensembled_model_path),
+            "--output-directory",
+            str(tmp_path),
+            "--overwrite",
+            "-v",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "INFO" in result.stdout
+    assert "DEBUG" not in result.stdout
 
 
 # mock prediction to just test CLI args

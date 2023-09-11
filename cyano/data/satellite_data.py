@@ -1,4 +1,3 @@
-import multiprocessing
 import os
 
 from datetime import timedelta
@@ -242,31 +241,23 @@ def generate_candidate_metadata(
             pystac item IDs)
     """
     # Determine the number of processes to use when parallelizing
-    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
+    NUM_PROCESSES = int(os.getenv("NUM_PROCESSES", 4))
 
     logger.debug(
-        f"Searching Sentinel-2 for satellite imagery to use in feature generation for {samples.shape[0]:,} samples"
+        f"Searching Sentinel-2 for satellite imagery to use in feature generation for {samples.shape[0]:,} samples, using {NUM_PROCESSES} processes"
     )
-    # Only log progress bar if debug message is logged
-    if logger._core.min_level <= 10:
-        results = process_map(
-            functools.partial(_generate_candidate_metadata_for_sample, config=config),
-            samples.index,
-            samples.date,
-            samples.latitude,
-            samples.longitude,
-            max_workers=NUM_PROCESSES,
-            chunksize=1,
-            total=len(samples),
-        )
-    # Otherwise parallelize without progress bar
-    else:
-        pool = multiprocessing.Pool(processes=NUM_PROCESSES)
-        results = pool.starmap(
-            functools.partial(_generate_candidate_metadata_for_sample, config=config),
-            zip(samples.index, samples.date, samples.latitude, samples.longitude),
-            chunksize=1,
-        )
+    results = process_map(
+        functools.partial(_generate_candidate_metadata_for_sample, config=config),
+        samples.index,
+        samples.date,
+        samples.latitude,
+        samples.longitude,
+        max_workers=NUM_PROCESSES,
+        chunksize=1,
+        total=len(samples),
+        # Only log progress bar if debug message is logged
+        disable=(logger._core.min_level > 10),
+    )
 
     # Consolidate parallel results
     sentinel_meta = [res[0] for res in results]
@@ -439,35 +430,27 @@ def download_satellite_data(
         cache_dir (Union[str, Path]): Cache directory to save raw imagery
     """
     # Determine the number of processes to use when parallelizing
-    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
+    NUM_PROCESSES = int(os.getenv("NUM_PROCESSES", 4))
 
     # Iterate over all rows (item / sample combos)
     imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"
-    logger.debug(f"Downloading satellite imagery for {satellite_meta.shape[0]:,} items")
-    # Only log progress bar if debug message is logged
-    if logger._core.min_level <= 10:
-        exception_logs = process_map(
-            functools.partial(
-                download_row,
-                samples=samples,
-                imagery_dir=imagery_dir,
-                config=config,
-            ),
-            satellite_meta.iterrows(),
-            max_workers=NUM_PROCESSES,
-            chunksize=1,
-            total=len(satellite_meta),
-        )
-    # Otherwise parallelize without progress bar
-    else:
-        pool = multiprocessing.Pool(processes=NUM_PROCESSES)
-        exception_logs = pool.imap(
-            functools.partial(
-                download_row, samples=samples, imagery_dir=imagery_dir, config=config
-            ),
-            satellite_meta.iterrows(),
-            chunksize=1,
-        )
+    logger.debug(
+        f"Downloading satellite imagery for {satellite_meta.shape[0]:,} items with {NUM_PROCESSES} processes"
+    )
+    exception_logs = process_map(
+        functools.partial(
+            download_row,
+            samples=samples,
+            imagery_dir=imagery_dir,
+            config=config,
+        ),
+        satellite_meta.iterrows(),
+        max_workers=NUM_PROCESSES,
+        chunksize=1,
+        total=len(satellite_meta),
+        # Only log progress bar if debug message is logged
+        disable=(logger._core.min_level > 10),
+    )
 
     exceptions = [e for e in exception_logs if e]
     if len(exceptions) > 0:

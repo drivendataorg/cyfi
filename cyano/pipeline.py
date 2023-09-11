@@ -293,7 +293,6 @@ class CyanoModelPipeline:
                 )
             )
         preds = pd.concat(preds).rename(self.target_col)
-        logger.debug(f"Ensembled {len(self.models)} models to generate predictions")
 
         # Group by sample id if multiple predictions per id
         if not preds.index.is_unique:
