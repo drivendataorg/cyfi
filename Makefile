@@ -43,7 +43,7 @@ test: clean lint
 
 ## Make assets
 assets:
-	cyano experiment tests/assets/experiment_config.yaml
+	python cyano/experiment.py tests/assets/experiment_config.yaml
 
 ## Sync experiments
 sync_experiments_to_s3:
