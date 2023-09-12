@@ -1,6 +1,5 @@
 ## Code to generate features from raw downloaded source data
 import functools
-import os
 import tarfile
 from typing import Union
 
@@ -39,17 +38,12 @@ def calculate_satellite_features(
             satellite imagery. Each row is a unique combination of sample ID and
             item ID
     """
-    # Determine the number of processes to use when parallelizing
-    NUM_PROCESSES = int(os.getenv("NUM_PROCESSES", 4))
-
     # Calculate satellite metadata features
     if "month" in config.satellite_meta_features:
         satellite_meta["month"] = pd.to_datetime(satellite_meta.datetime).dt.month
 
     # Iterate over selected sample / item combinations
-    logger.debug(
-        f"Generating satellite features for {satellite_meta.shape[0]:,} images with {NUM_PROCESSES} processes"
-    )
+    logger.debug(f"Generating satellite features for {satellite_meta.shape[0]:,} images.")
     satellite_features = process_map(
         functools.partial(
             _calculate_satellite_features_for_sample_item, config=config, cache_dir=cache_dir
@@ -58,7 +52,6 @@ def calculate_satellite_features(
         satellite_meta.item_id,
         chunksize=1,
         total=len(satellite_meta),
-        max_workers=NUM_PROCESSES,
         # Only log progress bar if debug message is logged
         disable=(logger._core.min_level > 10),
     )
@@ -125,9 +118,6 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
         pd.DataFrame: Dataframe where the index is sample_id. There is one column
             for each metadata feature and one row for each sample
     """
-    # Determine the number of processes to use when parallelizing
-    NUM_PROCESSES = int(os.getenv("NUM_PROCESSES", 4))
-
     # Generate features for each sample
     sample_meta_features = samples.copy()
 
@@ -148,7 +138,7 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
             lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
         )
         logger.debug(
-            f"Generating land cover features for {sample_meta_features.shape[0]:,} samples with {NUM_PROCESSES} processes"
+            f"Generating land cover features for {sample_meta_features.shape[0]:,} samples."
         )
         land_covers = process_map(
             functools.partial(lookup_land_cover, land_cover_data=land_cover_data),
@@ -156,7 +146,6 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
             sample_meta_features.longitude,
             chunksize=1,
             total=len(sample_meta_features),
-            max_workers=NUM_PROCESSES,
             # Only log progress bar if debug message is logged
             disable=(logger._core.min_level > 10),
         )

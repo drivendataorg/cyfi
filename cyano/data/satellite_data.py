@@ -1,5 +1,3 @@
-import os
-
 from datetime import timedelta
 import functools
 import shutil
@@ -240,11 +238,8 @@ def generate_candidate_metadata(
             candidates, dictionary mapping sample IDs to the relevant
             pystac item IDs)
     """
-    # Determine the number of processes to use when parallelizing
-    NUM_PROCESSES = int(os.getenv("NUM_PROCESSES", 4))
-
     logger.debug(
-        f"Searching Sentinel-2 for satellite imagery to use in feature generation for {samples.shape[0]:,} samples, using {NUM_PROCESSES} processes"
+        f"Searching Sentinel-2 for satellite imagery to use in feature generation for {samples.shape[0]:,} samples."
     )
     results = process_map(
         functools.partial(_generate_candidate_metadata_for_sample, config=config),
@@ -252,7 +247,6 @@ def generate_candidate_metadata(
         samples.date,
         samples.latitude,
         samples.longitude,
-        max_workers=NUM_PROCESSES,
         chunksize=1,
         total=len(samples),
         # Only log progress bar if debug message is logged
@@ -429,14 +423,9 @@ def download_satellite_data(
         config (FeaturesConfig): Features config
         cache_dir (Union[str, Path]): Cache directory to save raw imagery
     """
-    # Determine the number of processes to use when parallelizing
-    NUM_PROCESSES = int(os.getenv("NUM_PROCESSES", 4))
-
     # Iterate over all rows (item / sample combos)
     imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"
-    logger.debug(
-        f"Downloading satellite imagery for {satellite_meta.shape[0]:,} items with {NUM_PROCESSES} processes"
-    )
+    logger.debug(f"Downloading satellite imagery for {satellite_meta.shape[0]:,} items.")
     exception_logs = process_map(
         functools.partial(
             download_row,
@@ -445,7 +434,6 @@ def download_satellite_data(
             config=config,
         ),
         satellite_meta.iterrows(),
-        max_workers=NUM_PROCESSES,
         chunksize=1,
         total=len(satellite_meta),
         # Only log progress bar if debug message is logged

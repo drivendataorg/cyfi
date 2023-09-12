@@ -1,7 +1,6 @@
 import sys
 import tempfile
 
-from dotenv import load_dotenv, find_dotenv
 from loguru import logger
 import pandas as pd
 from pathlib import Path
@@ -11,8 +10,6 @@ from cyano.pipeline import CyanoModelPipeline
 from cyano.evaluate import EvaluatePreds
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
-
-load_dotenv(find_dotenv())
 
 DEFAULT_MODEL_PATH = str(Path(__file__).parent / "assets/model_v0.zip")
 
