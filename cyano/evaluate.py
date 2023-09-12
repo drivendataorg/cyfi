@@ -21,14 +21,15 @@ from cyano.data.utils import (
     add_unique_identifier,
     convert_density_to_log_density,
     convert_density_to_severity,
+    SEVERITY_LEFT_EDGES,
 )
 
 
-def generate_and_plot_crosstab(y_true, y_pred, normalize=False):
+def generate_and_plot_severity_crosstab(y_true, y_pred, normalize=False):
     to_plot = pd.crosstab(y_pred, y_true)
 
-    # make sure crosstab is 1-5 on both axes
-    for i in np.arange(1, 6):
+    # make sure crosstab is even on both axes
+    for i in np.arange(1, len(SEVERITY_LEFT_EDGES) + 1):
         if i not in to_plot.index:
             to_plot.loc[i, :] = 0
 
@@ -36,7 +37,7 @@ def generate_and_plot_crosstab(y_true, y_pred, normalize=False):
             to_plot[i] = 0
 
     # reverse index order for plotting
-    to_plot = to_plot.loc[::-1, :].astype(int)
+    to_plot = to_plot.sort_index().loc[::-1, :].astype(int)
     fmt = ",.0f"
 
     if normalize:
@@ -294,7 +295,7 @@ class EvaluatePreds:
         if self.model_path is not None:
             self.calculate_feature_importances()
 
-        crosstab_plot = generate_and_plot_crosstab(
+        crosstab_plot = generate_and_plot_severity_crosstab(
             self.y_true_df.severity, self.y_pred_df.severity
         )
         crosstab_plot.figure.savefig(self.save_dir / "crosstab.png")
