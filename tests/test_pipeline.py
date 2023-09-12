@@ -17,6 +17,7 @@ def test_prep_predict_data(predict_data, tmp_path):
     pipe = CyanoModelPipeline()
     pipe._prep_predict_data(samples_path)
     assert pipe.predict_samples.index.is_unique
+    assert len(pipe.predict_samples) == len(predict_data)
 
 
 def test_cache_dir(features_config):
