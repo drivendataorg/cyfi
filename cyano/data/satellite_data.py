@@ -253,7 +253,7 @@ def generate_candidate_metadata(
         chunksize=1,
         total=len(samples),
         # Only log progress bar if debug message is logged
-        disable=(logger._core.min_level >= 20),
+        disable=(logger._core.min_level > 20),
     )
 
     # Consolidate parallel results

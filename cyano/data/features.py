@@ -53,7 +53,7 @@ def calculate_satellite_features(
         chunksize=1,
         total=len(satellite_meta),
         # Only log progress bar if debug message is logged
-        disable=(logger._core.min_level >= 20),
+        disable=(logger._core.min_level > 20),
     )
     satellite_features = pd.DataFrame([features for features in satellite_features if features])
 
@@ -147,7 +147,7 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
             chunksize=1,
             total=len(sample_meta_features),
             # Only log progress bar if debug message is logged
-            disable=(logger._core.min_level >= 20),
+            disable=(logger._core.min_level > 20),
         )
 
         sample_meta_features["land_cover"] = land_covers
