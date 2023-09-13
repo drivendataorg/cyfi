@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 # Dictionary mapping severity levels to the minimum cells/mL in that level
-SEVERITY_LEFT_EDGES = {1: 0, 2: 20000, 3: 100000, 4: 1000000, 5: 10000000}
+SEVERITY_LEFT_EDGES = {"low": 0, "moderate": 20000, "high": 100000}
 
 
 def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
@@ -46,7 +46,7 @@ def convert_density_to_severity(density_series: pd.Series) -> pd.Series:
         include_lowest=True,
         right=False,
         labels=SEVERITY_LEFT_EDGES.keys(),
-    ).astype(float)
+    )
 
     return density
 

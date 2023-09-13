@@ -64,7 +64,6 @@ def test_calculate_all_and_save(experiment_config, tmp_path):
     assert list(results["severity"].keys()) == [
         "overall_rmse",
         "overall_mae",
-        "overall_mape",
         "regional_rmse",
         "region_averaged_rmse",
         "regional_mae",
@@ -85,6 +84,5 @@ def test_calculate_all_and_save(experiment_config, tmp_path):
     assert list(results["severity"].keys()) == [
         "overall_rmse",
         "overall_mae",
-        "overall_mape",
         "classification_report",
     ]

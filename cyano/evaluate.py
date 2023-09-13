@@ -21,22 +21,30 @@ from cyano.data.utils import (
     add_unique_identifier,
     convert_density_to_log_density,
     convert_density_to_severity,
+    SEVERITY_LEFT_EDGES,
 )
 
+SEVERITY_LEVEL_NAMES = list(SEVERITY_LEFT_EDGES.keys())
 
-def generate_and_plot_crosstab(y_true, y_pred, normalize=False):
+# map severity levels to integers to we can calculate numerical metrics
+SEVERITY_INT_MAPPING = dict(zip(SEVERITY_LEVEL_NAMES, range(len(SEVERITY_LEVEL_NAMES))))
+# inverse mapping
+SEVERITY_CAT_MAPPING = {v: k for k, v in SEVERITY_INT_MAPPING.items()}
+
+
+def generate_and_plot_severity_crosstab(y_true, y_pred, normalize=False):
     to_plot = pd.crosstab(y_pred, y_true)
 
-    # make sure crosstab is 1-5 on both axes
-    for i in np.arange(1, 6):
-        if i not in to_plot.index:
-            to_plot.loc[i, :] = 0
+    # make sure crosstab is even on both axes
+    for level in SEVERITY_LEVEL_NAMES:
+        if level not in to_plot.index:
+            to_plot.loc[level, :] = 0
 
-        if i not in to_plot.columns:
-            to_plot[i] = 0
+        if level not in to_plot.columns:
+            to_plot[level] = 0
 
     # reverse index order for plotting
-    to_plot = to_plot.loc[::-1, :].astype(int)
+    to_plot = to_plot.loc[SEVERITY_LEVEL_NAMES[::-1]]
     fmt = ",.0f"
 
     if normalize:
@@ -69,7 +77,7 @@ def generate_actual_density_boxplot(y_true_density, y_pred):
         y="density_cells_per_ml",
         x="y_pred",
         ax=ax,
-        order=list(range(1, 6)),
+        order=SEVERITY_LEVEL_NAMES,
         showfliers=False,
     )
     ax.set_xlabel("Predicted severity")
@@ -141,7 +149,7 @@ class EvaluatePreds:
 
         self.missing_predictions_mask = all_preds.severity.isna()
         self.y_pred_df = all_preds[~self.missing_predictions_mask].copy()
-        self.y_pred_df["severity"] = self.y_pred_df.severity.astype(int)
+        self.y_pred_df["severity"] = self.y_pred_df.severity
         logger.info(f"Evaluating on {len(self.y_pred_df):,} samples (of {len(all_preds):,})")
 
         # Load ground truth
@@ -161,9 +169,11 @@ class EvaluatePreds:
                 "Sample IDs for points (lat, lon, date) in y_pred_csv do not align with sample IDs in y_true_csv."
             )
 
-        # Add severity
-        if "severity" not in y_true_df:
-            y_true_df["severity"] = convert_density_to_severity(y_true_df.density_cells_per_ml)
+        # Always derive severity from density
+        self.y_true_df["severity"] = convert_density_to_severity(
+            self.y_true_df.density_cells_per_ml
+        )
+
         if "region" in self.y_true_df.columns:
             self.region = self.y_true_df.region
         else:
@@ -177,7 +187,6 @@ class EvaluatePreds:
         results = dict()
         results["overall_rmse"] = mean_squared_error(y_true, y_pred, squared=False)
         results["overall_mae"] = mean_absolute_error(y_true, y_pred)
-        results["overall_mape"] = mean_absolute_percentage_error(y_true, y_pred)
 
         if region is not None:
             df = pd.concat([y_true, y_pred, region], axis=1)
@@ -197,7 +206,10 @@ class EvaluatePreds:
             )
 
         results["classification_report"] = classification_report(
-            y_true, y_pred, labels=np.arange(1, 6), output_dict=True, zero_division=False
+            y_true.map(SEVERITY_CAT_MAPPING),
+            y_pred.map(SEVERITY_CAT_MAPPING),
+            output_dict=True,
+            zero_division=False,
         )
         return results
 
@@ -258,8 +270,8 @@ class EvaluatePreds:
 
         # calculate severity metrics
         results["severity"] = self.calculate_severity_metrics(
-            y_true=self.y_true_df["severity"],
-            y_pred=self.y_pred_df["severity"],
+            y_true=self.y_true_df["severity"].map(SEVERITY_INT_MAPPING),
+            y_pred=self.y_pred_df["severity"].map(SEVERITY_INT_MAPPING),
             region=self.region,
         )
 
@@ -294,7 +306,7 @@ class EvaluatePreds:
         if self.model_path is not None:
             self.calculate_feature_importances()
 
-        crosstab_plot = generate_and_plot_crosstab(
+        crosstab_plot = generate_and_plot_severity_crosstab(
             self.y_true_df.severity, self.y_pred_df.severity
         )
         crosstab_plot.figure.savefig(self.save_dir / "crosstab.png")
