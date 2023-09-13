@@ -20,6 +20,9 @@ catalog = Client.open(
     "https://planetarycomputer.microsoft.com/api/stac/v1", modifier=pc.sign_inplace
 )
 
+# Define new logger level to track progress
+progress_log_level = logger.level(name="PROGRESS", no=30, color="<black><bold>")
+
 
 def get_bounding_box(latitude: float, longitude: float, meters_window: int) -> List[float]:
     """
@@ -238,8 +241,8 @@ def generate_candidate_metadata(
             candidates, dictionary mapping sample IDs to the relevant
             pystac item IDs)
     """
-    logger.debug(
-        f"Searching Sentinel-2 for satellite imagery to use in feature generation for {samples.shape[0]:,} samples."
+    logger.info(
+        f"Searching Sentinel-2 for satellite imagery for {samples.shape[0]:,} sample points."
     )
     results = process_map(
         functools.partial(_generate_candidate_metadata_for_sample, config=config),
@@ -250,7 +253,7 @@ def generate_candidate_metadata(
         chunksize=1,
         total=len(samples),
         # Only log progress bar if debug message is logged
-        disable=(logger._core.min_level > 10),
+        disable=(logger._core.min_level >= 20),
     )
 
     # Consolidate parallel results
@@ -337,7 +340,7 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
     selected_satellite_meta = pd.concat(selected_satellite_meta).reset_index(drop=True)
     samples_with_imagery = selected_satellite_meta.sample_id.nunique()
     logger.info(
-        f"Searched Sentinel-2 with buffers of {config.pc_days_search_window:,} days and {config.pc_meters_search_window:,} meters. Identified satellite imagery to generate features for {samples_with_imagery:,} samples ({(samples_with_imagery / samples.shape[0]):.0%})"
+        f"Searched Sentinel-2 with buffers of {config.pc_days_search_window:,} days and {config.pc_meters_search_window:,} meters. Identified satellite imagery to generate features for {samples_with_imagery:,} sample points ({(samples_with_imagery / samples.shape[0]):.0%})"
     )
 
     return selected_satellite_meta
@@ -403,7 +406,9 @@ def download_row(
             shutil.rmtree(sample_image_dir)
 
         # Return error type
-        return f"{e.__class__.__module__}.{e.__class__.__name__}"
+        logger.debug(
+            f"{e.__class__.__module__}.{e.__class__.__name__} raised for sample ID {row.sample_id}, Sentinel-2 item ID {row.item_id}"
+        )
 
 
 def download_satellite_data(
@@ -425,8 +430,11 @@ def download_satellite_data(
     """
     # Iterate over all rows (item / sample combos)
     imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"
-    logger.debug(f"Downloading satellite imagery for {satellite_meta.shape[0]:,} items.")
-    exception_logs = process_map(
+    logger.log(
+        progress_log_level.name,
+        f"Downloading satellite imagery for {satellite_meta.shape[0]:,} Sentinel-2 items.",
+    )
+    _ = process_map(
         functools.partial(
             download_row,
             samples=samples,
@@ -437,13 +445,5 @@ def download_satellite_data(
         chunksize=1,
         total=len(satellite_meta),
         # Only log progress bar if debug message is logged
-        disable=(logger._core.min_level > 10),
+        disable=(logger._core.min_level >= progress_log_level.no),
     )
-
-    exceptions = [e for e in exception_logs if e]
-    if len(exceptions) > 0:
-        # Log number of exceptions to CLI
-        exception_types = ",".join(set(exceptions))
-        logger.debug(
-            f"{len(exception_types):,} exceptions raised during satellite imagery download. Exception types encountered: {exception_types}"
-        )

@@ -150,7 +150,7 @@ class EvaluatePreds:
         self.missing_predictions_mask = all_preds.severity.isna()
         self.y_pred_df = all_preds[~self.missing_predictions_mask].copy()
         self.y_pred_df["severity"] = self.y_pred_df.severity
-        logger.info(f"Evaluating on {len(self.y_pred_df):,} samples (of {len(all_preds):,})")
+        logger.info(f"Evaluating on {len(self.y_pred_df):,} sample points (of {len(all_preds):,})")
 
         # Load ground truth
         y_true_df = pd.read_csv(y_true_csv)

@@ -39,7 +39,8 @@ verbose_option = typer.Option(
 @app.command()
 def predict(
     samples_path: Path = typer.Argument(
-        exists=True, help="Path to a csv of samples with columns for date, longitude, and latitude"
+        exists=True,
+        help="Path to a csv of sample points with columns for date, longitude, and latitude",
     ),
     model_path: Path = typer.Option(
         default=None,
@@ -61,8 +62,8 @@ def predict(
     overwrite: bool = typer.Option(False, "--overwrite", "-o", help="Overwrite existing files"),
     verbose: int = verbose_option,
 ):
-    """Generate cyanobacteria predictions for a set of samples saved at `samples_path`. By default,
-    predictions will be saved to `preds.csv` in the current directory.
+    """Generate cyanobacteria predictions for a set of sample points saved at `samples_path`. By
+    default, cyanobacteria estimates will be saved to `preds.csv` in the current directory.
     """
     output_path = output_directory / output_filename
     features_path = output_directory / "sample_features.csv"
@@ -121,11 +122,11 @@ def predict_point(
 def evaluate(
     y_pred_csv: Path = typer.Argument(
         exists=True,
-        help="Path to a csv of samples with columns for date, longitude, latitude, and predicted density",
+        help="Path to a csv of sample points with columns for date, longitude, latitude, and predicted density",
     ),
     y_true_csv: Path = typer.Argument(
         exists=True,
-        help="Path to a csv of samples with columns for date, longitude, latitude, and actual density, with optional metadata columns",
+        help="Path to a csv of sample points with columns for date, longitude, latitude, and actual density, with optional metadata columns",
     ),
     save_dir: Path = typer.Option(
         default=Path.cwd() / "metrics", help="Folder in which to save out metrics and plots."

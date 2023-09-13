@@ -43,7 +43,7 @@ def calculate_satellite_features(
         satellite_meta["month"] = pd.to_datetime(satellite_meta.datetime).dt.month
 
     # Iterate over selected sample / item combinations
-    logger.debug(f"Generating satellite features for {satellite_meta.shape[0]:,} images.")
+    logger.info(f"Generating satellite features for {satellite_meta.shape[0]:,} images.")
     satellite_features = process_map(
         functools.partial(
             _calculate_satellite_features_for_sample_item, config=config, cache_dir=cache_dir
@@ -53,7 +53,7 @@ def calculate_satellite_features(
         chunksize=1,
         total=len(satellite_meta),
         # Only log progress bar if debug message is logged
-        disable=(logger._core.min_level > 10),
+        disable=(logger._core.min_level >= 20),
     )
     satellite_features = pd.DataFrame([features for features in satellite_features if features])
 
@@ -137,8 +137,8 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
         land_cover_data = xr.open_dataset(
             lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
         )
-        logger.debug(
-            f"Generating land cover features for {sample_meta_features.shape[0]:,} samples."
+        logger.info(
+            f"Generating land cover features for {sample_meta_features.shape[0]:,} sample points."
         )
         land_covers = process_map(
             functools.partial(lookup_land_cover, land_cover_data=land_cover_data),
@@ -147,7 +147,7 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
             chunksize=1,
             total=len(sample_meta_features),
             # Only log progress bar if debug message is logged
-            disable=(logger._core.min_level > 10),
+            disable=(logger._core.min_level >= 20),
         )
 
         sample_meta_features["land_cover"] = land_covers
@@ -203,7 +203,7 @@ def generate_all_features(
     ct_with_satellite = satellite_features.index.nunique()
     if ct_with_satellite < samples.shape[0]:
         logger.warning(
-            f"Could not generate satellite features for some samples. Predictions will only be generated for {ct_with_satellite} samples with satellite imagery ({(ct_with_satellite / samples.shape[0]):.0%} of samples)"
+            f"Could not generate satellite features for some sample points. Predictions will only be generated for {ct_with_satellite} sample points with satellite imagery ({(ct_with_satellite / samples.shape[0]):.0%} of sample points)"
         )
     features = satellite_features.copy()
 
@@ -224,11 +224,11 @@ def generate_all_features(
     ct_with_features = features.index.nunique()
     if config.sample_meta_features:
         logger.info(
-            f"Generated {satellite_features.shape[1]:,} satellite feature(s) and {sample_meta_features.shape[1]:,} sample metadata feature(s) for {ct_with_features:,} samples ({(ct_with_features / samples.shape[0]):.0%} of samples)"
+            f"Generated {satellite_features.shape[1]:,} satellite feature(s) and {sample_meta_features.shape[1]:,} sample metadata feature(s) for {ct_with_features:,} sample points ({(ct_with_features / samples.shape[0]):.0%} of sample points)"
         )
     else:
         logger.info(
-            f"Generated {satellite_features.shape[1]:,} satellite feature(s) for {ct_with_features:,} samples ({(ct_with_features / samples.shape[0]):.0%} of samples)"
+            f"Generated {satellite_features.shape[1]:,} satellite feature(s) for {ct_with_features:,} sample points ({(ct_with_features / samples.shape[0]):.0%} of sample points)"
         )
 
     # Process string column values (eg replace `:` from satellite meta)
