@@ -68,6 +68,13 @@ class CyanoModelPipeline:
         if debug:
             labels = labels.head(10)
 
+        # Drop any duplicate samples
+        if not labels.index.is_unique:
+            logger.warning(
+                f"There are duplicate samples in the training data. Dropping {labels.index.duplicated().sum():,} duplicates and keeping {labels.index.nunique():,} unique combinations of date, latitude, and longitude."
+            )
+            labels = labels.drop_duplicates()
+
         # Add log density if needed
         if (self.target_col == "log_density") and ("log_density" not in labels):
             labels["log_density"] = convert_density_to_log_density(labels.density_cells_per_ml)
@@ -261,6 +268,13 @@ class CyanoModelPipeline:
 
         if debug:
             samples = samples.head(10)
+
+        # Drop any duplicate samples
+        if not samples.index.is_unique:
+            logger.warning(
+                f"There are duplicate samples in the data. Dropping {samples.index.duplicated().sum():,} duplicates and keeping {samples.index.nunique():,} unique combinations of date, latitude, and longitude."
+            )
+            samples = samples.drop_duplicates()
 
         # Save out samples with uids
         samples.to_csv(self.cache_dir / "predict_samples_uid_mapping.csv", index=True)

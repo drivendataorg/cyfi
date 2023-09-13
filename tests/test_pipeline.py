@@ -1,3 +1,4 @@
+import pandas as pd
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -5,6 +6,18 @@ from cyano.config import FeaturesConfig, CyanoModelConfig
 from cyano.pipeline import CyanoModelPipeline
 
 ASSETS_DIR = Path(__file__).parent / "assets"
+
+
+def test_prep_predict_data(predict_data, tmp_path):
+    # Duplicates in the sample data should be dropped
+    samples_path = tmp_path / "samples.csv"
+    df = pd.concat([predict_data, predict_data])
+    df.to_csv(samples_path, index=False)
+
+    pipe = CyanoModelPipeline()
+    pipe._prep_predict_data(samples_path)
+    assert pipe.predict_samples.index.is_unique
+    assert len(pipe.predict_samples) == len(predict_data)
 
 
 def test_cache_dir(features_config):
