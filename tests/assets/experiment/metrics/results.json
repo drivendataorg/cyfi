@@ -2,7 +2,6 @@
     "severity": {
         "overall_rmse": 0.8660254037844386,
         "overall_mae": 0.75,
-        "overall_mape": 3377699720527872.0,
         "regional_rmse": {
             "northeast": 1.0,
             "south": 0.7071067811865476

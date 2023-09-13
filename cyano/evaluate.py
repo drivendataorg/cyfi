@@ -187,7 +187,6 @@ class EvaluatePreds:
         results = dict()
         results["overall_rmse"] = mean_squared_error(y_true, y_pred, squared=False)
         results["overall_mae"] = mean_absolute_error(y_true, y_pred)
-        results["overall_mape"] = mean_absolute_percentage_error(y_true, y_pred)
 
         if region is not None:
             df = pd.concat([y_true, y_pred, region], axis=1)
