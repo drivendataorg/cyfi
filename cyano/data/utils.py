@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 # Dictionary mapping severity levels to the minimum cells/mL in that level
-SEVERITY_LEFT_EDGES = {"low": 0, "medium": 20000, "high": 100000}
+SEVERITY_LEFT_EDGES = {"low": 0, "moderate": 20000, "high": 100000}
 
 
 def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:

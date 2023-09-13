@@ -18,7 +18,7 @@
                 "f1-score": 0.0,
                 "support": 3
             },
-            "medium": {
+            "moderate": {
                 "precision": 0.25,
                 "recall": 1.0,
                 "f1-score": 0.4,
