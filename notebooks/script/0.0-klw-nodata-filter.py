@@ -8,7 +8,7 @@
 
 # ### Takeaway (spoiler!)
 # 
-# Overall, I'm very on the fence but I lean towards implementing this.
+# Overall, I'm pretty on the fence but I lean towards implementing this.
 # 
 # - The only samples that are dropped from prediction and training are older samples, so this change is unlikely to affect the number of samples we are able to predict on in the future
 # - The largest difference in performance is better identification of high-severity samples. There is some loss of performance in identifying low-severity samples, but the change is smaller.
