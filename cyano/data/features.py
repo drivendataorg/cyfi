@@ -203,7 +203,7 @@ def generate_all_features(
     ct_with_satellite = satellite_features.index.nunique()
     if ct_with_satellite < samples.shape[0]:
         logger.warning(
-            f"Could not generate satellite features for some sample points. Predictions will only be generated for {ct_with_satellite} sample points with satellite imagery ({(ct_with_satellite / samples.shape[0]):.0%} of sample points)"
+            f"Satellite data is not available for all sample points. Predictions will only be generated for {ct_with_satellite} sample points with satellite imagery ({(ct_with_satellite / samples.shape[0]):.0%} of sample points)"
         )
     features = satellite_features.copy()
 

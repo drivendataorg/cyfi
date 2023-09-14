@@ -21,7 +21,7 @@ catalog = Client.open(
 )
 
 # Define new logger level to track progress
-progress_log_level = logger.level(name="PROGRESS", no=30, color="<black><bold>")
+progress_log_level = logger.level(name="PROGRESS", no=30, color="<magenta><bold>")
 
 
 def get_bounding_box(latitude: float, longitude: float, meters_window: int) -> List[float]:
