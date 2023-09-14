@@ -1,7 +1,6 @@
 import sys
 import tempfile
 
-from dotenv import load_dotenv, find_dotenv
 from loguru import logger
 import pandas as pd
 from pathlib import Path
@@ -12,19 +11,36 @@ from cyano.evaluate import EvaluatePreds
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
-load_dotenv(find_dotenv())
-
 DEFAULT_MODEL_PATH = str(Path(__file__).parent / "assets/model_v0.zip")
 
-# Set logger to only log info or higher
-logger.remove()
-logger.add(sys.stderr, level="INFO")
+
+def verbose_callback(verbosity: int):
+    """Set up logger with level based on --verbose count."""
+    logger.remove()
+    if verbosity >= 2:
+        logger.add(sys.stderr, level="DEBUG")
+    elif verbosity == 1:
+        logger.add(sys.stderr, level="INFO")
+    else:
+        logger.add(sys.stderr, level="SUCCESS")
+
+
+verbose_option = typer.Option(
+    0,
+    "--verbose",
+    "-v",
+    count=True,
+    show_default=False,
+    help="Increase the verbosity/log level. [-v = INFO, -vv = DEBUG]",
+    callback=verbose_callback,
+)
 
 
 @app.command()
 def predict(
     samples_path: Path = typer.Argument(
-        exists=True, help="Path to a csv of samples with columns for date, longitude, and latitude"
+        exists=True,
+        help="Path to a csv of sample points with columns for date, longitude, and latitude",
     ),
     model_path: Path = typer.Option(
         default=None,
@@ -44,9 +60,10 @@ def predict(
         default=False, help="Whether to save sample features to `output_directory`"
     ),
     overwrite: bool = typer.Option(False, "--overwrite", "-o", help="Overwrite existing files"),
+    verbose: int = verbose_option,
 ):
-    """Generate cyanobacteria predictions for a set of samples saved at `samples_path`. By default,
-    predictions will be saved to `preds.csv` in the current directory.
+    """Generate cyanobacteria predictions for a set of sample points saved at `samples_path`. By
+    default, cyanobacteria estimates will be saved to `preds.csv` in the current directory.
     """
     output_path = output_directory / output_filename
     features_path = output_directory / "sample_features.csv"
@@ -105,11 +122,11 @@ def predict_point(
 def evaluate(
     y_pred_csv: Path = typer.Argument(
         exists=True,
-        help="Path to a csv of samples with columns for date, longitude, latitude, and predicted density",
+        help="Path to a csv of sample points with columns for date, longitude, latitude, and predicted density",
     ),
     y_true_csv: Path = typer.Argument(
         exists=True,
-        help="Path to a csv of samples with columns for date, longitude, latitude, and actual density, with optional metadata columns",
+        help="Path to a csv of sample points with columns for date, longitude, latitude, and actual density, with optional metadata columns",
     ),
     save_dir: Path = typer.Option(
         default=Path.cwd() / "metrics", help="Folder in which to save out metrics and plots."
@@ -117,6 +134,7 @@ def evaluate(
     overwrite: bool = typer.Option(
         False, "--overwrite", "-o", help="Overwrite any existing files in `save_dir`"
     ),
+    verbose: int = verbose_option,
 ):
     """Evaluate cyanobacteria model predictions"""
     if not overwrite and save_dir.exists():

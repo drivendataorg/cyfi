@@ -53,7 +53,7 @@ class CyanoModelPipeline:
         self.target_col = cyano_model_config.target_col
 
     def _prep_train_data(self, data, debug: bool):
-        """Load labels and save out samples with UIDs"""
+        """Load labels and save out sample points with UIDs"""
         labels = pd.read_csv(data)
         # Check that we have required columns
         for col in ["latitude", "longitude", "date"]:
@@ -71,7 +71,7 @@ class CyanoModelPipeline:
         # Drop any duplicate samples
         if not labels.index.is_unique:
             logger.warning(
-                f"There are duplicate samples in the training data. Dropping {labels.index.duplicated().sum():,} duplicates and keeping {labels.index.nunique():,} unique combinations of date, latitude, and longitude."
+                f"There are duplicate sample points in the training data. Dropping {labels.index.duplicated().sum():,} duplicates and keeping {labels.index.nunique():,} unique combinations of date, latitude, and longitude."
             )
             labels = labels.drop_duplicates()
 
@@ -85,7 +85,7 @@ class CyanoModelPipeline:
 
         # Save out samples with uids
         labels.to_csv(self.cache_dir / "train_samples_uid_mapping.csv", index=True)
-        logger.info(f"Loaded {labels.shape[0]:,} sample(s) for training")
+        logger.info(f"Loaded {labels.shape[0]:,} sample points for training")
 
         expected_cols = ["date", "latitude", "longitude"]
         if "region" in labels.columns:
@@ -103,13 +103,12 @@ class CyanoModelPipeline:
         satellite_meta = identify_satellite_data(samples, self.features_config)
         save_satellite_to = self.cache_dir / f"satellite_metadata_{split}.csv"
         satellite_meta.to_csv(save_satellite_to, index=False)
-        logger.info(
-            f"{satellite_meta.shape[0]:,} rows of satellite metadata saved to {save_satellite_to}"
-        )
+        logger.info(f"Satellite imagery metadata saved to {save_satellite_to}")
 
         ## Download satellite data
         download_satellite_data(satellite_meta, samples, self.features_config, self.cache_dir)
-        logger.success(f"Raw satellite imagery saved to {self.cache_dir}")
+        logger.success("Downloaded satellite imagery")
+        logger.info(f"Satellite imagery saved to {self.cache_dir}")
 
         ## Generate features
         features = generate_all_features(
@@ -185,15 +184,15 @@ class CyanoModelPipeline:
 
         # Training with folds requires region, check if region has been provided
         elif "region" not in self.train_samples:
-            logger.warning(
+            logger.debug(
                 f"Ignoring n_folds = {self.cyano_model_config.n_folds} and training without folds because `region` is not in the labels dataframe."
             )
             return False
 
         # Check if there are not enough samples
         elif self.train_features.index.nunique() <= self.cyano_model_config.n_folds:
-            logger.warning(
-                f"Ignoring n_folds = {self.cyano_model_config.n_folds} and training without folds because there are not enough samples."
+            logger.debug(
+                f"Ignoring n_folds = {self.cyano_model_config.n_folds} and training without folds because there are not enough sample points."
             )
             return False
 
@@ -202,8 +201,8 @@ class CyanoModelPipeline:
             self.train_samples.loc[self.train_features.index].region.value_counts().min()
             < self.cyano_model_config.n_folds
         ):
-            logger.warning(
-                f"Ignoring n_folds = {self.cyano_model_config.n_folds} and training without folds because at least one region has fewer than n_folds samples."
+            logger.debug(
+                f"Ignoring n_folds = {self.cyano_model_config.n_folds} and training without folds because at least one region has fewer than n_folds sample points."
             )
             return False
 
@@ -248,7 +247,6 @@ class CyanoModelPipeline:
         )
         # Determine the number of ensembled models
         model_files = [name for name in archive.namelist() if "lgb_model" in name]
-        logger.info(f"Loading {len(model_files)} ensembled models")
         models = []
         for model_file in model_files:
             models.append(lgb.Booster(model_str=archive.read(model_file).decode()))
@@ -272,13 +270,15 @@ class CyanoModelPipeline:
         # Drop any duplicate samples
         if not samples.index.is_unique:
             logger.warning(
-                f"There are duplicate samples in the data. Dropping {samples.index.duplicated().sum():,} duplicates and keeping {samples.index.nunique():,} unique combinations of date, latitude, and longitude."
+                f"There are duplicate sample points in the data. Dropping {samples.index.duplicated().sum():,} duplicates and keeping {samples.index.nunique():,} unique combinations of date, latitude, and longitude."
             )
             samples = samples.drop_duplicates()
 
         # Save out samples with uids
         samples.to_csv(self.cache_dir / "predict_samples_uid_mapping.csv", index=True)
-        logger.info(f"Loaded {samples.shape[0]:,} samples for prediction")
+        logger.success(
+            f"Loaded {samples.shape[0]:,} sample points (unique combinations of date, latitude, and longitude) for prediction"
+        )
 
         self.predict_samples = samples
 
@@ -286,7 +286,6 @@ class CyanoModelPipeline:
         self.predict_features = self._prepare_features(self.predict_samples, train_split=False)
 
     def _predict_model(self):
-        logger.info(f"Ensembling {len(self.models)} models")
         preds = []
         for model in self.models:
             preds.append(
@@ -298,9 +297,6 @@ class CyanoModelPipeline:
 
         # Group by sample id if multiple predictions per id
         if not preds.index.is_unique:
-            logger.info(
-                f"Grouping {preds.shape[0]:,} predictions by {preds.index.nunique():,} unique sample IDs"
-            )
             preds = preds.groupby(preds.index).mean()
 
         # do not allow negative values
@@ -325,16 +321,12 @@ class CyanoModelPipeline:
         # Round density prediction
         self.output_df["density_cells_per_ml"] = self.output_df["density_cells_per_ml"].round()
 
-        missing_mask = self.output_df.severity.isna()
-        if missing_mask.any():
-            logger.warning(
-                f"{missing_mask.sum():,} samples do not have predictions ({missing_mask.mean():.0%})"
-            )
-
     def _write_predictions(self, preds_path):
         Path(preds_path).parent.mkdir(exist_ok=True, parents=True)
         self.output_df.to_csv(preds_path, index=True)
-        logger.success(f"Predictions saved to {preds_path}")
+        logger.success(
+            f"Cyanobacteria estimates for {self.output_df.severity.notna().sum():,} sample points saved to {preds_path}"
+        )
 
     def run_prediction(self, predict_csv, preds_path=None, debug=False):
         self._prep_predict_data(predict_csv, debug)

@@ -1,6 +1,5 @@
 ## Code to generate features from raw downloaded source data
 import functools
-import os
 import tarfile
 from typing import Union
 
@@ -39,18 +38,12 @@ def calculate_satellite_features(
             satellite imagery. Each row is a unique combination of sample ID and
             item ID
     """
-    # Determine the number of processes to use when parallelizing
-    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
-
     # Calculate satellite metadata features
     if "month" in config.satellite_meta_features:
         satellite_meta["month"] = pd.to_datetime(satellite_meta.datetime).dt.month
 
-    logger.info(
-        f"Generating satellite features for {len(satellite_meta):,} sample/item combos, {satellite_meta.sample_id.nunique():,} samples with {NUM_PROCESSES} processes"
-    )
-
     # Iterate over selected sample / item combinations
+    logger.info(f"Generating satellite features for {satellite_meta.shape[0]:,} images.")
     satellite_features = process_map(
         functools.partial(
             _calculate_satellite_features_for_sample_item, config=config, cache_dir=cache_dir
@@ -59,9 +52,9 @@ def calculate_satellite_features(
         satellite_meta.item_id,
         chunksize=1,
         total=len(satellite_meta),
-        max_workers=NUM_PROCESSES,
+        # Only log progress bar if debug message is logged
+        disable=(logger._core.min_level > 20),
     )
-
     satellite_features = pd.DataFrame([features for features in satellite_features if features])
 
     # Add in satellite meta features
@@ -125,9 +118,6 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
         pd.DataFrame: Dataframe where the index is sample_id. There is one column
             for each metadata feature and one row for each sample
     """
-    # Determine the number of processes to use when parallelizing
-    NUM_PROCESSES = int(os.getenv("CY_NUM_PROCESSES", 4))
-
     # Generate features for each sample
     sample_meta_features = samples.copy()
 
@@ -137,18 +127,18 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
         lc_cache_dir.mkdir(exist_ok=True)
         land_cover_map_filepath = lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
 
-        if land_cover_map_filepath.exists():
-            logger.debug(f"Using land cover map already downloaded to {lc_cache_dir}")
-        else:
+        if not land_cover_map_filepath.exists():
             logger.debug(f"Downloading ~2GB land cover map to {lc_cache_dir}")
             s3p = S3Path("s3://drivendata-public-assets/land_cover_map.tar.gz")
             s3p.download_to(lc_cache_dir)
             file = tarfile.open(lc_cache_dir / "land_cover_map.tar.gz")
             file.extractall(lc_cache_dir)
 
-        logger.info(f"Loading land cover features with {NUM_PROCESSES} processes")
         land_cover_data = xr.open_dataset(
             lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
+        )
+        logger.info(
+            f"Generating land cover features for {sample_meta_features.shape[0]:,} sample points."
         )
         land_covers = process_map(
             functools.partial(lookup_land_cover, land_cover_data=land_cover_data),
@@ -156,7 +146,8 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
             sample_meta_features.longitude,
             chunksize=1,
             total=len(sample_meta_features),
-            max_workers=NUM_PROCESSES,
+            # Only log progress bar if debug message is logged
+            disable=(logger._core.min_level > 20),
         )
 
         sample_meta_features["land_cover"] = land_covers
@@ -209,27 +200,20 @@ def generate_all_features(
     # Generate satellite features
     # May be >1 row per sample, only includes samples with imagery
     satellite_features = calculate_satellite_features(satellite_meta, config, cache_dir)
-    logger.info(
-        f"Generated {satellite_features.shape[1]} satellite features for {satellite_features.index.nunique():,} samples, {satellite_features.shape[0]:,} item/sample combinations."
-    )
-
-    # Generate non-satellite features. Each has only one row per sample
+    ct_with_satellite = satellite_features.index.nunique()
+    if ct_with_satellite < samples.shape[0]:
+        logger.warning(
+            f"Satellite data is not available for all sample points. Predictions will only be generated for {ct_with_satellite} sample points with satellite imagery ({(ct_with_satellite / samples.shape[0]):.0%} of sample points)"
+        )
     features = satellite_features.copy()
 
+    # Generate non-satellite features. Each has only one row per sample
     if config.sample_meta_features:
         sample_meta_features = calculate_metadata_features(samples, config)
-        logger.info(
-            f"Generated {sample_meta_features.shape[1]} metadata features for {sample_meta_features.shape[0]:,} samples"
-        )
         # Don't include samples for which we only have metadata
         features = features.merge(
             sample_meta_features, left_index=True, right_index=True, how="left", validate="m:1"
         )
-
-    pct_with_features = features.index.nunique() / samples.shape[0]
-    logger.success(
-        f"Generated {features.shape[1]:,} features for {features.index.nunique():,} samples ({pct_with_features:.0%})"
-    )
 
     all_feature_cols = (
         config.satellite_image_features
@@ -237,6 +221,15 @@ def generate_all_features(
         + config.sample_meta_features
     )
     features = features[all_feature_cols]
+    ct_with_features = features.index.nunique()
+    if config.sample_meta_features:
+        logger.info(
+            f"Generated {satellite_features.shape[1]:,} satellite feature(s) and {sample_meta_features.shape[1]:,} sample metadata feature(s) for {ct_with_features:,} sample points ({(ct_with_features / samples.shape[0]):.0%} of sample points)"
+        )
+    else:
+        logger.info(
+            f"Generated {satellite_features.shape[1]:,} satellite feature(s) for {ct_with_features:,} sample points ({(ct_with_features / samples.shape[0]):.0%} of sample points)"
+        )
 
     # Process string column values (eg replace `:` from satellite meta)
     features.columns = [col.replace(":", "_") for col in features.columns]
