@@ -274,7 +274,6 @@ def generate_candidate_metadata(
 
 def select_items(
     items_meta: pd.DataFrame,
-    date: Union[str, pd.Timestamp],
     config: FeaturesConfig,
 ) -> List[str]:
     """Select which pystac items to include for a given sample
@@ -282,16 +281,11 @@ def select_items(
     Args:
         item_meta (pd.DataFrame): Dataframe with metadata about all possible
             pystac items to include for the given sample
-        date (Union[str, pd.Timestamp]): Date the sample was collected
         config (FeaturesConfig): Features config
 
     Returns:
         List[str]: List of the pystac items IDs for the selected items
     """
-    # Calculate days between sample and image
-    items_meta["days_before_sample"] = (
-        pd.to_datetime(date) - pd.to_datetime(items_meta.datetime)
-    ).dt.days
     # Filter by time frame
     items_meta = items_meta[
         items_meta.days_before_sample.between(0, config.pc_days_search_window)
@@ -333,7 +327,13 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
         sample_items_meta = candidate_sentinel_meta[
             candidate_sentinel_meta.item_id.isin(sample_item_ids)
         ].copy()
-        selected_ids = select_items(sample_items_meta, sample.date, config)
+
+        # Add days between sample and image
+        sample_items_meta["days_before_sample"] = (
+            pd.to_datetime(sample.date) - pd.to_datetime(sample_items_meta.datetime)
+        ).dt.days
+
+        selected_ids = select_items(sample_items_meta, config)
 
         # Save out the selected items
         sample_items_meta = sample_items_meta[sample_items_meta.item_id.isin(selected_ids)]
