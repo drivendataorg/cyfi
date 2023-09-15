@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
+import pytest
 
+from cyano.data.utils import add_unique_identifier
 from cyano.evaluate import EvaluatePreds
 
 
@@ -29,6 +31,20 @@ def test_evaluate_preds(experiment_config, tmp_path):
     # check we have density_cells_per_ml and severity (which are always predicted)
     for col in ["density_cells_per_ml", "severity"]:
         assert (col in ep.y_true_df.columns) & (col in ep.y_pred_df.columns)
+
+
+def test_evaluate_preds_missing_density(train_data, tmp_path):
+    # Check that exact density column is required
+    df = add_unique_identifier(train_data)
+    df.to_csv(tmp_path / "y_pred.csv", index=True)
+    df.drop(columns=["density_cells_per_ml"]).to_csv(tmp_path / "y_true.csv", index=True)
+
+    with pytest.raises(ValueError):
+        _ = EvaluatePreds(
+            y_true_csv=tmp_path / "y_true.csv",
+            y_pred_csv=tmp_path / "y_pred.csv",
+            save_dir=tmp_path / "metrics",
+        )
 
 
 def test_calculate_feature_importances(experiment_config, ensembled_model_path, tmp_path):
