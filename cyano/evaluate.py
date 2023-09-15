@@ -88,22 +88,10 @@ def generate_actual_density_boxplot(y_true_density, y_pred):
     return ax
 
 
-def _set_ax_lim(ax, max_value, log_scale):
-    if log_scale:
-        ax.set_xlim(1, max_value)
-        ax.set_ylim(1, max_value)
-    else:
-        ax.set_xlim(0, max_value)
-        ax.set_ylim(0, max_value)
-
-    return ax
-
-
-def generate_density_scatterplot(y_true, y_pred, log_scale=True):
+def generate_density_scatterplot(y_true, y_pred):
     _, ax = plt.subplots(figsize=(FIGSIZE))
-    if log_scale:
-        ax.set_xscale("log")
-        ax.set_yscale("log")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
     max_value = max(y_true.max(), y_pred.max()) * 1.1
     ax.axline(
         (0, 0),
@@ -116,7 +104,8 @@ def generate_density_scatterplot(y_true, y_pred, log_scale=True):
     )
     ax.scatter(x=y_true, y=y_pred, s=3, alpha=0.8)
 
-    ax = _set_ax_lim(ax, max_value, log_scale)
+    ax.set_xlim(1, max_value)
+    ax.set_ylim(1, max_value)
 
     ax.set_xlabel(f"Actual {y_true.name}")
     ax.set_ylabel(f"Predicted {y_pred.name}")
@@ -126,7 +115,7 @@ def generate_density_scatterplot(y_true, y_pred, log_scale=True):
     return ax
 
 
-def generate_density_kdeplot(y_true, y_pred, log_scale=True):
+def generate_density_kdeplot(y_true, y_pred):
     to_plot = pd.concat([y_true, y_pred.loc[y_true.index]], axis=1)
     to_plot.columns = ["y_true", "y_pred"]
 
@@ -136,12 +125,13 @@ def generate_density_kdeplot(y_true, y_pred, log_scale=True):
         y="y_pred",
         x="y_true",
         warn_singular=False,
-        log_scale=log_scale,
+        log_scale=True,
         ax=ax,
     )
 
     max_value = max(y_true.max(), y_pred.max()) * 1.1
-    ax = _set_ax_lim(ax, max_value, log_scale)
+    ax.set_xlim(1, max_value)
+    ax.set_ylim(1, max_value)
 
     ax.set_xlabel(f"Actual {y_true.name}")
     ax.set_ylabel(f"Predicted {y_pred.name}")
@@ -181,6 +171,8 @@ class EvaluatePreds:
 
         # Load ground truth
         y_true_df = pd.read_csv(y_true_csv)
+        if "density_cells_per_ml" not in y_true_df.columns:
+            raise ValueError("Evaluation data must include a `density_cells_per_ml` column")
         y_true_df = add_unique_identifier(y_true_df)
 
         try:
@@ -190,27 +182,10 @@ class EvaluatePreds:
                 "Sample IDs for points (lat, lon, date) in y_pred_csv do not align with sample IDs in y_true_csv."
             )
 
-        # Add columns for severity and log_density as needed
-        if "density_cells_per_ml" in y_true_df.columns:
-            self.density_var = "density_cells_per_ml"
-            self.y_true_df["severity"] = convert_density_to_severity(
-                self.y_true_df.density_cells_per_ml
-            )
-            self.y_true_df["log_density"] = convert_density_to_log_density(
-                self.y_true_df.density_cells_per_ml
-            )
-        elif "log_density" in y_true_df.columns:
-            self.density_var = "log_density"
-            self.y_true_df["density_cells_per_ml"] = convert_log_density_to_density(
-                self.y_true_df.log_density
-            )
-            self.y_true_df["severity"] = convert_density_to_severity(
-                self.y_true_df["density_cells_per_ml"]
-            )
-        else:
-            raise ValueError(
-                "Evaluation data must include a `density_cells_per_ml` column or a `log_density` column"
-            )
+        # Calculate severity from density
+        self.y_true_df["severity"] = convert_density_to_severity(
+            self.y_true_df.density_cells_per_ml
+        )
 
         if "region" in self.y_true_df.columns:
             self.region = self.y_true_df.region
@@ -252,7 +227,11 @@ class EvaluatePreds:
         return results
 
     @staticmethod
-    def calculate_log_density_metrics(y_true, y_pred, region=None):
+    def calculate_log_density_metrics(y_true_df, y_pred_df, region=None):
+        # Get log density
+        y_true = convert_density_to_log_density(y_true_df.density_cells_per_ml)
+        y_pred = convert_density_to_log_density(y_pred_df.density_cells_per_ml)
+
         results = dict()
         results["overall_r_squared"] = r2_score(y_true, y_pred)
         results["overall_mape"] = mean_absolute_percentage_error(y_true, y_pred)
@@ -309,23 +288,21 @@ class EvaluatePreds:
 
         # calculate log density metrics
         results["log_density"] = self.calculate_log_density_metrics(
-            y_true=self.y_true_df["log_density"],
-            y_pred=self.y_pred_df["log_density"],
+            y_true_df=self.y_true_df,
+            y_pred_df=self.y_pred_df,
             region=self.region,
         )
 
         # add plots
         density_scatter = generate_density_scatterplot(
-            self.y_true_df[self.density_var],
-            self.y_pred_df[self.density_var],
-            log_scale=True if self.density_var == "density_cells_per_ml" else False,
+            self.y_true_df.density_cells_per_ml,
+            self.y_pred_df.density_cells_per_ml,
         )
         density_scatter.figure.savefig(self.save_dir / "density_scatterplot.png")
 
         density_kde = generate_density_kdeplot(
-            self.y_true_df[self.density_var],
-            self.y_pred_df[self.density_var],
-            log_scale=True if self.density_var == "density_cells_per_ml" else False,
+            self.y_true_df.density_cells_per_ml,
+            self.y_pred_df.density_cells_per_ml,
         )
         density_kde.figure.savefig(self.save_dir / "density_kde.png")
 
