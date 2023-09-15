@@ -115,6 +115,8 @@ def predict_point(
     pipeline = CyanoModelPipeline.from_disk(DEFAULT_MODEL_PATH)
     pipeline.run_prediction(samples_path, preds_path=None)
 
+    # make sure date is printed out as string rather than timestamp
+    pipeline.output_df["date"] = pd.to_datetime(pipeline.output_df.date).dt.date.astype(str)
     logger.success(f"Estimate generated:\n{pipeline.output_df.iloc[0].to_string()}")
 
 
