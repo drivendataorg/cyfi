@@ -103,8 +103,8 @@ def generate_density_scatterplot(y_true, y_pred):
     )
     ax.scatter(x=y_true, y=y_pred, s=3, alpha=0.8)
 
-    ax.set_xlim(1, max_value)
-    ax.set_ylim(1, max_value)
+    ax.set_xlim(10, max_value)
+    ax.set_ylim(10, max_value)
 
     ax.set_xlabel(f"Actual {y_true.name}")
     ax.set_ylabel(f"Predicted {y_pred.name}")
@@ -129,8 +129,8 @@ def generate_density_kdeplot(y_true, y_pred):
     )
 
     max_value = max(y_true.max(), y_pred.max()) * 1.1
-    ax.set_xlim(1, max_value)
-    ax.set_ylim(1, max_value)
+    ax.set_xlim(10, max_value)
+    ax.set_ylim(10, max_value)
 
     ax.set_xlabel(f"Actual {y_true.name}")
     ax.set_ylabel(f"Predicted {y_pred.name}")
