@@ -98,6 +98,7 @@ def predict_point(
         "-dt",
         help="Date formatted as YYYY-MM-DD, e.g. 2023-09-20. If no date is specified, today's date will be used.",
     ),
+    verbose: int = verbose_option,
 ):
     """Estimate cyanobacteria density for a single location on a given date"""
 
