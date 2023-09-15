@@ -29,7 +29,7 @@ features_config:
   - days_before_sample
   use_sentinel_bands:
   - B02
-last_commit_hash: d751f38f437fafbaf43ecad82b7a860067486131
+last_commit_hash: 5de83e2c4343f19655818b318be3c77ece8bf3ec
 predict_csv: tests/assets/evaluate_data.csv
 save_dir: tests/assets/experiment
 train_csv: tests/assets/train_data.csv
