@@ -103,21 +103,23 @@ def predict_point(
     """Estimate cyanobacteria density for a single location on a given date"""
 
     if date is None:
-        date = pd.to_datetime("today")
+        date = pd.to_datetime("today").strftime("%Y-%m-%d")
 
     # check provided date is not in the future
     elif pd.to_datetime(date) > pd.to_datetime("today"):
         raise ValueError("Cannot predict on a date that is in the future.")
 
-    samples = pd.DataFrame(
-        {"date": [date.strftime("%Y-%m-%d")], "latitude": [latitude], "longitude": [longitude]}
-    )
+    samples = pd.DataFrame({"date": [date], "latitude": [latitude], "longitude": [longitude]})
     samples_path = Path(tempfile.gettempdir()) / "samples.csv"
     samples.to_csv(samples_path, index=False)
 
     pipeline = CyanoModelPipeline.from_disk(DEFAULT_MODEL_PATH)
     pipeline.run_prediction(samples_path, preds_path=None)
 
+    # format as integer with comma for console
+    pipeline.output_df["density_cells_per_ml"] = pipeline.output_df.density_cells_per_ml.map(
+        "{:,.0f}".format
+    )
     logger.success(f"Estimate generated:\n{pipeline.output_df.iloc[0].to_string()}")
 
 
