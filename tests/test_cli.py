@@ -119,7 +119,13 @@ def test_cli_predict_verbosity(tmp_path, predict_data_path, ensembled_model_path
 # mock prediction to just test CLI args
 def pipeline_predict_mock(self, predict_csv, preds_path=None):
     self.output_df = pd.DataFrame(
-        {"date": ["2021-05-17"], "latitude": ["36.05"], "longitude": ["-76.7"], "severity": [2]}
+        {
+            "date": ["2021-05-17"],
+            "latitude": ["36.05"],
+            "longitude": ["-76.7"],
+            "severity": ["moderate"],
+            "density_cells_per_ml": 32078.0,
+        }
     )
 
 

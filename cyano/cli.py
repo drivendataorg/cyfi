@@ -98,11 +98,12 @@ def predict_point(
         "-dt",
         help="Date formatted as YYYY-MM-DD, e.g. 2023-09-20. If no date is specified, today's date will be used.",
     ),
+    verbose: int = verbose_option,
 ):
     """Estimate cyanobacteria density for a single location on a given date"""
 
     if date is None:
-        date = pd.to_datetime("today")
+        date = pd.to_datetime("today").strftime("%Y-%m-%d")
 
     # check provided date is not in the future
     elif pd.to_datetime(date) > pd.to_datetime("today"):
@@ -115,6 +116,10 @@ def predict_point(
     pipeline = CyanoModelPipeline.from_disk(DEFAULT_MODEL_PATH)
     pipeline.run_prediction(samples_path, preds_path=None)
 
+    # format as integer with comma for console
+    pipeline.output_df["density_cells_per_ml"] = pipeline.output_df.density_cells_per_ml.map(
+        "{:,.0f}".format
+    )
     logger.success(f"Estimate generated:\n{pipeline.output_df.iloc[0].to_string()}")
 
 
