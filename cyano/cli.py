@@ -108,15 +108,15 @@ def predict_point(
     elif pd.to_datetime(date) > pd.to_datetime("today"):
         raise ValueError("Cannot predict on a date that is in the future.")
 
-    samples = pd.DataFrame({"date": [date], "latitude": [latitude], "longitude": [longitude]})
+    samples = pd.DataFrame(
+        {"date": [date.strftime("%Y-%m-%d")], "latitude": [latitude], "longitude": [longitude]}
+    )
     samples_path = Path(tempfile.gettempdir()) / "samples.csv"
     samples.to_csv(samples_path, index=False)
 
     pipeline = CyanoModelPipeline.from_disk(DEFAULT_MODEL_PATH)
     pipeline.run_prediction(samples_path, preds_path=None)
 
-    # make sure date is printed out as string rather than timestamp
-    pipeline.output_df["date"] = pd.to_datetime(pipeline.output_df.date).dt.date.astype(str)
     logger.success(f"Estimate generated:\n{pipeline.output_df.iloc[0].to_string()}")
 
 
