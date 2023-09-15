@@ -21,7 +21,6 @@ from cyano.data.utils import (
     add_unique_identifier,
     convert_density_to_log_density,
     convert_density_to_severity,
-    convert_log_density_to_density,
     SEVERITY_LEFT_EDGES,
 )
 
@@ -165,9 +164,6 @@ class EvaluatePreds:
         self.missing_predictions_mask = all_preds.severity.isna()
         self.y_pred_df = all_preds[~self.missing_predictions_mask].copy()
         logger.info(f"Evaluating on {len(self.y_pred_df):,} sample points (of {len(all_preds):,})")
-        self.y_pred_df["log_density"] = convert_density_to_log_density(
-            self.y_pred_df.density_cells_per_ml
-        )
 
         # Load ground truth
         y_true_df = pd.read_csv(y_true_csv)
