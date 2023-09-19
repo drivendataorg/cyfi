@@ -7,6 +7,7 @@ import appdirs
 from cloudpathlib import AnyPath, S3Path
 from loguru import logger
 import numpy as np
+import numpy.ma as ma
 import pandas as pd
 from pathlib import Path
 from tqdm.contrib.concurrent import process_map
@@ -96,7 +97,7 @@ def _calculate_satellite_features_for_sample_item(
             raise FileNotFoundError(
                 f"Band {band} is missing from pystac item directory {sample_item_dir}"
             )
-        band_arrays[band] = np.load(sample_item_dir / f"{band}.npy")
+        band_arrays[band] = ma.masked_equal(np.load(sample_item_dir / f"{band}.npy"), 0)
 
     # Iterate over features to generate
     sample_item_features = {"sample_id": sample_id, "item_id": item_id}
@@ -200,6 +201,10 @@ def generate_all_features(
     # Generate satellite features
     # May be >1 row per sample, only includes samples with imagery
     satellite_features = calculate_satellite_features(satellite_meta, config, cache_dir)
+
+    # drop rows where bounding box only contained missing data
+    satellite_features = satellite_features.dropna()
+
     ct_with_satellite = satellite_features.index.nunique()
     if ct_with_satellite < samples.shape[0]:
         logger.warning(
