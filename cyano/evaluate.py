@@ -45,7 +45,7 @@ def generate_and_plot_severity_crosstab(y_true, y_pred, normalize=False):
             to_plot[level] = 0
 
     # reverse index order for plotting
-    to_plot = to_plot.loc[SEVERITY_LEVEL_NAMES[::-1]]
+    to_plot = to_plot.loc[SEVERITY_LEVEL_NAMES[::-1], SEVERITY_LEVEL_NAMES]
     fmt = ",.0f"
 
     if normalize:
