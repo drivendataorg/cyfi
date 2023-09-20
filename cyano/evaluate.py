@@ -120,7 +120,8 @@ def generate_density_kdeplot(y_true, y_pred):
 
     _, ax = plt.subplots(figsize=FIGSIZE)
     fig = sns.kdeplot(
-        data=to_plot,
+        # add 1 so we can do log scale if there are zero values
+        data=to_plot + 1,
         y="y_pred",
         x="y_true",
         warn_singular=False,
