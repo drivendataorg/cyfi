@@ -97,12 +97,8 @@ def _calculate_satellite_features_for_sample_item(
                 f"Band {band} is missing from pystac item directory {sample_item_dir}"
             )
         arr = np.load(sample_item_dir / f"{band}.npy")
-
         # set no data value to be nan
-        if band == "SCL":
-            band_arrays[band] = np.where(arr == 0, np.nan, arr)
-        else:
-            band_arrays[band] = arr
+        band_arrays[band] = np.where(arr == 0, np.nan, arr)
 
     # Iterate over features to generate
     sample_item_features = {"sample_id": sample_id, "item_id": item_id}
