@@ -12,7 +12,6 @@ from sklearn.metrics import (
     classification_report,
     mean_absolute_error,
     mean_squared_error,
-    mean_absolute_percentage_error,
     r2_score,
 )
 from zipfile import ZipFile
@@ -231,7 +230,6 @@ class EvaluatePreds:
 
         results = dict()
         results["overall_r_squared"] = r2_score(y_true, y_pred)
-        results["overall_mape"] = mean_absolute_percentage_error(y_true, y_pred)
 
         if region is not None:
             df = pd.concat([y_true, y_pred, region], axis=1)
