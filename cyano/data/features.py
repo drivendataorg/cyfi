@@ -210,6 +210,9 @@ def generate_all_features(
     satellite_features = calculate_satellite_features(satellite_meta, config, cache_dir)
 
     # drop rows where bounding box contained any no data pixels
+    logger.info(
+        f"Dropping {satellite_features.isna().any(axis=1).sum()} row(s) where satellite images have a bounding box with missing data."
+    )
     satellite_features = satellite_features.dropna()
 
     ct_with_satellite = satellite_features.index.nunique()
