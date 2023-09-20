@@ -45,7 +45,6 @@
     },
     "log_density": {
         "overall_r_squared": -1.74214860415861,
-        "overall_mape": 1.2939161356490164e+16,
         "regional_r_squared": {
             "northeast": -2.095164296715266,
             "south": -2.030146701104201
