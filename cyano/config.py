@@ -146,6 +146,7 @@ class FeaturesConfig(BaseModel):
         "NDVI_B05",
         "NDVI_B06",
         "NDVI_B07",
+        "nodata_pixel_count_in_bbox",
     ]
 
     # Do not allow extra fields
@@ -157,7 +158,7 @@ class FeaturesConfig(BaseModel):
 
     @field_validator("satellite_image_features")
     def validate_satellite_image_features(cls, path_field):
-        return check_field_is_subset(path_field, list(SATELLITE_FEATURE_CALCULATORS.keys()))
+        return check_field_is_subset(path_field, list(SATELLITE_FEATURE_CALCULATORS.keys()) + ["nodata_pixel_count_in_bbox"])
 
     @field_validator("satellite_meta_features")
     def validate_satellite_meta_features(cls, path_field):

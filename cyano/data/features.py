@@ -101,12 +101,15 @@ def _calculate_satellite_features_for_sample_item(
 
     # Iterate over features to generate
     sample_item_features = {"sample_id": sample_id, "item_id": item_id}
-    for feature in config.satellite_image_features:
-        sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
 
-    # Calculate number of no data pixels using the first spectral band
-    bands = [b for b in config.use_sentinel_bands if b.startswith("B")]
-    sample_item_features["no_data_count"] = np.isnan(band_arrays[bands[0]]).sum()
+    for feature in config.satellite_image_features:
+        if feature == "nodata_pixel_count_in_bbox":
+            # Calculate number of no data pixels using the first spectral band
+            first_band = [b for b in config.use_sentinel_bands if b.startswith("B")][0]
+            sample_item_features["nodata_pixel_count_in_bbox"] = np.isnan(band_arrays[first_band]).sum()
+
+        else:
+            sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
 
     return sample_item_features
 
