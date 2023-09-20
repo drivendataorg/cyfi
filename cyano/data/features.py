@@ -7,7 +7,6 @@ import appdirs
 from cloudpathlib import AnyPath, S3Path
 from loguru import logger
 import numpy as np
-import numpy.ma as ma
 import pandas as pd
 from pathlib import Path
 from tqdm.contrib.concurrent import process_map
@@ -97,12 +96,17 @@ def _calculate_satellite_features_for_sample_item(
             raise FileNotFoundError(
                 f"Band {band} is missing from pystac item directory {sample_item_dir}"
             )
-        band_arrays[band] = ma.masked_equal(np.load(sample_item_dir / f"{band}.npy"), 0)
+        arr = np.load(sample_item_dir / f"{band}.npy")
+        band_arrays[band] = np.where(arr == 0, np.nan, arr)
 
     # Iterate over features to generate
     sample_item_features = {"sample_id": sample_id, "item_id": item_id}
     for feature in config.satellite_image_features:
         sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
+
+    # Calculate number of no data pixels using the first spectral band
+    bands = [b for b in config.use_sentinel_bands if b.startswith("B")]
+    sample_item_features["no_data_count"] = np.isnan(band_arrays[bands[0]]).sum()
 
     return sample_item_features
 
