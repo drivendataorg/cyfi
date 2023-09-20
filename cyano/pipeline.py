@@ -134,6 +134,7 @@ class CyanoModelPipeline:
                 self.cyano_model_config.params.model_dump(),
                 lgb_data,
                 num_boost_round=self.cyano_model_config.num_boost_round,
+                verbose_eval=False,
             )
         ]
 
@@ -172,6 +173,7 @@ class CyanoModelPipeline:
                 valid_sets=[lgb_valid_data],
                 valid_names=["valid"],
                 num_boost_round=self.cyano_model_config.num_boost_round,
+                verbose_eval=False,
             )
             trained_models.append(trained_model)
 
