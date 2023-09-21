@@ -20,7 +20,7 @@ from cyfi.data.utils import (
 )
 
 
-class CyanoModelPipeline:
+class CyFiPipeline:
     def __init__(
         self,
         features_config: FeaturesConfig = FeaturesConfig(),
@@ -28,7 +28,7 @@ class CyanoModelPipeline:
         cache_dir: Optional[Path] = None,
         models: Optional[List[lgb.Booster]] = None,
     ):
-        """Instantiate CyanoModelPipeline
+        """Instantiate CyFiPipeline
 
         Args:
             features_config (FeaturesConfig): Features configuration

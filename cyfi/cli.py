@@ -6,7 +6,7 @@ import pandas as pd
 from pathlib import Path
 import typer
 
-from cyfi.pipeline import CyanoModelPipeline
+from cyfi.pipeline import CyFiPipeline
 from cyfi.evaluate import EvaluatePreds
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
@@ -79,7 +79,7 @@ def predict(
 
     if model_path is None:
         model_path = DEFAULT_MODEL_PATH
-    pipeline = CyanoModelPipeline.from_disk(model_path)
+    pipeline = CyFiPipeline.from_disk(model_path)
 
     pipeline.run_prediction(samples_path, output_path)
 
@@ -113,7 +113,7 @@ def predict_point(
     samples_path = Path(tempfile.gettempdir()) / "samples.csv"
     samples.to_csv(samples_path, index=False)
 
-    pipeline = CyanoModelPipeline.from_disk(DEFAULT_MODEL_PATH)
+    pipeline = CyFiPipeline.from_disk(DEFAULT_MODEL_PATH)
     pipeline.run_prediction(samples_path, preds_path=None)
 
     # format as integer with comma for console

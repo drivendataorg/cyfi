@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 import typer
 
 from cyfi.config import FeaturesConfig, CyFiModelConfig
-from cyfi.pipeline import CyanoModelPipeline
+from cyfi.pipeline import CyFiPipeline
 from cyfi.evaluate import EvaluatePreds
 
 REPO_ROOT = Path(__file__).parents[1].resolve()
@@ -72,7 +72,7 @@ class ExperimentConfig(BaseModel):
         return cls(**config_dict)
 
     def run_experiment(self):
-        pipeline = CyanoModelPipeline(
+        pipeline = CyFiPipeline(
             features_config=self.features_config,
             cyfi_model_config=self.cyfi_model_config,
             cache_dir=self.cache_dir,
