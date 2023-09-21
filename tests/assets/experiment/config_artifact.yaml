@@ -1,10 +1,10 @@
 cache_dir: None
 cyfi_model_config:
-  n_folds: 1
+  n_folds: 2
   num_boost_round: 100
   params:
     application: regression
-    early_stopping_round: null
+    early_stopping_round: 100
     feature_fraction: 1.0
     learning_rate: 0.1
     max_depth: -1
@@ -29,7 +29,7 @@ features_config:
   - days_before_sample
   use_sentinel_bands:
   - B02
-last_commit_hash: 13d8fb38f63992d286baea36846672d20feba599
+last_commit_hash: 3758e567fd1f6562d169b9af4f403d00842666ca
 predict_csv: tests/assets/evaluate_data.csv
 save_dir: tests/assets/experiment
 train_csv: tests/assets/train_data.csv
