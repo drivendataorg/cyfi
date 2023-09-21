@@ -3,7 +3,7 @@
 #################################################################################
 
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-PROJECT_NAME = cy-fi
+PROJECT_NAME = cyfi
 PYTHON_VERSION = 3.10
 PYTHON_INTERPRETER = python
 
