@@ -1,3 +1,4 @@
+from enum import Enum
 import sys
 import tempfile
 
@@ -13,6 +14,11 @@ from cyfi.evaluate import EvaluatePreds
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
 DEFAULT_MODEL_PATH = str(Path(__file__).parent / "assets/model_v0.zip")
+
+
+class CRS(str, Enum):
+    EPSG_4326 = "EPSG:4326"
+    EPSG_3857 = "EPSG:3857"
 
 
 def verbose_callback(verbosity: int):
@@ -91,17 +97,17 @@ def predict(
 
 @app.command()
 def predict_point(
-    latitude: float = typer.Option(..., "--latitude", "-lat", help="Latitude"),
-    longitude: float = typer.Option(..., "--longitude", "-lon", help="Longitude"),
+    latitude: float = typer.Option(..., "--lat", help="Latitude"),
+    longitude: float = typer.Option(..., "--lon", help="Longitude"),
     date: str = typer.Option(
         None,
         "--date",
         "-dt",
         help="Date formatted as YYYY-MM-DD, e.g. 2023-09-20. If no date is specified, today's date will be used.",
     ),
-    crs: str = typer.Option(
+    crs: CRS = typer.Option(
         "EPSG:4326",
-        help="Coordinate reference system of the provided latitude and longitude. Must be a valid [pyproj.crs.CRS](https://pyproj4.github.io/pyproj/stable/api/crs/crs.html#pyproj.crs.CRS).",
+        help="Coordinate reference system of the provided latitude and longitude.",
     ),
     verbose: int = verbose_option,
 ):
@@ -114,24 +120,21 @@ def predict_point(
     elif pd.to_datetime(date) > pd.to_datetime("today"):
         raise ValueError("Cannot predict on a date that is in the future.")
 
-    # convert CRS to EPSG:4326 if needed
-    convert_crs = False
-    if crs not in ["EPSG:4326", "4326", "epsg:4326"]:
-        convert_crs = True
-        (original_lat, original_lon) = (latitude, longitude)
-        transformer = Transformer.from_crs(crs_from=crs, crs_to="EPSG:4326")
-        (latitude, longitude) = transformer.transform(latitude, longitude)
+    transformer = Transformer.from_crs(crs_from=crs.value, crs_to="EPSG:4326")
+    (converted_latitude, converted_longitude) = transformer.transform(latitude, longitude)
 
-    samples = pd.DataFrame({"date": [date], "latitude": [latitude], "longitude": [longitude]})
+    samples = pd.DataFrame(
+        {"date": [date], "latitude": [converted_latitude], "longitude": [converted_longitude]}
+    )
     samples_path = Path(tempfile.gettempdir()) / "samples.csv"
     samples.to_csv(samples_path, index=False)
 
     pipeline = CyFiPipeline.from_disk(DEFAULT_MODEL_PATH)
     pipeline.run_prediction(samples_path, preds_path=None)
-    # If other CRS specified, change lat / long back to original values
-    if convert_crs:
-        pipeline.output_df["latitude"] = [original_lat]
-        pipeline.output_df["longitude"] = [original_lon]
+
+    # print out user-specified lat / lon
+    pipeline.output_df["latitude"] = [latitude]
+    pipeline.output_df["longitude"] = [longitude]
 
     # format as integer with comma for console
     pipeline.output_df["density_cells_per_ml"] = pipeline.output_df.density_cells_per_ml.map(

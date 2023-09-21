@@ -143,9 +143,9 @@ def test_cli_predict_point(mocker):  # noqa: F811
             "predict-point",
             "-dt",
             "2021-05-17",
-            "-lat",
+            "--lat",
             "36.05",
-            "-lon",
+            "--lon",
             "-76.7",
         ],
     )
@@ -158,9 +158,9 @@ def test_cli_predict_point(mocker):  # noqa: F811
             "predict-point",
             "-dt",
             "2035-01-01",
-            "-lat",
+            "--lat",
             "36.05",
-            "-lon",
+            "--lon",
             "-76.7",
         ],
     )
@@ -168,44 +168,34 @@ def test_cli_predict_point(mocker):  # noqa: F811
     assert "Cannot predict on a date that is in the future" in result.exception.__str__()
 
 
-def test_cli_predict_point_crs(mocker, local_model_path, tmp_path):  # noqa: F811
-    # Test specifying a point in a different CRS
-    mocker.patch("cyfi.cli.DEFAULT_MODEL_PATH", local_model_path)
+def test_cli_predict_point_crs(mocker):  # noqa: F811
+    mocker.patch("cyfi.cli.CyFiPipeline.run_prediction", pipeline_predict_mock)
 
-    (lat, lon, date) = (37.7, -122.4, "2022-09-01")
-
-    # Get expected prediction value
-    samples = pd.DataFrame({"date": [date], "latitude": [lat], "longitude": [lon]})
-    samples_path = tmp_path / "samples.csv"
-    samples.to_csv(samples_path, index=False)
-
-    pipeline = CyFiPipeline.from_disk(local_model_path)
-    pipeline.run_prediction(tmp_path / "samples.csv")
-    expected_density = pipeline.output_df["density_cells_per_ml"].iloc[0]
-
-    # Run CLI with different CRS
-    use_crs = "EPSG:3857"
-    transformer = Transformer.from_crs("EPSG:4326", use_crs)
-    (new_lat, new_lon) = transformer.transform(lat, lon)
-
+    inputs = [
+        "predict-point",
+        "-dt",
+        "2023-01-01",
+        "--lat",
+        "36.05",
+        "--lon",
+        "-76.7",
+    ]
+    # try predicting in a different CRS
     result = runner.invoke(
         app,
-        [
-            "predict-point",
-            "-dt",
-            date,
-            "-lat",
-            str(new_lat),
-            "-lon",
-            str(new_lon),
-            "--crs",
-            use_crs,
-        ],
+        inputs + ["--crs", "EPSG:3857"],
     )
     assert result.exit_code == 0
-    assert f"{expected_density:,.0f}" in result.stdout
-    assert str(math.trunc(new_lat)) in result.stdout
-    assert str(math.trunc(new_lon)) in result.stdout
+    # check original location printed out
+    assert "36.0" in result.stdout
+
+    # try predicting with invalid CRS
+    result = runner.invoke(
+        app,
+        inputs + ["--crs", "EPSG:10"],
+    )
+    assert result.exit_code == 2
+    assert "Invalid value for '--crs" in result.stdout
 
 
 def test_cli_evaluate(tmp_path, evaluate_data_path):
