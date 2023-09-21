@@ -101,7 +101,7 @@ def predict_point(
     ),
     crs: str = typer.Option(
         "EPSG:4326",
-        help="Coordinate reference system of the provided latitude and longitude.",
+        help="Coordinate reference system of the provided latitude and longitude. Must be a valid [pyproj.crs.CRS](https://pyproj4.github.io/pyproj/stable/api/crs/crs.html#pyproj.crs.CRS).",
     ),
     verbose: int = verbose_option,
 ):
