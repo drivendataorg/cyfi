@@ -12,11 +12,11 @@ def test_add_unique_identifier(train_data):
     assert (
         uids
         == [
-            "e3ebefd90a00c3cc9f5aeaf32cd4c184",
-            "671520fa92f555ab335e0cfa888c57e7",
+            "ef04be46891bd8bf9a9beab01aa74b4f",
+            "6696747608f3d2f469b3e3c28ef9866d",
             "9c601f226c2af07d570134127a7fda27",
             "3a2c48812b551d720f8d56772efa6df1",
-            "2543db364f727f17fe4ce7881aa180da",
+            "1969e5e476b5971a377c268c7a8a9ca3",
         ]
     ).all()
 

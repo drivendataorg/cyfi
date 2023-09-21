@@ -47,11 +47,11 @@ def test_evaluate_preds_missing_density(train_data, tmp_path):
         )
 
 
-def test_calculate_feature_importances(experiment_config, ensembled_model_path, tmp_path):
+def test_calculate_feature_importances(experiment_config, local_model_path, tmp_path):
     ep = EvaluatePreds(
         y_true_csv=experiment_config.predict_csv,
         y_pred_csv=experiment_config.save_dir / "preds.csv",
-        model_path=ensembled_model_path,
+        model_path=local_model_path,
         save_dir=tmp_path / "metrics",
     )
     ep.calculate_feature_importances()

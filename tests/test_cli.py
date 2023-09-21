@@ -11,7 +11,7 @@ ASSETS_DIR = Path(__file__).parent / "assets"
 runner = CliRunner()
 
 
-def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_path):
+def test_cli_predict(tmp_path, predict_data_path, predict_data, local_model_path):
     ## Run CLI command
     result = runner.invoke(
         app,
@@ -19,7 +19,7 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_
             "predict",
             str(predict_data_path),
             "--model-path",
-            str(ensembled_model_path),
+            str(local_model_path),
             "--output-directory",
             str(tmp_path),
             "--keep-features",
@@ -43,14 +43,14 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, ensembled_model_
     assert "INFO" not in result.stdout
 
 
-def test_cli_predict_samples_path(tmp_path, ensembled_model_path):
+def test_cli_predict_samples_path(tmp_path, local_model_path):
     ## Errors when samples_path is not provided
     result = runner.invoke(
         app,
         [
             "predict",
             "--model-path",
-            str(ensembled_model_path),
+            str(local_model_path),
             "--output-directory",
             str(tmp_path),
             "--overwrite",
@@ -75,7 +75,7 @@ def test_cli_predict_samples_path(tmp_path, ensembled_model_path):
     assert "does not exist" in result.stdout
 
 
-def test_cli_no_overwrite(tmp_path, train_data, train_data_path, ensembled_model_path):
+def test_cli_no_overwrite(tmp_path, train_data, train_data_path, local_model_path):
     # Check that existing files aren't overwritten without the --overwrite flag
     train_data.to_csv(tmp_path / "preds.csv")
 
@@ -85,7 +85,7 @@ def test_cli_no_overwrite(tmp_path, train_data, train_data_path, ensembled_model
             "predict",
             str(train_data_path),
             "--model-path",
-            str(ensembled_model_path),
+            str(local_model_path),
             "--output-directory",
             str(tmp_path),
             "--keep-features",
@@ -96,7 +96,7 @@ def test_cli_no_overwrite(tmp_path, train_data, train_data_path, ensembled_model
     assert "overwrite" in result.exception.args[0]
 
 
-def test_cli_predict_verbosity(tmp_path, predict_data_path, ensembled_model_path):
+def test_cli_predict_verbosity(tmp_path, predict_data_path, local_model_path):
     ## Check that log level increases when specified
     result = runner.invoke(
         app,
@@ -104,7 +104,7 @@ def test_cli_predict_verbosity(tmp_path, predict_data_path, ensembled_model_path
             "predict",
             str(predict_data_path),
             "--model-path",
-            str(ensembled_model_path),
+            str(local_model_path),
             "--output-directory",
             str(tmp_path),
             "--overwrite",
@@ -130,7 +130,7 @@ def pipeline_predict_mock(self, predict_csv, preds_path=None):
 
 
 def test_cli_predict_point(mocker):  # noqa: F811
-    mocker.patch("cyfi.cli.CyanoModelPipeline.run_prediction", pipeline_predict_mock)
+    mocker.patch("cyfi.cli.CyFiPipeline.run_prediction", pipeline_predict_mock)
 
     result = runner.invoke(
         app,
