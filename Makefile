@@ -3,7 +3,7 @@
 #################################################################################
 
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-PROJECT_NAME = cyanobacteria-prediction
+PROJECT_NAME = cy-fi
 PYTHON_VERSION = 3.10
 PYTHON_INTERPRETER = python
 
@@ -30,12 +30,12 @@ requirements:
 
 ## Format using black
 format:
-	black cyano tests
+	black cyfi tests
 
 ## Lint using flake8 + black
 lint:
-	flake8 cyano tests
-	black --check cyano tests
+	flake8 cyfi tests
+	black --check cyfi tests
 
 ## Run tests
 test: clean lint
@@ -43,12 +43,8 @@ test: clean lint
 
 ## Make assets
 assets:
-	python cyano/experiment.py tests/assets/experiment_config.yaml
+	python cyfi/experiment.py tests/assets/experiment_config.yaml
 
-## Sync experiments
-sync_experiments_to_s3:
-	aws s3 sync --exclude *.DS_Store experiments/results/ s3://drivendata-competition-nasa-cyanobacteria/experiments/results/
-	
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################

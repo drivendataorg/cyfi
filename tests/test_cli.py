@@ -3,8 +3,8 @@ from pathlib import Path
 from pytest_mock import mocker  # noqa: F401
 from typer.testing import CliRunner
 
-from cyano.cli import app
-from cyano.data.utils import add_unique_identifier
+from cyfi.cli import app
+from cyfi.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
@@ -130,7 +130,7 @@ def pipeline_predict_mock(self, predict_csv, preds_path=None):
 
 
 def test_cli_predict_point(mocker):  # noqa: F811
-    mocker.patch("cyano.cli.CyanoModelPipeline.run_prediction", pipeline_predict_mock)
+    mocker.patch("cyfi.cli.CyanoModelPipeline.run_prediction", pipeline_predict_mock)
 
     result = runner.invoke(
         app,

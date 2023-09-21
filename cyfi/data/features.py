@@ -13,7 +13,7 @@ from tqdm.contrib.concurrent import process_map
 import xarray as xr
 
 
-from cyano.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
+from cyfi.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
 
 
 def calculate_satellite_features(
@@ -127,7 +127,7 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
 
     # Pull in land cover classification from CDRP
     if "land_cover" in config.sample_meta_features:
-        lc_cache_dir = Path(appdirs.user_cache_dir()) / "cyano"
+        lc_cache_dir = Path(appdirs.user_cache_dir()) / "cyfi"
         lc_cache_dir.mkdir(exist_ok=True)
         land_cover_map_filepath = lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
 

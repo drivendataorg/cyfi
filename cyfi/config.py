@@ -218,7 +218,7 @@ class LGBParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class CyanoModelConfig(BaseModel):
+class CyFiModelConfig(BaseModel):
     """Model configuration
 
     Args:

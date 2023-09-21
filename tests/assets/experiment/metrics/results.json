@@ -16,26 +16,26 @@
                 "precision": 0.0,
                 "recall": 0.0,
                 "f1-score": 0.0,
-                "support": 3.0
+                "support": 3
             },
             "moderate": {
                 "precision": 0.25,
                 "recall": 1.0,
                 "f1-score": 0.4,
-                "support": 1.0
+                "support": 1
             },
             "accuracy": 0.25,
             "macro avg": {
                 "precision": 0.125,
                 "recall": 0.5,
                 "f1-score": 0.2,
-                "support": 4.0
+                "support": 4
             },
             "weighted avg": {
                 "precision": 0.0625,
                 "recall": 0.25,
                 "f1-score": 0.1,
-                "support": 4.0
+                "support": 4
             }
         }
     },
@@ -44,10 +44,10 @@
         "percent": 0.2
     },
     "log_density": {
-        "overall_r_squared": -1.74214860415861,
+        "overall_r_squared": -1.7421486041586092,
         "regional_r_squared": {
-            "northeast": -2.095164296715266,
-            "south": -2.030146701104201
+            "northeast": -2.0951642967152644,
+            "south": -2.0301467011041994
         }
     }
 }

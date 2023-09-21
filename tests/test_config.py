@@ -2,7 +2,7 @@ from pydantic import ValidationError
 import pytest
 
 
-from cyano.config import LGBParams, FeaturesConfig, CyanoModelConfig
+from cyfi.config import LGBParams, FeaturesConfig, CyFiModelConfig
 
 
 def test_lgbparams():
@@ -67,18 +67,18 @@ def test_features_config_cache_path(features_config):
     assert config1.get_cached_path() != config4.get_cached_path()
 
 
-def test_cyano_model_config():
-    config = CyanoModelConfig()
+def test_cyfi_model_config():
+    config = CyFiModelConfig()
     assert config.n_folds == 5
     assert isinstance(config.params, LGBParams)
 
-    config = CyanoModelConfig(n_folds="1")
+    config = CyFiModelConfig(n_folds="1")
     assert config.n_folds == 1
 
     # Errors with unrecognized target col
     with pytest.raises(ValueError):
-        CyanoModelConfig(target_col="surprise_target_col")
+        CyFiModelConfig(target_col="surprise_target_col")
 
     # Errors with extra field
     with pytest.raises(ValidationError):
-        CyanoModelConfig(extra_field="surprise_extra_field")
+        CyFiModelConfig(extra_field="surprise_extra_field")

@@ -1,6 +1,6 @@
 import numpy as np
 
-from cyano.data.utils import (
+from cyfi.data.utils import (
     add_unique_identifier,
     convert_density_to_log_density,
     convert_log_density_to_density,

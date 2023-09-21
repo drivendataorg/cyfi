@@ -16,7 +16,7 @@ from sklearn.metrics import (
 )
 from zipfile import ZipFile
 
-from cyano.data.utils import (
+from cyfi.data.utils import (
     add_unique_identifier,
     convert_density_to_log_density,
     convert_density_to_severity,

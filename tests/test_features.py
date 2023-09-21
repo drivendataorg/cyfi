@@ -5,10 +5,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from cyano.config import FeaturesConfig
-from cyano.data.features import generate_all_features, calculate_metadata_features
-from cyano.data.satellite_data import download_satellite_data, generate_candidate_metadata
-from cyano.data.utils import add_unique_identifier
+from cyfi.config import FeaturesConfig
+from cyfi.data.features import generate_all_features, calculate_metadata_features
+from cyfi.data.satellite_data import download_satellite_data, generate_candidate_metadata
+from cyfi.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 

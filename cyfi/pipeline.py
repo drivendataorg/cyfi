@@ -9,10 +9,10 @@ from loguru import logger
 import pandas as pd
 from sklearn.model_selection import StratifiedGroupKFold
 
-from cyano.config import FeaturesConfig, CyanoModelConfig
-from cyano.data.features import generate_all_features
-from cyano.data.satellite_data import identify_satellite_data, download_satellite_data
-from cyano.data.utils import (
+from cyfi.config import FeaturesConfig, CyFiModelConfig
+from cyfi.data.features import generate_all_features
+from cyfi.data.satellite_data import identify_satellite_data, download_satellite_data
+from cyfi.data.utils import (
     add_unique_identifier,
     convert_density_to_severity,
     convert_density_to_log_density,
@@ -24,7 +24,7 @@ class CyanoModelPipeline:
     def __init__(
         self,
         features_config: FeaturesConfig = FeaturesConfig(),
-        cyano_model_config: CyanoModelConfig = CyanoModelConfig(),
+        cyfi_model_config: CyFiModelConfig = CyFiModelConfig(),
         cache_dir: Optional[Path] = None,
         models: Optional[List[lgb.Booster]] = None,
     ):
@@ -32,13 +32,13 @@ class CyanoModelPipeline:
 
         Args:
             features_config (FeaturesConfig): Features configuration
-            cyano_model_config (Optional[CyanoModelConfig], optional): Model
+            cyfi_model_config (Optional[CyFiModelConfig], optional): Model
                 training configuration. Defaults to None.
             cache_dir (Optional[Path], optional): Cache directory. Defaults to None.
             model (Optional[lgb.Booster], optional): Trained LGB model. Defaults to None.
         """
         self.features_config = features_config
-        self.cyano_model_config = cyano_model_config
+        self.cyfi_model_config = cyfi_model_config
         self.models = models
 
         # Determine cache dir based on feature config hash
@@ -50,7 +50,7 @@ class CyanoModelPipeline:
 
         self.samples = None
         self.labels = None
-        self.target_col = cyano_model_config.target_col
+        self.target_col = cyfi_model_config.target_col
 
     def _prep_train_data(self, data, debug: bool):
         """Load labels and save out sample points with UIDs"""
@@ -124,16 +124,16 @@ class CyanoModelPipeline:
 
     def _train_model_without_folds(self):
         # Set early stopping to None since we have no validation set
-        self.cyano_model_config.params.early_stopping_round = None
+        self.cyfi_model_config.params.early_stopping_round = None
 
         lgb_data = lgb.Dataset(
             self.train_features, label=self.train_labels.loc[self.train_features.index]
         )
         self.models = [
             lgb.train(
-                self.cyano_model_config.params.model_dump(),
+                self.cyfi_model_config.params.model_dump(),
                 lgb_data,
-                num_boost_round=self.cyano_model_config.num_boost_round,
+                num_boost_round=self.cyfi_model_config.num_boost_round,
                 callbacks=[lgb.log_evaluation(period=0)],  # do not log evaluation to console
             )
         ]
@@ -141,7 +141,7 @@ class CyanoModelPipeline:
     def _train_model_with_folds(self):
         train_features = self.train_features.copy().reset_index(drop=False)
         kf = StratifiedGroupKFold(
-            n_splits=self.cyano_model_config.n_folds,
+            n_splits=self.cyfi_model_config.n_folds,
             shuffle=True,
             random_state=40,
         )
@@ -168,11 +168,11 @@ class CyanoModelPipeline:
             )
 
             trained_model = lgb.train(
-                self.cyano_model_config.params.model_dump(),
+                self.cyfi_model_config.params.model_dump(),
                 lgb_train_data,
                 valid_sets=[lgb_valid_data],
                 valid_names=["valid"],
-                num_boost_round=self.cyano_model_config.num_boost_round,
+                num_boost_round=self.cyfi_model_config.num_boost_round,
                 callbacks=[lgb.log_evaluation(period=0)],  # do not log evaluation to console
             )
             trained_models.append(trained_model)
@@ -181,30 +181,30 @@ class CyanoModelPipeline:
 
     def _validate_training_with_folds(self):
         """Determine whether a model will be trained with folds. Returns True if training with folds has been specified and is supported."""
-        if self.cyano_model_config.n_folds == 1:
+        if self.cyfi_model_config.n_folds == 1:
             return False
 
         # Training with folds requires region, check if region has been provided
         elif "region" not in self.train_samples:
             logger.debug(
-                f"Ignoring n_folds = {self.cyano_model_config.n_folds} and training without folds because `region` is not in the labels dataframe."
+                f"Ignoring n_folds = {self.cyfi_model_config.n_folds} and training without folds because `region` is not in the labels dataframe."
             )
             return False
 
         # Check if there are not enough samples
-        elif self.train_features.index.nunique() <= self.cyano_model_config.n_folds:
+        elif self.train_features.index.nunique() <= self.cyfi_model_config.n_folds:
             logger.debug(
-                f"Ignoring n_folds = {self.cyano_model_config.n_folds} and training without folds because there are not enough sample points."
+                f"Ignoring n_folds = {self.cyfi_model_config.n_folds} and training without folds because there are not enough sample points."
             )
             return False
 
         # Check if any reion has fewer samples than the number of folds
         elif (
             self.train_samples.loc[self.train_features.index].region.value_counts().min()
-            < self.cyano_model_config.n_folds
+            < self.cyfi_model_config.n_folds
         ):
             logger.debug(
-                f"Ignoring n_folds = {self.cyano_model_config.n_folds} and training without folds because at least one region has fewer than n_folds sample points."
+                f"Ignoring n_folds = {self.cyfi_model_config.n_folds} and training without folds because at least one region has fewer than n_folds sample points."
             )
             return False
 
@@ -216,7 +216,7 @@ class CyanoModelPipeline:
 
         if train_with_folds:
             # Train with folds, distributing regions evenly between folds
-            logger.info(f"Training LGB model with {self.cyano_model_config.n_folds} folds")
+            logger.info(f"Training LGB model with {self.cyfi_model_config.n_folds} folds")
             self._train_model_with_folds()
         else:
             logger.info("Training single LGB model")
@@ -230,7 +230,7 @@ class CyanoModelPipeline:
         logger.info(f"Saving model to {save_path}")
         with ZipFile(save_path, "w") as z:
             z.writestr("features_config.yaml", yaml.dump(self.features_config.model_dump()))
-            z.writestr("cyano_model_config.yaml", yaml.dump(self.cyano_model_config.model_dump()))
+            z.writestr("cyfi_model_config.yaml", yaml.dump(self.cyfi_model_config.model_dump()))
             for idx, model in enumerate(self.models):
                 z.writestr(f"lgb_model_{idx}.txt", model.model_to_string())
 
@@ -244,8 +244,8 @@ class CyanoModelPipeline:
     def from_disk(cls, filepath, cache_dir=None):
         archive = ZipFile(filepath, "r")
         features_config = FeaturesConfig(**yaml.safe_load(archive.read("features_config.yaml")))
-        cyano_model_config = CyanoModelConfig(
-            **yaml.safe_load(archive.read("cyano_model_config.yaml"))
+        cyfi_model_config = CyFiModelConfig(
+            **yaml.safe_load(archive.read("cyfi_model_config.yaml"))
         )
         # Determine the number of ensembled models
         model_files = [name for name in archive.namelist() if "lgb_model" in name]
@@ -255,7 +255,7 @@ class CyanoModelPipeline:
 
         return cls(
             features_config=features_config,
-            cyano_model_config=cyano_model_config,
+            cyfi_model_config=cyfi_model_config,
             models=models,
             cache_dir=cache_dir,
         )

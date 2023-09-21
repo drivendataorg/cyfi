@@ -6,8 +6,8 @@ import pandas as pd
 from pathlib import Path
 import typer
 
-from cyano.pipeline import CyanoModelPipeline
-from cyano.evaluate import EvaluatePreds
+from cyfi.pipeline import CyanoModelPipeline
+from cyfi.evaluate import EvaluatePreds
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 

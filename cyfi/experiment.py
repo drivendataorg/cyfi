@@ -11,9 +11,9 @@ import pandas as pd
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 import typer
 
-from cyano.config import FeaturesConfig, CyanoModelConfig
-from cyano.pipeline import CyanoModelPipeline
-from cyano.evaluate import EvaluatePreds
+from cyfi.config import FeaturesConfig, CyFiModelConfig
+from cyfi.pipeline import CyanoModelPipeline
+from cyfi.evaluate import EvaluatePreds
 
 REPO_ROOT = Path(__file__).parents[1].resolve()
 
@@ -36,7 +36,7 @@ class ExperimentConfig(BaseModel):
             columns for date, latitude, longitude, and severity.
         features_config (FeaturesConfig, optional): Features configuration. Defaults to
             FeaturesConfig().
-        cyano_model_config (CyanoModelConfig, optional): Model configuration. Defaults to CyanoModelConfig().
+        cyfi_model_config (CyFiModelConfig, optional): Model configuration. Defaults to CyFiModelConfig().
         cache_dir (Path, optional): Cache directory. Defaults to None.
         save_dir (Path, optional): Directory to save experiment results. Defaults to
             Path.cwd().
@@ -48,7 +48,7 @@ class ExperimentConfig(BaseModel):
     train_csv: Union[str, Path]
     predict_csv: Union[str, Path]
     features_config: FeaturesConfig = FeaturesConfig()
-    cyano_model_config: CyanoModelConfig = CyanoModelConfig()
+    cyfi_model_config: CyFiModelConfig = CyFiModelConfig()
     cache_dir: Path = None
     save_dir: Path = Path.cwd()
     last_commit_hash: str = None
@@ -74,7 +74,7 @@ class ExperimentConfig(BaseModel):
     def run_experiment(self):
         pipeline = CyanoModelPipeline(
             features_config=self.features_config,
-            cyano_model_config=self.cyano_model_config,
+            cyfi_model_config=self.cyfi_model_config,
             cache_dir=self.cache_dir,
         )
         pipeline.run_training(

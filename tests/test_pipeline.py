@@ -2,8 +2,8 @@ import pandas as pd
 from pathlib import Path
 from zipfile import ZipFile
 
-from cyano.config import FeaturesConfig, CyanoModelConfig
-from cyano.pipeline import CyanoModelPipeline
+from cyfi.config import FeaturesConfig, CyFiModelConfig
+from cyfi.pipeline import CyanoModelPipeline
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
@@ -23,20 +23,20 @@ def test_prep_predict_data(predict_data, tmp_path):
 def test_cache_dir(features_config):
     pipe = CyanoModelPipeline(
         features_config=FeaturesConfig(image_feature_meter_window=200),
-        cyano_model_config=CyanoModelConfig(num_boost_round=1000, target_col="log_density"),
+        cyfi_model_config=CyFiModelConfig(num_boost_round=1000, target_col="log_density"),
     )
 
     # Pipeline with same features config should cache to the same place
     same_features_pipe = CyanoModelPipeline(
         features_config=FeaturesConfig(image_feature_meter_window=200),
-        cyano_model_config=CyanoModelConfig(num_boost_round=2000, target_col="severity"),
+        cyfi_model_config=CyFiModelConfig(num_boost_round=2000, target_col="severity"),
     )
     assert pipe.cache_dir == same_features_pipe.cache_dir
 
     # Pipeline with different features config should cache to a different place
     different_features_pipe = CyanoModelPipeline(
         features_config=FeaturesConfig(image_feature_meter_window=500),
-        cyano_model_config=CyanoModelConfig(num_boost_round=1000, target_col="log_density"),
+        cyfi_model_config=CyFiModelConfig(num_boost_round=1000, target_col="log_density"),
     )
     assert pipe.cache_dir != different_features_pipe.cache_dir
 
@@ -45,7 +45,7 @@ def test_cache_dir(features_config):
     pipe_with_cache = CyanoModelPipeline(
         cache_dir=cache_dir,
         features_config=features_config,
-        cyano_model_config=CyanoModelConfig(num_boost_round=1000, target_col="log_density"),
+        cyfi_model_config=CyFiModelConfig(num_boost_round=1000, target_col="log_density"),
     )
     assert cache_dir == pipe_with_cache.cache_dir.parent
     assert (cache_dir / features_config.get_cached_path()) == pipe_with_cache.cache_dir
@@ -59,7 +59,7 @@ def test_train_model_with_folds(
     n_folds = 2
     pipeline = CyanoModelPipeline(
         features_config=features_config,
-        cyano_model_config=CyanoModelConfig(n_folds=n_folds),
+        cyfi_model_config=CyFiModelConfig(n_folds=n_folds),
     )
     pipeline._prep_train_data(evaluate_data_path, debug=False)
     pipeline.train_features = evaluate_data_features
@@ -79,7 +79,7 @@ def test_train_model_no_region(
 ):
     # Test that folds are not used when n_folds > 1 but region is missing
     pipeline = CyanoModelPipeline(
-        features_config=features_config, cyano_model_config=CyanoModelConfig(n_folds=2)
+        features_config=features_config, cyfi_model_config=CyFiModelConfig(n_folds=2)
     )
     pipeline._prep_train_data(evaluate_data_path, debug=False)
     pipeline.train_features = evaluate_data_features
@@ -100,7 +100,7 @@ def test_train_model_insufficient_samples(
 ):
     # Test that folds are not used when n_folds > 1 but there are insufficient samples
     pipeline = CyanoModelPipeline(
-        features_config=features_config, cyano_model_config=CyanoModelConfig(n_folds=6)
+        features_config=features_config, cyfi_model_config=CyFiModelConfig(n_folds=6)
     )
     pipeline._prep_train_data(evaluate_data_path, debug=False)
     pipeline.train_features = evaluate_data_features

@@ -1,5 +1,5 @@
 cache_dir: None
-cyano_model_config:
+cyfi_model_config:
   n_folds: 1
   num_boost_round: 100
   params:
@@ -29,7 +29,7 @@ features_config:
   - days_before_sample
   use_sentinel_bands:
   - B02
-last_commit_hash: 339f38b07b0f4f46c7cb95eb373c27e249c04e3a
+last_commit_hash: 13d8fb38f63992d286baea36846672d20feba599
 predict_csv: tests/assets/evaluate_data.csv
 save_dir: tests/assets/experiment
 train_csv: tests/assets/train_data.csv

@@ -15,7 +15,7 @@ import rioxarray
 from tqdm.contrib.concurrent import process_map
 from urllib3 import Retry
 
-from cyano.config import FeaturesConfig
+from cyfi.config import FeaturesConfig
 
 
 retry = Retry(total=20, backoff_factor=1, status_forcelist=[502, 503, 504], allowed_methods=None)
