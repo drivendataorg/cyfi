@@ -168,9 +168,9 @@ def test_cli_predict_point(mocker):  # noqa: F811
     assert "Cannot predict on a date that is in the future" in result.exception.__str__()
 
 
-def test_cli_predict_point_crs(mocker, ensembled_model_path, tmp_path):  # noqa: F811
+def test_cli_predict_point_crs(mocker, local_model_path, tmp_path):  # noqa: F811
     # Test specifying a point in a different CRS
-    mocker.patch("cyano.cli.DEFAULT_MODEL_PATH", ensembled_model_path)
+    mocker.patch("cyfi.cli.DEFAULT_MODEL_PATH", local_model_path)
 
     (lat, lon, date) = (37.7, -122.4, "2022-09-01")
 
@@ -179,7 +179,7 @@ def test_cli_predict_point_crs(mocker, ensembled_model_path, tmp_path):  # noqa:
     samples_path = tmp_path / "samples.csv"
     samples.to_csv(samples_path, index=False)
 
-    pipeline = CyanoModelPipeline.from_disk(ensembled_model_path)
+    pipeline = CyFiPipeline.from_disk(local_model_path)
     pipeline.run_prediction(tmp_path / "samples.csv")
     expected_density = pipeline.output_df["density_cells_per_ml"].iloc[0]
 
