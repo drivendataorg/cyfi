@@ -4,6 +4,7 @@ import tempfile
 from loguru import logger
 import pandas as pd
 from pathlib import Path
+from pyproj import Transformer
 import typer
 
 from cyfi.pipeline import CyFiPipeline
@@ -98,6 +99,10 @@ def predict_point(
         "-dt",
         help="Date formatted as YYYY-MM-DD, e.g. 2023-09-20. If no date is specified, today's date will be used.",
     ),
+    crs: str = typer.Option(
+        "EPSG:4326",
+        help="Coordinate reference system of the provided latitude and longitude.",
+    ),
     verbose: int = verbose_option,
 ):
     """Estimate cyanobacteria density for a single location on a given date"""
@@ -109,12 +114,22 @@ def predict_point(
     elif pd.to_datetime(date) > pd.to_datetime("today"):
         raise ValueError("Cannot predict on a date that is in the future.")
 
+    # convert CRS to EPSG:4326 if needed
+    if crs not in ["EPSG:4326", "4326", "epsg:4326"]:
+        transformer = Transformer.from_crs(crs_from=crs, crs_to="EPSG:4326")
+        (latitude, longitude) = transformer.transform(latitude, longitude)
+
     samples = pd.DataFrame({"date": [date], "latitude": [latitude], "longitude": [longitude]})
     samples_path = Path(tempfile.gettempdir()) / "samples.csv"
     samples.to_csv(samples_path, index=False)
 
     pipeline = CyFiPipeline.from_disk(DEFAULT_MODEL_PATH)
     pipeline.run_prediction(samples_path, preds_path=None)
+    # If other CRS specified, clarify CRS of returned point
+    if crs not in ["EPSG:4326", "4326", "epsg:4326"]:
+        pipeline.output_df = pipeline.output_df.rename(
+            columns={"latitude": "latitude_epsg4326", "longitude": "longitude_epsg4326"}
+        )
 
     # format as integer with comma for console
     pipeline.output_df["density_cells_per_ml"] = pipeline.output_df.density_cells_per_ml.map(
