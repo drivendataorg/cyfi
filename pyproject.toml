@@ -17,6 +17,29 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 requires-python = ">=3.10"
+dependencies = [
+  "appdirs",
+  "cloudpathlib[s3]>=0.4.1",
+  "geopandas",
+  "geopy",
+  "GitPython",
+  "loguru",
+  "matplotlib",
+  "numpy",
+  "odc-stac",
+  "pandas",
+  "pathlib",
+  "planetary-computer",
+  "pydantic",
+  "pystac",
+  "pystac-client",
+  "scikit-learn",
+  "seaborn",
+  "repro-zipfile",
+  "rioxarray",
+  "tqdm",
+  "typer",
+]
 
 [tool.black]
 line-length = 99

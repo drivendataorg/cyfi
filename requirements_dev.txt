@@ -1,29 +1,8 @@
 -e .
 
-appdirs
 black
-cloudpathlib[s3]>=0.4.1
 flake8
-geopandas
-geopy
-GitPython
 jupyter
-loguru
-matplotlib
-numpy
-odc-stac
-pandas
-pathlib
-planetary-computer
-pydantic
-pystac
-pystac-client
 pytest
 pytest-cov
 pytest_mock
-scikit-learn
-seaborn
-repro-zipfile
-rioxarray
-tqdm
-typer
