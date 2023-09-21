@@ -1,10 +1,15 @@
+import math
+
 import pandas as pd
 from pathlib import Path
+from pyproj import Transformer
 from pytest_mock import mocker  # noqa: F401
 from typer.testing import CliRunner
 
 from cyfi.cli import app
 from cyfi.data.utils import add_unique_identifier
+from cyfi.pipeline import CyFiPipeline
+
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
@@ -161,6 +166,46 @@ def test_cli_predict_point(mocker):  # noqa: F811
     )
     assert result.exit_code == 1
     assert "Cannot predict on a date that is in the future" in result.exception.__str__()
+
+
+def test_cli_predict_point_crs(mocker, ensembled_model_path, tmp_path):  # noqa: F811
+    # Test specifying a point in a different CRS
+    mocker.patch("cyano.cli.DEFAULT_MODEL_PATH", ensembled_model_path)
+
+    (lat, lon, date) = (37.7, -122.4, "2022-09-01")
+
+    # Get expected prediction value
+    samples = pd.DataFrame({"date": [date], "latitude": [lat], "longitude": [lon]})
+    samples_path = tmp_path / "samples.csv"
+    samples.to_csv(samples_path, index=False)
+
+    pipeline = CyanoModelPipeline.from_disk(ensembled_model_path)
+    pipeline.run_prediction(tmp_path / "samples.csv")
+    expected_density = pipeline.output_df["density_cells_per_ml"].iloc[0]
+
+    # Run CLI with different CRS
+    use_crs = "EPSG:3857"
+    transformer = Transformer.from_crs("EPSG:4326", use_crs)
+    (new_lat, new_lon) = transformer.transform(lat, lon)
+
+    result = runner.invoke(
+        app,
+        [
+            "predict-point",
+            "-dt",
+            date,
+            "-lat",
+            str(new_lat),
+            "-lon",
+            str(new_lon),
+            "--crs",
+            use_crs,
+        ],
+    )
+    assert result.exit_code == 0
+    assert f"{expected_density:,.0f}" in result.stdout
+    assert str(math.trunc(new_lat)) in result.stdout
+    assert str(math.trunc(new_lon)) in result.stdout
 
 
 def test_cli_evaluate(tmp_path, evaluate_data_path):
