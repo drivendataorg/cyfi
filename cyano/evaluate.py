@@ -12,7 +12,6 @@ from sklearn.metrics import (
     classification_report,
     mean_absolute_error,
     mean_squared_error,
-    mean_absolute_percentage_error,
     r2_score,
 )
 from zipfile import ZipFile
@@ -45,7 +44,7 @@ def generate_and_plot_severity_crosstab(y_true, y_pred, normalize=False):
             to_plot[level] = 0
 
     # reverse index order for plotting
-    to_plot = to_plot.loc[SEVERITY_LEVEL_NAMES[::-1]]
+    to_plot = to_plot.loc[SEVERITY_LEVEL_NAMES[::-1], SEVERITY_LEVEL_NAMES]
     fmt = ",.0f"
 
     if normalize:
@@ -120,7 +119,8 @@ def generate_density_kdeplot(y_true, y_pred):
 
     _, ax = plt.subplots(figsize=FIGSIZE)
     fig = sns.kdeplot(
-        data=to_plot,
+        # add 1 so we can do log scale if there are zero values
+        data=to_plot + 1,
         y="y_pred",
         x="y_true",
         warn_singular=False,
@@ -230,7 +230,6 @@ class EvaluatePreds:
 
         results = dict()
         results["overall_r_squared"] = r2_score(y_true, y_pred)
-        results["overall_mape"] = mean_absolute_percentage_error(y_true, y_pred)
 
         if region is not None:
             df = pd.concat([y_true, y_pred, region], axis=1)

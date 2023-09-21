@@ -87,7 +87,6 @@ def test_calculate_all_and_save(experiment_config, tmp_path):
     ]
     assert list(results["log_density"].keys()) == [
         "overall_r_squared",
-        "overall_mape",
         "regional_r_squared",
     ]
 

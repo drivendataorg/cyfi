@@ -96,11 +96,15 @@ def _calculate_satellite_features_for_sample_item(
             raise FileNotFoundError(
                 f"Band {band} is missing from pystac item directory {sample_item_dir}"
             )
-        band_arrays[band] = np.load(sample_item_dir / f"{band}.npy")
+        arr = np.load(sample_item_dir / f"{band}.npy")
+        # set no data value to be nan
+        band_arrays[band] = np.where(arr == 0, np.nan, arr)
 
     # Iterate over features to generate
     sample_item_features = {"sample_id": sample_id, "item_id": item_id}
+
     for feature in config.satellite_image_features:
+        # note: features will be nan if any pixel in bounding box is nan
         sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
 
     return sample_item_features
@@ -200,6 +204,13 @@ def generate_all_features(
     # Generate satellite features
     # May be >1 row per sample, only includes samples with imagery
     satellite_features = calculate_satellite_features(satellite_meta, config, cache_dir)
+
+    # drop rows where bounding box contained any no data pixels
+    logger.info(
+        f"Dropping {satellite_features.isna().any(axis=1).sum()} row(s) where satellite images have a bounding box with missing data."
+    )
+    satellite_features = satellite_features.dropna()
+
     ct_with_satellite = satellite_features.index.nunique()
     if ct_with_satellite < samples.shape[0]:
         logger.warning(

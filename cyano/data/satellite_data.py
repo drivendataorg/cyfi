@@ -10,14 +10,21 @@ import pandas as pd
 from pathlib import Path
 import planetary_computer as pc
 from pystac_client import Client, ItemSearch
+from pystac_client.stac_api_io import StacApiIO
 import rioxarray
 from tqdm.contrib.concurrent import process_map
+from urllib3 import Retry
 
 from cyano.config import FeaturesConfig
 
+
+retry = Retry(total=20, backoff_factor=1, status_forcelist=[502, 503, 504], allowed_methods=None)
+
 # Establish a connection to the STAC API
 catalog = Client.open(
-    "https://planetarycomputer.microsoft.com/api/stac/v1", modifier=pc.sign_inplace
+    "https://planetarycomputer.microsoft.com/api/stac/v1",
+    modifier=pc.sign_inplace,
+    stac_io=StacApiIO(max_retries=retry),
 )
 
 # Define new logger level to track progress
