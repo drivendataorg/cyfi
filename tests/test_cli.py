@@ -1,5 +1,3 @@
-import math
-
 import pandas as pd
 from pathlib import Path
 from pyproj import Transformer
@@ -8,7 +6,6 @@ from typer.testing import CliRunner
 
 from cyfi.cli import app
 from cyfi.data.utils import add_unique_identifier
-from cyfi.pipeline import CyFiPipeline
 
 
 ASSETS_DIR = Path(__file__).parent / "assets"
@@ -168,17 +165,20 @@ def test_cli_predict_point(mocker):  # noqa: F811
     assert "Cannot predict on a date that is in the future" in result.exception.__str__()
 
 
-def test_cli_predict_point_crs(mocker):  # noqa: F811
-    mocker.patch("cyfi.cli.CyFiPipeline.run_prediction", pipeline_predict_mock)
+def test_cli_predict_point_crs(mocker, local_model_path):  # noqa: F811
+    mocker.patch("cyfi.cli.DEFAULT_MODEL_PATH", local_model_path)
+
+    transformer = Transformer.from_crs(crs_from="EPSG:4326", crs_to="EPSG:3857")
+    lat, lon = transformer.transform(36.05, -76.7)
 
     inputs = [
         "predict-point",
         "-dt",
         "2023-01-01",
         "--lat",
-        "36.05",
+        lat,
         "--lon",
-        "-76.7",
+        lon,
     ]
     # try predicting in a different CRS
     result = runner.invoke(
@@ -186,8 +186,9 @@ def test_cli_predict_point_crs(mocker):  # noqa: F811
         inputs + ["--crs", "EPSG:3857"],
     )
     assert result.exit_code == 0
+
     # check original location printed out
-    assert "36.0" in result.stdout
+    assert str(round(lat, 2)) in result.stdout
 
     # try predicting with invalid CRS
     result = runner.invoke(

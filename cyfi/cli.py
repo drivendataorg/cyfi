@@ -121,7 +121,7 @@ def predict_point(
         raise ValueError("Cannot predict on a date that is in the future.")
 
     transformer = Transformer.from_crs(crs_from=crs.value, crs_to="EPSG:4326")
-    (converted_latitude, converted_longitude) = transformer.transform(latitude, longitude)
+    converted_latitude, converted_longitude = transformer.transform(latitude, longitude)
 
     samples = pd.DataFrame(
         {"date": [date], "latitude": [converted_latitude], "longitude": [converted_longitude]}
