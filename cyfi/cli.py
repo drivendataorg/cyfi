@@ -47,7 +47,7 @@ verbose_option = typer.Option(
 def predict(
     samples_path: Path = typer.Argument(
         exists=True,
-        help="Path to a csv of sample points with columns for date, longitude, and latitude. Latitude and longitude must be in coordinate reference system WSG-84 (EPSG:4326)",
+        help="Path to a csv of sample points with columns for date, longitude, and latitude. Latitude and longitude must be in coordinate reference system WGS-84 (EPSG:4326)",
     ),
     model_path: Path = typer.Option(
         default=None,
@@ -147,7 +147,7 @@ def predict_point(
 def evaluate(
     y_pred_csv: Path = typer.Argument(
         exists=True,
-        help="Path to a csv of sample points with columns for date, longitude, latitude, and predicted density. Latitude and longitude must be in coordinate reference system WSG-84 (EPSG:4326)",
+        help="Path to a csv of sample points with columns for date, longitude, latitude, and predicted density. Latitude and longitude must be in coordinate reference system WGS-84 (EPSG:4326)",
     ),
     y_true_csv: Path = typer.Argument(
         exists=True,
