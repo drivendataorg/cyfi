@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 import pytest
 
-from cyano.data.utils import add_unique_identifier
-from cyano.evaluate import EvaluatePreds
+from cyfi.data.utils import add_unique_identifier
+from cyfi.evaluate import EvaluatePreds
 
 
 ASSETS_DIR = Path(__file__).parent / "assets"
@@ -27,7 +27,7 @@ def test_evaluate_preds(experiment_config, tmp_path):
     # y_true and y_pred dfs should have four observations
     assert len(ep.y_pred_df) == 4
 
-    assert experiment_config.cyano_model_config.target_col == "log_density"
+    assert experiment_config.cyfi_model_config.target_col == "log_density"
     # check we have density_cells_per_ml and severity (which are always predicted)
     for col in ["density_cells_per_ml", "severity"]:
         assert (col in ep.y_true_df.columns) & (col in ep.y_pred_df.columns)
@@ -47,11 +47,11 @@ def test_evaluate_preds_missing_density(train_data, tmp_path):
         )
 
 
-def test_calculate_feature_importances(experiment_config, ensembled_model_path, tmp_path):
+def test_calculate_feature_importances(experiment_config, local_model_path, tmp_path):
     ep = EvaluatePreds(
         y_true_csv=experiment_config.predict_csv,
         y_pred_csv=experiment_config.save_dir / "preds.csv",
-        model_path=ensembled_model_path,
+        model_path=local_model_path,
         save_dir=tmp_path / "metrics",
     )
     ep.calculate_feature_importances()

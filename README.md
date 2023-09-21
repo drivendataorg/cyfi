@@ -1,7 +1,9 @@
-cyanobacteria-prediction
+CyFi
 ==============================
 
-Predict cyanobacteria density based on satellite imagery.
+Cyan Finder
+
+> Estimate cyanobacteria density based on satellite imagery.
 
 
 ### Experiment module
@@ -9,7 +11,7 @@ Predict cyanobacteria density based on satellite imagery.
 There is an unsupported `experiment` module for training new models.
 
 ```
-$ python cyano/experiment.py --help
+$ python cyfi/experiment.py --help
 Usage: experiment.py [OPTIONS] CONFIG_PATH
 
   Run an experiment

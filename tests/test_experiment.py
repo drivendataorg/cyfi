@@ -3,8 +3,8 @@ from pydantic import ValidationError
 import pytest
 from typer.testing import CliRunner
 
-from cyano.config import FeaturesConfig
-from cyano.experiment import app, ExperimentConfig
+from cyfi.config import FeaturesConfig
+from cyfi.experiment import app, ExperimentConfig
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 

@@ -1,8 +1,8 @@
 train_csv: tests/assets/train_data.csv
 predict_csv: tests/assets/evaluate_data.csv
 save_dir: tests/assets/experiment/
-cyano_model_config:
-  n_folds: 1
+cyfi_model_config:
+  n_folds: 2
   num_boost_round: 100
   target_col: log_density
 features_config:

@@ -3,12 +3,12 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "cyano"
+name = "cyfi"
 version = "0.1.0"
 authors = [
   {name = "DrivenData", email = "info@drivendata.org"}
 ]
-description = "Cyano is a Python package to predict cyanobacteria density at specific locations based on satellite imagery and other publicly available data sources."
+description = "CyFi is a Python package to estimate cyanobacteria density in small, inland water bodies using Sentinel-2 satellite imagery."
 readme = "README.md"
 license = {text = "MIT License"}
 classifiers = [
@@ -30,12 +30,12 @@ exclude = '''
 '''
 
 [project.scripts]
-cyano = "cyano.cli:app"
+cyfi = "cyfi.cli:app"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--cov=cyano --cov-report=term --cov-report=html --cov-report=xml"
+addopts = "--cov=cyfi --cov-report=term --cov-report=html --cov-report=xml"
 testpaths = ["tests"]
 
 [tool.coverage.run]
-source = ["cyano"]
+source = ["cyfi"]

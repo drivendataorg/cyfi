@@ -5,10 +5,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from cyano.config import FeaturesConfig
-from cyano.data.features import generate_all_features, calculate_metadata_features
-from cyano.data.satellite_data import download_satellite_data, generate_candidate_metadata
-from cyano.data.utils import add_unique_identifier
+from cyfi.config import FeaturesConfig
+from cyfi.data.features import generate_all_features, calculate_metadata_features
+from cyfi.data.satellite_data import download_satellite_data, generate_candidate_metadata
+from cyfi.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
@@ -51,7 +51,7 @@ def test_generate_candidate_metadata(train_data, features_config):
 
     # Check that candidate metadata matches known expected values
     assert candidate_meta.item_id.is_unique
-    assert len(candidate_meta) == 9
+    assert len(candidate_meta) == 31
     assert (
         "S2A_MSIL2A_20170728T155901_R097_T17SPV_20210210T154351" in candidate_meta.item_id.values
     )
@@ -97,6 +97,6 @@ def test_land_cover_features(train_data):
 
     assert features.land_cover.notna().all()
     # Check that generated land cover classes match known classes
-    assert features.loc["2543db364f727f17fe4ce7881aa180da", "land_cover"] == 190
-    assert features.loc["671520fa92f555ab335e0cfa888c57e7", "land_cover"] == 60
+    assert features.loc["9c601f226c2af07d570134127a7fda27", "land_cover"] == 90
+    assert features.loc["3a2c48812b551d720f8d56772efa6df1", "land_cover"] == 70
     assert features.shape[0] == train_data.shape[0]

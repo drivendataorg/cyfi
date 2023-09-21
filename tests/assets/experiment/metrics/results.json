@@ -1,17 +1,23 @@
 {
     "severity": {
-        "overall_rmse": 0.8660254037844386,
-        "overall_mae": 0.75,
+        "overall_rmse": 1.8027756377319946,
+        "overall_mae": 1.75,
         "regional_rmse": {
-            "northeast": 1.0,
-            "south": 0.7071067811865476
+            "northeast": 2.0,
+            "south": 1.5811388300841898
         },
-        "region_averaged_rmse": 0.8535533905932737,
+        "region_averaged_rmse": 1.790569415042095,
         "regional_mae": {
-            "northeast": 1.0,
-            "south": 0.5
+            "northeast": 2.0,
+            "south": 1.5
         },
         "classification_report": {
+            "high": {
+                "precision": 0.0,
+                "recall": 0.0,
+                "f1-score": 0.0,
+                "support": 0.0
+            },
             "low": {
                 "precision": 0.0,
                 "recall": 0.0,
@@ -19,22 +25,22 @@
                 "support": 3.0
             },
             "moderate": {
-                "precision": 0.25,
-                "recall": 1.0,
-                "f1-score": 0.4,
+                "precision": 0.0,
+                "recall": 0.0,
+                "f1-score": 0.0,
                 "support": 1.0
             },
-            "accuracy": 0.25,
+            "accuracy": 0.0,
             "macro avg": {
-                "precision": 0.125,
-                "recall": 0.5,
-                "f1-score": 0.2,
+                "precision": 0.0,
+                "recall": 0.0,
+                "f1-score": 0.0,
                 "support": 4.0
             },
             "weighted avg": {
-                "precision": 0.0625,
-                "recall": 0.25,
-                "f1-score": 0.1,
+                "precision": 0.0,
+                "recall": 0.0,
+                "f1-score": 0.0,
                 "support": 4.0
             }
         }
@@ -44,10 +50,10 @@
         "percent": 0.2
     },
     "log_density": {
-        "overall_r_squared": -1.74214860415861,
+        "overall_r_squared": -1.7993063079032798,
         "regional_r_squared": {
-            "northeast": -2.095164296715266,
-            "south": -2.030146701104201
+            "northeast": -2.150062158171442,
+            "south": -2.119208313196941
         }
     }
 }

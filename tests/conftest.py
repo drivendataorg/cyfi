@@ -3,8 +3,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from cyano.config import FeaturesConfig
-from cyano.experiment import ExperimentConfig
+from cyfi.config import FeaturesConfig
+from cyfi.experiment import ExperimentConfig
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
@@ -55,8 +55,8 @@ def evaluate_data_features() -> pd.DataFrame:
 
 
 @pytest.fixture(scope="session")
-def ensembled_model_path() -> Path:
-    return ASSETS_DIR / "ensembled_model.zip"
+def local_model_path() -> Path:
+    return ASSETS_DIR / "experiment" / "model.zip"
 
 
 @pytest.fixture
