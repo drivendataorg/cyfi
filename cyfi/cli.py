@@ -115,7 +115,10 @@ def predict_point(
         raise ValueError("Cannot predict on a date that is in the future.")
 
     # convert CRS to EPSG:4326 if needed
+    convert_crs = False
     if crs not in ["EPSG:4326", "4326", "epsg:4326"]:
+        convert_crs = True
+        (original_lat, original_lon) = (latitude, longitude)
         transformer = Transformer.from_crs(crs_from=crs, crs_to="EPSG:4326")
         (latitude, longitude) = transformer.transform(latitude, longitude)
 
@@ -125,11 +128,10 @@ def predict_point(
 
     pipeline = CyFiPipeline.from_disk(DEFAULT_MODEL_PATH)
     pipeline.run_prediction(samples_path, preds_path=None)
-    # If other CRS specified, clarify CRS of returned point
-    if crs not in ["EPSG:4326", "4326", "epsg:4326"]:
-        pipeline.output_df = pipeline.output_df.rename(
-            columns={"latitude": "latitude_epsg4326", "longitude": "longitude_epsg4326"}
-        )
+    # If other CRS specified, change lat / long back to original values
+    if convert_crs:
+        pipeline.output_df["latitude"] = [original_lat]
+        pipeline.output_df["longitude"] = [original_lon]
 
     # format as integer with comma for console
     pipeline.output_df["density_cells_per_ml"] = pipeline.output_df.density_cells_per_ml.map(
