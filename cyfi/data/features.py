@@ -5,6 +5,7 @@ from typing import Union
 
 import appdirs
 from cloudpathlib import AnyPath, S3Path
+import cv2
 from loguru import logger
 import numpy as np
 import pandas as pd
@@ -88,23 +89,36 @@ def _calculate_satellite_features_for_sample_item(
     if not sample_item_dir.exists():
         return None
 
+    # TODO: ensure SCL band is downloaded
+    scl_array = np.load(sample_item_dir / "SCL.npy")
+
     # Load band arrays into a dictionary with band names for keys
     band_arrays = {}
-    # If we want to mask image data with water boundaries in some way, add here
     for band in config.use_sentinel_bands:
         if not (sample_item_dir / f"{band}.npy").exists():
             raise FileNotFoundError(
                 f"Band {band} is missing from pystac item directory {sample_item_dir}"
             )
         arr = np.load(sample_item_dir / f"{band}.npy")
-        # set no data value to be nan
-        band_arrays[band] = np.where(arr == 0, np.nan, arr)
+
+        # Set no data value to be nan
+        arr = np.where(arr == 0, np.nan, arr)
+
+        # Filter array to water area
+        if band != "SCL":
+            scaled_scl = cv2.resize(scl_array[0], (arr.shape[2], arr.shape[1]))
+            arr = arr[0][scaled_scl == 6]
+
+        # If the bounding box does not contain any water pixels or has entirely no data pixels, do not calculate features
+        if arr.size == 0 or np.isnan(arr).all():
+            return None
+
+        band_arrays[band] = arr
 
     # Iterate over features to generate
     sample_item_features = {"sample_id": sample_id, "item_id": item_id}
-
     for feature in config.satellite_image_features:
-        # note: features will be nan if any pixel in bounding box is nan
+        # note: features will be nan if any pixel in bounding box is nan or if there is no water in the bounding box
         sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
 
     return sample_item_features
