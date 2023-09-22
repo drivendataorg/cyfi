@@ -118,7 +118,7 @@ def _calculate_satellite_features_for_sample_item(
     # Iterate over features to generate
     sample_item_features = {"sample_id": sample_id, "item_id": item_id}
     for feature in config.satellite_image_features:
-        # note: features will be nan if any pixel in bounding box is nan or if there is no water in the bounding box
+        # note: features will be nan if any pixel in bounding box is nan
         sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
 
     return sample_item_features
