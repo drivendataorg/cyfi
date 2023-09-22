@@ -92,6 +92,13 @@ def _calculate_satellite_features_for_sample_item(
     # TODO: ensure SCL band is downloaded
     scl_array = np.load(sample_item_dir / "SCL.npy")
 
+    # don't calculate features for the item if there is more than 5% cloud
+    cloud_ratio = ((scl_array >= 7) & (scl_array <= 10)).sum() / (
+        scl_array.shape[1] * scl_array.shape[2]
+    )
+    if cloud_ratio >= 0.05:
+        return
+
     # Load band arrays into a dictionary with band names for keys
     band_arrays = {}
     for band in config.use_sentinel_bands:
