@@ -282,18 +282,18 @@ AVAILABLE_SAMPLE_META_FEATURES = ["land_cover", "rounded_latitude", "rounded_lon
 
 SATELLITE_FEATURE_CALCULATORS = {
     "NDVI_B04": lambda x: (x["B08"].mean() - x["B04"].mean())
-    / (x["B08"].mean() + x["B04"].mean() + 1),
+    / (x["B08"].mean() + x["B04"].mean()),
     "NDVI_B05": lambda x: (x["B08"].mean() - x["B05"].mean())
-    / (x["B08"].mean() + x["B05"].mean() + 1),
+    / (x["B08"].mean() + x["B05"].mean()),
     "NDVI_B06": lambda x: (x["B08"].mean() - x["B06"].mean())
-    / (x["B08"].mean() + x["B06"].mean() + 1),
+    / (x["B08"].mean() + x["B06"].mean()),
     "NDVI_B07": lambda x: (x["B08"].mean() - x["B07"].mean())
-    / (x["B08"].mean() + x["B07"].mean() + 1),
-    "green_red_ratio": lambda x: x["B03"].mean() / (x["B04"].mean() + 1),
-    "green_blue_ratio": lambda x: x["B03"].mean() / (x["B02"].mean() + 1),
-    "red_blue_ratio": lambda x: x["B04"].mean() / (x["B02"].mean() + 1),
-    "green95th_blue_ratio": lambda x: np.percentile(x["B03"], 95) / (x["B02"].mean() + 1),
-    "green5th_blue_ratio": lambda x: np.percentile(x["B03"], 5) / (x["B02"].mean() + 1),
+    / (x["B08"].mean() + x["B07"].mean()),
+    "green_red_ratio": lambda x: x["B03"].mean() / (x["B04"].mean()),
+    "green_blue_ratio": lambda x: x["B03"].mean() / (x["B02"].mean()),
+    "red_blue_ratio": lambda x: x["B04"].mean() / (x["B02"].mean()),
+    "green95th_blue_ratio": lambda x: np.percentile(x["B03"], 95) / (x["B02"].mean()),
+    "green5th_blue_ratio": lambda x: np.percentile(x["B03"], 5) / (x["B02"].mean()),
     "prop_water": lambda x: (x["SCL"] == 6).mean(),
     "AOT_mean": lambda x: x["AOT"].mean(),
     "AOT_min": lambda x: x["AOT"].min(),
