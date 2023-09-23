@@ -2,7 +2,8 @@ import hashlib
 from typing import List, Optional
 
 import numpy as np
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic.types import confloat
 
 
 def check_field_is_subset(field_value: List, accepted_values: List) -> List:
@@ -38,6 +39,11 @@ class FeaturesConfig(BaseModel):
         image_feature_meter_window (Optional[int], optional): Buffer in meters to add on each side of a
             given sample's location when creating the bounding box for the subset of a satellite image
             that will be used to generate features. Defaults to 200.
+        max_cloud_percent (Optional[float], optional): Maximum portion of cloud pixels allowed in bounding box.
+            If the portion of cloud pixels is above this, the image will not be used. Defaults to 0.05.
+            Ranges from 0-1.
+        filter_to_water_area (bool): Whether to filter to water pixels in the bounding box using the scene
+            classification band. Defaults to True.
         n_sentinel_items (Optional[int], optional): Maximum number of Sentinel-2 items to use for each
             sample. Defaults to 15.
         satellite_image_features (Optional[List], optional): List of satellite imagery features to
@@ -78,6 +84,8 @@ class FeaturesConfig(BaseModel):
         "WVP",
     ]
     image_feature_meter_window: Optional[int] = 200
+    max_cloud_percent: Optional[confloat(ge=0, le=1)] = 0.05
+    filter_to_water_area: bool = True
     n_sentinel_items: Optional[int] = 15
     satellite_meta_features: Optional[List] = ["month", "days_before_sample"]
     sample_meta_features: Optional[List] = ["land_cover"]
@@ -152,20 +160,29 @@ class FeaturesConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     @field_validator("use_sentinel_bands")
-    def validate_sentinel_bands(cls, path_field):
-        return check_field_is_subset(path_field, AVAILABLE_SENTINEL_BANDS)
+    def validate_sentinel_bands(cls, field):
+        return check_field_is_subset(field, AVAILABLE_SENTINEL_BANDS)
+
+    @model_validator(mode="after")
+    def include_SCL_for_water_or_cloud_filtering(self):
+        if (
+            self.max_cloud_percent is not None or self.filter_to_water_area
+        ) and "SCL" not in self.use_sentinel_bands:
+            # add SCL which is used for water and cloud filtering
+            self.use_sentinel_bands = self.use_sentinel_bands + ["SCL"]
+        return self
 
     @field_validator("satellite_image_features")
-    def validate_satellite_image_features(cls, path_field):
-        return check_field_is_subset(path_field, list(SATELLITE_FEATURE_CALCULATORS.keys()))
+    def validate_satellite_image_features(cls, field):
+        return check_field_is_subset(field, list(SATELLITE_FEATURE_CALCULATORS.keys()))
 
     @field_validator("satellite_meta_features")
-    def validate_satellite_meta_features(cls, path_field):
-        return check_field_is_subset(path_field, AVAILABLE_SATELLITE_META_FEATURES)
+    def validate_satellite_meta_features(cls, field):
+        return check_field_is_subset(field, AVAILABLE_SATELLITE_META_FEATURES)
 
     @field_validator("sample_meta_features")
-    def validate_sample_meta_features(cls, path_field):
-        return check_field_is_subset(path_field, AVAILABLE_SAMPLE_META_FEATURES)
+    def validate_sample_meta_features(cls, field):
+        return check_field_is_subset(field, AVAILABLE_SAMPLE_META_FEATURES)
 
     def get_cached_path(self) -> str:
         """Get the hash used for the features cache directory name"""
@@ -242,8 +259,8 @@ class CyFiModelConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @field_validator("target_col")
-    def validate_target_col(cls, path_field):
-        return check_field_is_subset(path_field, AVAILABLE_TARGET_COLS)
+    def validate_target_col(cls, field):
+        return check_field_is_subset(field, AVAILABLE_TARGET_COLS)
 
 
 AVAILABLE_TARGET_COLS = ["severity", "log_density", "density_cells_per_ml"]

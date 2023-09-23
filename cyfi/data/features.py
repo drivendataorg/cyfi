@@ -89,15 +89,17 @@ def _calculate_satellite_features_for_sample_item(
     if not sample_item_dir.exists():
         return None
 
-    # TODO: ensure SCL band is downloaded
-    scl_array = np.load(sample_item_dir / "SCL.npy")
+    # Load SCL band if filtering based on clouds and/or water
+    if config.max_cloud_percent is not None or config.filter_to_water_area:
+        scl_array = np.load(sample_item_dir / "SCL.npy")
 
-    # don't calculate features for the item if there is more than 5% cloud
-    cloud_ratio = ((scl_array >= 7) & (scl_array <= 10)).sum() / (
-        scl_array.shape[1] * scl_array.shape[2]
-    )
-    if cloud_ratio >= 0.05:
-        return
+    # Don't calculate features for the item if the cloud ratio is too high
+    if config.max_cloud_percent is not None:
+        cloud_ratio = ((scl_array >= 7) & (scl_array <= 10)).sum() / (
+            scl_array.shape[1] * scl_array.shape[2]
+        )
+        if cloud_ratio > config.max_cloud_percent:
+            return
 
     # Load band arrays into a dictionary with band names for keys
     band_arrays = {}
@@ -112,11 +114,12 @@ def _calculate_satellite_features_for_sample_item(
         arr = np.where(arr == 0, np.nan, arr)
 
         # Filter array to water area
-        if band != "SCL":
-            scaled_scl = cv2.resize(scl_array[0], (arr.shape[2], arr.shape[1]))
-            arr = arr[0][scaled_scl == 6]
+        if config.filter_to_water_area:
+            if band != "SCL":
+                scaled_scl = cv2.resize(scl_array[0], (arr.shape[2], arr.shape[1]))
+                arr = arr[0][scaled_scl == 6]
 
-        # If the bounding box does not contain any water pixels or has entirely no data pixels, do not calculate features
+        # If the bounding box does not contain any water pixels (if filtering) or has entirely no data pixels, do not calculate features
         if arr.size == 0 or np.isnan(arr).all():
             return None
 
