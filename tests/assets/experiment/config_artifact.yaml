@@ -4,7 +4,7 @@ cyfi_model_config:
   num_boost_round: 100
   params:
     application: regression
-    early_stopping_round: null
+    early_stopping_round: 100
     feature_fraction: 1.0
     learning_rate: 0.1
     max_depth: -1
@@ -16,11 +16,11 @@ cyfi_model_config:
 debug: false
 features_config:
   filter_to_water_area: true
-  image_feature_meter_window: 200
+  image_feature_meter_window: 2000
   max_cloud_percent: 0.05
   n_sentinel_items: 15
-  pc_days_search_window: 15
-  pc_meters_search_window: 5000
+  pc_days_search_window: 30
+  pc_meters_search_window: 2000
   sample_meta_features: []
   satellite_image_features:
   - B02_min
@@ -32,7 +32,7 @@ features_config:
   use_sentinel_bands:
   - B02
   - SCL
-last_commit_hash: f1e63c06b618d6a91883a35fbda28eea524874cd
+last_commit_hash: eaffe328109c46309486cc86a039c26c5e9de7d5
 predict_csv: tests/assets/evaluate_data.csv
 save_dir: tests/assets/experiment
 train_csv: tests/assets/train_data.csv

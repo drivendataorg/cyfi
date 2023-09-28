@@ -1,13 +1,15 @@
 {
     "severity": {
-        "overall_rmse": 2.0,
-        "overall_mae": 2.0,
+        "overall_rmse": 1.8027756377319946,
+        "overall_mae": 1.75,
         "regional_rmse": {
-            "northeast": 2.0
+            "northeast": 2.0,
+            "south": 1.5811388300841898
         },
-        "region_averaged_rmse": 2.0,
+        "region_averaged_rmse": 1.790569415042095,
         "regional_mae": {
-            "northeast": 2.0
+            "northeast": 2.0,
+            "south": 1.5
         },
         "classification_report": {
             "high": {
@@ -20,31 +22,38 @@
                 "precision": 0.0,
                 "recall": 0.0,
                 "f1-score": 0.0,
-                "support": 2.0
+                "support": 3.0
+            },
+            "moderate": {
+                "precision": 0.0,
+                "recall": 0.0,
+                "f1-score": 0.0,
+                "support": 1.0
             },
             "accuracy": 0.0,
             "macro avg": {
                 "precision": 0.0,
                 "recall": 0.0,
                 "f1-score": 0.0,
-                "support": 2.0
+                "support": 4.0
             },
             "weighted avg": {
                 "precision": 0.0,
                 "recall": 0.0,
                 "f1-score": 0.0,
-                "support": 2.0
+                "support": 4.0
             }
         }
     },
     "samples_missing_predictions": {
-        "count": 3.0,
-        "percent": 0.6
+        "count": 1.0,
+        "percent": 0.2
     },
     "log_density": {
-        "overall_r_squared": -3.928133506820517,
+        "overall_r_squared": -2.3603127793149947,
         "regional_r_squared": {
-            "northeast": -3.928133506820517
+            "northeast": -2.680832772064445,
+            "south": -3.0150460539858326
         }
     }
 }
