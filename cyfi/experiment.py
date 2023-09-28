@@ -97,8 +97,14 @@ class ExperimentConfig(BaseModel):
 
         # Copy train and test features and Sentinel metadata to experiment dir
         for split in ["train", "test"]:
-            shutil.copy(pipeline.cache_dir / f"features_{split}.csv", self.save_dir / f"features_{split}.csv")
-            shutil.copy(pipeline.cache_dir / f"sentinel_metadata_{split}.csv", self.save_dir / f"sentinel_metadata_{split}.csv")
+            shutil.copy(
+                pipeline.cache_dir / f"features_{split}.csv",
+                self.save_dir / f"features_{split}.csv",
+            )
+            shutil.copy(
+                pipeline.cache_dir / f"sentinel_metadata_{split}.csv",
+                self.save_dir / f"sentinel_metadata_{split}.csv",
+            )
 
         if self.debug:
             logger.info("Evaluation is not run in debug mode")

@@ -262,8 +262,8 @@ def generate_all_features(
     Returns:
         (selected_image_meta, features): Tuple of dataframes.
 
-            'selected_image_meta' is a DataFrame with metadata and the 
-            visual_href link to the selected Sentinel image for each sample point. 
+            'selected_image_meta' is a DataFrame with metadata and the
+            visual_href link to the selected Sentinel image for each sample point.
 
             'features' is a dataframe where the index is sample_id and there is one
             column for each feature. Each row is a unique combination of
@@ -309,5 +309,15 @@ def generate_all_features(
     features.columns = [col.replace(":", "_") for col in features.columns]
 
     # save out metadata on chosen satellite image for use in visualization later
-    selected_image_meta = satellite_features.reset_index()[["sample_id", "item_id", "cloud_pct", "num_no_data", "num_water_pixels", "days_before_sample", "visual_href"]]
+    selected_image_meta = satellite_features.reset_index()[
+        [
+            "sample_id",
+            "item_id",
+            "cloud_pct",
+            "num_no_data",
+            "num_water_pixels",
+            "days_before_sample",
+            "visual_href",
+        ]
+    ]
     return selected_image_meta, features
