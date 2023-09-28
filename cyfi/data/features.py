@@ -90,6 +90,7 @@ def calculate_satellite_features(
     satellite_features = satellite_features.merge(
         satellite_meta[
             list(
+                # use set to avoid duplication since days_before_sample may be in config.satellite_meta_features
                 set(
                     ["item_id", "sample_id", "days_before_sample", "visual_href"]
                     + config.satellite_meta_features
