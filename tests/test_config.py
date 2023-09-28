@@ -52,11 +52,15 @@ def test_features_config():
         FeaturesConfig(max_cloud_percent=2)
 
     # SCL is needed for filtering based on clouds
-    config = FeaturesConfig(use_sentinel_bands=["B01"], max_cloud_percent=0.05, filter_to_water_area=False)
+    config = FeaturesConfig(
+        use_sentinel_bands=["B01"], max_cloud_percent=0.05, filter_to_water_area=False
+    )
     assert "SCL" in config.use_sentinel_bands
 
     # SCL is needed for filtering based on water
-    config = FeaturesConfig(use_sentinel_bands=["B01"], max_cloud_percent=None, filter_to_water_area=True)
+    config = FeaturesConfig(
+        use_sentinel_bands=["B01"], max_cloud_percent=None, filter_to_water_area=True
+    )
     assert "SCL" in config.use_sentinel_bands
 
 

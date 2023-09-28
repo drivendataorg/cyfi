@@ -238,7 +238,9 @@ def generate_all_features(
     logger.info(
         f"Dropping {(satellite_features.cloud_pct > config.max_cloud_percent).sum():,} row(s) where bounding box has too many clouds."
     )
-    satellite_features = satellite_features[satellite_features.cloud_pct <= config.max_cloud_percent]
+    satellite_features = satellite_features[
+        satellite_features.cloud_pct <= config.max_cloud_percent
+    ]
 
     # Drop rows where bounding box did not contain any water
     logger.info(
@@ -253,7 +255,9 @@ def generate_all_features(
     satellite_features = satellite_features[~satellite_features.isna().any(axis=1)]
 
     # Winsorize top and bottom 1% of satellite band features
-    satellite_features[config.satellite_image_features] = satellite_features[config.satellite_image_features].apply(lambda x: winsorize(x, limits=(0.01, 0.01)))
+    satellite_features[config.satellite_image_features] = satellite_features[
+        config.satellite_image_features
+    ].apply(lambda x: winsorize(x, limits=(0.01, 0.01)))
 
     ct_with_satellite = satellite_features.index.nunique()
     if ct_with_satellite < samples.shape[0]:
@@ -263,7 +267,12 @@ def generate_all_features(
 
     # Use the most recent, valid image
     # TODO: write out the used urls for later use
-    features = satellite_features.sort_values("days_before_sample").reset_index().groupby("sample_id").first()
+    features = (
+        satellite_features.sort_values("days_before_sample")
+        .reset_index()
+        .groupby("sample_id")
+        .first()
+    )
 
     # Generate non-satellite features. Each has only one row per sample
     if config.sample_meta_features:

@@ -78,7 +78,9 @@ class CyFiPipeline:
 
         # Winsorize top 1% of density values to exclude outliers
         if "density_cells_per_ml" in labels.columns:
-            labels["density_cells_per_ml"] = winsorize(labels.density_cells_per_ml, limits=(0, 0.01))
+            labels["density_cells_per_ml"] = winsorize(
+                labels.density_cells_per_ml, limits=(0, 0.01)
+            )
 
         # Add log density if needed
         if (self.target_col == "log_density") and ("log_density" not in labels):
