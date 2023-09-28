@@ -296,25 +296,24 @@ def generate_all_features(
     )
     features = features[all_feature_cols]
     ct_with_features = features.index.nunique()
+    num_sat_features = len(config.satellite_image_features) + len(config.satellite_meta_features)
     if config.sample_meta_features:
         logger.info(
-            f"Generated {satellite_features.shape[1]:,} satellite feature(s) and {sample_meta_features.shape[1]:,} sample metadata feature(s) for {ct_with_features:,} sample points ({(ct_with_features / samples.shape[0]):.0%} of sample points)"
+            f"Generated {num_sat_features:,} satellite feature(s) and {len(config.sample_meta_features):,} sample metadata feature(s) for {ct_with_features:,} sample points ({(ct_with_features / samples.shape[0]):.0%} of sample points)"
         )
     else:
         logger.info(
-            f"Generated {satellite_features.shape[1]:,} satellite feature(s) for {ct_with_features:,} sample points ({(ct_with_features / samples.shape[0]):.0%} of sample points)"
+            f"Generated {num_sat_features:,} satellite feature(s) for {ct_with_features:,} sample points ({(ct_with_features / samples.shape[0]):.0%} of sample points)"
         )
 
     # Process string column values (eg replace `:` from satellite meta)
     features.columns = [col.replace(":", "_") for col in features.columns]
 
     # save out metadata on chosen satellite image for use in visualization later
-    selected_image_meta = satellite_features.reset_index()[
+    selected_image_meta = satellite_features[
         [
-            "sample_id",
             "item_id",
             "cloud_pct",
-            "num_no_data",
             "num_water_pixels",
             "days_before_sample",
             "visual_href",
