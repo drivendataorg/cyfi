@@ -4,7 +4,7 @@ cyfi_model_config:
   num_boost_round: 100
   params:
     application: regression
-    early_stopping_round: 100
+    early_stopping_round: null
     feature_fraction: 1.0
     learning_rate: 0.1
     max_depth: -1
@@ -15,7 +15,9 @@ cyfi_model_config:
   target_col: log_density
 debug: false
 features_config:
+  filter_to_water_area: true
   image_feature_meter_window: 200
+  max_cloud_percent: 0.05
   n_sentinel_items: 15
   pc_days_search_window: 15
   pc_meters_search_window: 5000
@@ -29,7 +31,8 @@ features_config:
   - days_before_sample
   use_sentinel_bands:
   - B02
-last_commit_hash: 3758e567fd1f6562d169b9af4f403d00842666ca
+  - SCL
+last_commit_hash: f1e63c06b618d6a91883a35fbda28eea524874cd
 predict_csv: tests/assets/evaluate_data.csv
 save_dir: tests/assets/experiment
 train_csv: tests/assets/train_data.csv
