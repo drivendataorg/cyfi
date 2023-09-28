@@ -1,9 +1,11 @@
+from enum import Enum
 import sys
 import tempfile
 
 from loguru import logger
 import pandas as pd
 from pathlib import Path
+from pyproj import Transformer
 import shutil
 import typer
 
@@ -13,6 +15,11 @@ from cyfi.evaluate import EvaluatePreds
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
 DEFAULT_MODEL_PATH = str(Path(__file__).parent / "assets/model_v0.zip")
+
+
+class CRS(str, Enum):
+    EPSG_4326 = "EPSG:4326"
+    EPSG_3857 = "EPSG:3857"
 
 
 def verbose_callback(verbosity: int):
@@ -41,7 +48,7 @@ verbose_option = typer.Option(
 def predict(
     samples_path: Path = typer.Argument(
         exists=True,
-        help="Path to a csv of sample points with columns for date, longitude, and latitude",
+        help="Path to a csv of sample points with columns for date, longitude, and latitude. Latitude and longitude must be in coordinate reference system WGS-84 (EPSG:4326)",
     ),
     model_path: Path = typer.Option(
         default=None,
@@ -101,13 +108,17 @@ def predict(
 
 @app.command()
 def predict_point(
-    latitude: float = typer.Option(..., "--latitude", "-lat", help="Latitude"),
-    longitude: float = typer.Option(..., "--longitude", "-lon", help="Longitude"),
+    latitude: float = typer.Option(..., "--lat", help="Latitude"),
+    longitude: float = typer.Option(..., "--lon", help="Longitude"),
     date: str = typer.Option(
         None,
         "--date",
         "-dt",
         help="Date formatted as YYYY-MM-DD, e.g. 2023-09-20. If no date is specified, today's date will be used.",
+    ),
+    crs: CRS = typer.Option(
+        "EPSG:4326",
+        help="Coordinate reference system of the provided latitude and longitude.",
     ),
     verbose: int = verbose_option,
 ):
@@ -120,12 +131,21 @@ def predict_point(
     elif pd.to_datetime(date) > pd.to_datetime("today"):
         raise ValueError("Cannot predict on a date that is in the future.")
 
-    samples = pd.DataFrame({"date": [date], "latitude": [latitude], "longitude": [longitude]})
+    transformer = Transformer.from_crs(crs_from=crs.value, crs_to="EPSG:4326")
+    converted_latitude, converted_longitude = transformer.transform(latitude, longitude)
+
+    samples = pd.DataFrame(
+        {"date": [date], "latitude": [converted_latitude], "longitude": [converted_longitude]}
+    )
     samples_path = Path(tempfile.gettempdir()) / "samples.csv"
     samples.to_csv(samples_path, index=False)
 
     pipeline = CyFiPipeline.from_disk(DEFAULT_MODEL_PATH)
     pipeline.run_prediction(samples_path, preds_path=None)
+
+    # print out user-specified lat / lon
+    pipeline.output_df["latitude"] = [latitude]
+    pipeline.output_df["longitude"] = [longitude]
 
     # format as integer with comma for console
     pipeline.output_df["density_cells_per_ml"] = pipeline.output_df.density_cells_per_ml.map(
@@ -138,7 +158,7 @@ def predict_point(
 def evaluate(
     y_pred_csv: Path = typer.Argument(
         exists=True,
-        help="Path to a csv of sample points with columns for date, longitude, latitude, and predicted density",
+        help="Path to a csv of sample points with columns for date, longitude, latitude, and predicted density. Latitude and longitude must be in coordinate reference system WGS-84 (EPSG:4326)",
     ),
     y_true_csv: Path = typer.Argument(
         exists=True,

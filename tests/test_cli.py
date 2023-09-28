@@ -1,10 +1,12 @@
 import pandas as pd
 from pathlib import Path
+from pyproj import Transformer
 from pytest_mock import mocker  # noqa: F401
 from typer.testing import CliRunner
 
 from cyfi.cli import app
 from cyfi.data.utils import add_unique_identifier
+
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
@@ -137,9 +139,9 @@ def test_cli_predict_point(mocker):  # noqa: F811
             "predict-point",
             "-dt",
             "2021-05-17",
-            "-lat",
+            "--lat",
             "36.05",
-            "-lon",
+            "--lon",
             "-76.7",
         ],
     )
@@ -152,14 +154,48 @@ def test_cli_predict_point(mocker):  # noqa: F811
             "predict-point",
             "-dt",
             "2035-01-01",
-            "-lat",
+            "--lat",
             "36.05",
-            "-lon",
+            "--lon",
             "-76.7",
         ],
     )
     assert result.exit_code == 1
     assert "Cannot predict on a date that is in the future" in result.exception.__str__()
+
+
+def test_cli_predict_point_crs(mocker, local_model_path):  # noqa: F811
+    mocker.patch("cyfi.cli.DEFAULT_MODEL_PATH", local_model_path)
+
+    transformer = Transformer.from_crs(crs_from="EPSG:4326", crs_to="EPSG:3857")
+    lat, lon = transformer.transform(36.05, -76.7)
+
+    inputs = [
+        "predict-point",
+        "-dt",
+        "2023-01-01",
+        "--lat",
+        lat,
+        "--lon",
+        lon,
+    ]
+    # try predicting in a different CRS
+    result = runner.invoke(
+        app,
+        inputs + ["--crs", "EPSG:3857"],
+    )
+    assert result.exit_code == 0
+
+    # check original location printed out
+    assert str(round(lat, 2)) in result.stdout
+
+    # try predicting with invalid CRS
+    result = runner.invoke(
+        app,
+        inputs + ["--crs", "EPSG:10"],
+    )
+    assert result.exit_code == 2
+    assert "Invalid value for '--crs" in result.stdout
 
 
 def test_cli_evaluate(tmp_path, evaluate_data_path):
