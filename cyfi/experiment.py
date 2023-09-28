@@ -31,7 +31,8 @@ class ExperimentConfig(BaseModel):
 
     Args:
         train_csv (Union[str, Path]): Path to a training CSV with columns for date, latitude,
-            longitude, and severity.
+            longitude, and severity. Latitude and longitude must be in coordinate reference
+            system WGS-84 (EPSG:4326).
         predict_csv (Union[str, Path]): Path to a CSV for prediction and evaluation with
             columns for date, latitude, longitude, and severity.
         features_config (FeaturesConfig, optional): Features configuration. Defaults to
