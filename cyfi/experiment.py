@@ -8,7 +8,6 @@ from cloudpathlib import AnyPath
 from dotenv import load_dotenv, find_dotenv
 import git
 from loguru import logger
-import pandas as pd
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 import typer
 
