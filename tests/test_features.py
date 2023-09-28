@@ -19,7 +19,7 @@ def test_known_features(train_data, features_config, satellite_meta):
     train_data = add_unique_identifier(train_data)
 
     # Generate features based on saved imagery
-    features = generate_all_features(
+    sentinel_meta, features = generate_all_features(
         train_data,
         satellite_meta,
         features_config,
@@ -30,6 +30,9 @@ def test_known_features(train_data, features_config, satellite_meta):
     assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_mean"], 402.2583)
     assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_min"], 309)
     assert np.isclose(features.loc["3a2c48812b551d720f8d56772efa6df1", "B02_max"], 1296)
+
+    # Check expected columns in sentinel metadata (cloud_pct and num_water_pixels are not included because features_config doesn't use these)
+    assert (sentinel_meta.columns == ["item_id", "days_before_sample", "visual_href"]).all()
 
 
 def test_generate_candidate_metadata(train_data, features_config):

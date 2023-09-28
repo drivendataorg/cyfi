@@ -21,7 +21,7 @@ def test_lgbparams():
 def test_features_config():
     config = FeaturesConfig()
     assert config.sample_meta_features == ["land_cover"]
-    assert config.pc_days_search_window == 15
+    assert config.pc_days_search_window == 30
 
     config = FeaturesConfig(pc_meters_search_window=100, image_feature_meter_window="200")
     assert config.pc_meters_search_window == 100
