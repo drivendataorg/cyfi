@@ -51,7 +51,7 @@ def evaluate_data_path() -> Path:
 
 @pytest.fixture(scope="session")
 def evaluate_data_features() -> pd.DataFrame:
-    return pd.read_csv(ASSETS_DIR / "evaluate_data_features.csv", index_col=0)
+    return pd.read_csv(ASSETS_DIR / "experiment" / "features_test.csv", index_col=0)
 
 
 @pytest.fixture(scope="session")
