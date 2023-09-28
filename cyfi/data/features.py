@@ -88,7 +88,14 @@ def calculate_satellite_features(
 
     # Add in satellite meta features
     satellite_features = satellite_features.merge(
-        satellite_meta[["item_id", "sample_id", "visual_href"] + config.satellite_meta_features],
+        satellite_meta[
+            list(
+                set(
+                    ["item_id", "sample_id", "days_before_sample", "visual_href"]
+                    + config.satellite_meta_features
+                )
+            )
+        ],
         how="left",
         on=["item_id", "sample_id"],
         validate="1:1",
@@ -310,13 +317,15 @@ def generate_all_features(
     features.columns = [col.replace(":", "_") for col in features.columns]
 
     # save out metadata on chosen satellite image for use in visualization later
+    # only some of these are calculated depending on what filters are used (e.g. cloud and water)
+    possible_meta_columns = [
+        "item_id",
+        "cloud_pct",
+        "num_water_pixels",
+        "days_before_sample",
+        "visual_href",
+    ]
     selected_image_meta = satellite_features[
-        [
-            "item_id",
-            "cloud_pct",
-            "num_water_pixels",
-            "days_before_sample",
-            "visual_href",
-        ]
+        [c for c in possible_meta_columns if c in satellite_features.columns]
     ]
     return selected_image_meta, features
