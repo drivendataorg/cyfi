@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 import sys
 from typing import Union
 import yaml
@@ -94,10 +95,10 @@ class ExperimentConfig(BaseModel):
             predict_csv=self.predict_csv, preds_path=self.save_dir / "preds.csv", debug=self.debug
         )
 
-        # Copy train and test features to experiment dir
+        # Copy train and test features and Sentinel metadata to experiment dir
         for split in ["train", "test"]:
-            df = pd.read_csv(pipeline.cache_dir / f"features_{split}.csv")
-            df.to_csv(self.save_dir / f"features_{split}.csv", index=False)
+            shutil.copy(pipeline.cache_dir / f"features_{split}.csv", self.save_dir / f"features_{split}.csv")
+            shutil.copy(pipeline.cache_dir / f"sentinel_metadata_{split}.csv", self.save_dir / f"sentinel_metadata_{split}.csv")
 
         if self.debug:
             logger.info("Evaluation is not run in debug mode")
