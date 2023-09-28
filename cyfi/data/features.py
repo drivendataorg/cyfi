@@ -235,18 +235,20 @@ def generate_all_features(
     satellite_features = calculate_satellite_features(satellite_meta, config, cache_dir)
 
     # Drop rows where bounding box contained too many clouds
-    logger.info(
-        f"Dropping {(satellite_features.cloud_pct > config.max_cloud_percent).sum():,} row(s) where bounding box has too many clouds."
-    )
-    satellite_features = satellite_features[
-        satellite_features.cloud_pct <= config.max_cloud_percent
-    ]
+    if config.cloud_pct is not None:
+        logger.info(
+            f"Dropping {(satellite_features.cloud_pct > config.max_cloud_percent).sum():,} row(s) where bounding box has too many clouds."
+        )
+        satellite_features = satellite_features[
+            satellite_features.cloud_pct <= config.max_cloud_percent
+        ]
 
     # Drop rows where bounding box did not contain any water
-    logger.info(
-        f"Dropping {(satellite_features.num_water_pixels == 0).sum():,} row(s) where bouding box does not contain any water."
-    )
-    satellite_features = satellite_features[satellite_features.num_water_pixels > 0]
+    if config.filter_to_water_area:
+        logger.info(
+            f"Dropping {(satellite_features.num_water_pixels == 0).sum():,} row(s) where bouding box does not contain any water."
+        )
+        satellite_features = satellite_features[satellite_features.num_water_pixels > 0]
 
     # Drop where missing pixels (features will be nan)
     logger.info(
