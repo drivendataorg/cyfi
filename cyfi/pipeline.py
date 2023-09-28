@@ -118,12 +118,12 @@ class CyFiPipeline:
         logger.info(f"Satellite imagery saved to {self.cache_dir}")
 
         ## Generate features
-        features = generate_all_features(
+        selected_image_meta, features = generate_all_features(
             samples, satellite_meta, self.features_config, self.cache_dir
         )
-        save_features_to = self.cache_dir / f"features_{split}.csv"
-        features.to_csv(save_features_to, index=True)
 
+        features.to_csv(self.cache_dir / f"features_{split}.csv", index=True)
+        selected_image_meta.to_csv(self.cache_dir / f"sentinel_metadata_{split}.csv", index=True)
         return features
 
     def _prepare_train_features(self):
