@@ -7,6 +7,7 @@ from repro_zipfile import ReproducibleZipFile as ZipFile
 import lightgbm as lgb
 from loguru import logger
 import pandas as pd
+from scipy.stats.mstats import winsorize
 from sklearn.model_selection import StratifiedGroupKFold
 
 from cyfi.config import FeaturesConfig, CyFiModelConfig
@@ -74,6 +75,10 @@ class CyFiPipeline:
                 f"There are duplicate sample points in the training data. Dropping {labels.index.duplicated().sum():,} duplicates and keeping {labels.index.nunique():,} unique combinations of date, latitude, and longitude."
             )
             labels = labels.drop_duplicates()
+
+        # Winsorize top 1% of density values to exclude outliers
+        if "density_cells_per_ml" in labels.columns:
+            labels["density_cells_per_ml"] = winsorize(labels.density_cells_per_ml, limits=(0, 0.01))
 
         # Add log density if needed
         if (self.target_col == "log_density") and ("log_density" not in labels):
