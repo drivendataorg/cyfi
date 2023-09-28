@@ -70,6 +70,8 @@ def features_config():
         n_sentinel_items=1,
         satellite_meta_features=[],
         sample_meta_features=[],
+        filter_to_water_area=False,
+        max_cloud_percent=None,
     )
 
 
