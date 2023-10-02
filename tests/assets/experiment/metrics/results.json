@@ -50,10 +50,10 @@
         "percent": 0.2
     },
     "log_density": {
-        "overall_r_squared": -1.7993063079032798,
+        "overall_r_squared": -2.3603127793149947,
         "regional_r_squared": {
-            "northeast": -2.150062158171442,
-            "south": -2.119208313196941
+            "northeast": -2.680832772064445,
+            "south": -3.0150460539858326
         }
     }
 }

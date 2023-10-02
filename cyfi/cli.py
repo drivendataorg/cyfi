@@ -6,6 +6,7 @@ from loguru import logger
 import pandas as pd
 from pathlib import Path
 from pyproj import Transformer
+import shutil
 import typer
 
 from cyfi.pipeline import CyFiPipeline
@@ -66,6 +67,9 @@ def predict(
     keep_features: bool = typer.Option(
         default=False, help="Whether to save sample features to `output_directory`"
     ),
+    keep_metadata: bool = typer.Option(
+        default=False, help="Whether to save Sentinel image metadata to `output_directory`"
+    ),
     overwrite: bool = typer.Option(False, "--overwrite", "-o", help="Overwrite existing files"),
     verbose: int = verbose_option,
 ):
@@ -74,6 +78,7 @@ def predict(
     """
     output_path = output_directory / output_filename
     features_path = output_directory / "sample_features.csv"
+    metadata_path = output_directory / "sentinel_metadata.csv"
     if not overwrite:
         if output_path.exists():
             raise FileExistsError(
@@ -83,7 +88,10 @@ def predict(
             raise FileExistsError(
                 f"Not generating predictions because overwrite is False and {features_path} exists. To overwrite existing features, add `-o`."
             )
-
+        if keep_metadata and metadata_path.exists():
+            raise FileExistsError(
+                f"Not generating predictions because overwrite is False and {metadata_path} exists. To overwrite existing Sentinel metadata, add `-o`."
+            )
     if model_path is None:
         model_path = DEFAULT_MODEL_PATH
     pipeline = CyFiPipeline.from_disk(model_path)
@@ -93,6 +101,9 @@ def predict(
     if keep_features:
         pipeline.predict_features.to_csv(features_path, index=True)
         logger.success(f"Features saved to {features_path}")
+    if keep_metadata:
+        shutil.copy(pipeline.cache_dir / "sentinel_metadata_test.csv", metadata_path)
+        logger.success(f"Sentinel metadata saved to {metadata_path}")
 
 
 @app.command()

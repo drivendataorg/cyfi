@@ -5,10 +5,12 @@ from typing import Union
 
 import appdirs
 from cloudpathlib import AnyPath, S3Path
+import cv2
 from loguru import logger
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from scipy.stats.mstats import winsorize
 from tqdm.contrib.concurrent import process_map
 import xarray as xr
 
@@ -57,9 +59,44 @@ def calculate_satellite_features(
     )
     satellite_features = pd.DataFrame([features for features in satellite_features if features])
 
+    # Drop rows where bounding box contained too many clouds
+    if config.max_cloud_percent is not None:
+        logger.info(
+            f"Dropping {(satellite_features.cloud_pct > config.max_cloud_percent).sum():,} row(s) where bounding box has too many clouds."
+        )
+        satellite_features = satellite_features[
+            satellite_features.cloud_pct <= config.max_cloud_percent
+        ]
+
+    # Drop rows where bounding box did not contain any water
+    if config.filter_to_water_area:
+        logger.info(
+            f"Dropping {(satellite_features.num_water_pixels == 0).sum():,} row(s) where bouding box does not contain any water."
+        )
+        satellite_features = satellite_features[satellite_features.num_water_pixels > 0]
+
+    # Drop where missing pixels (features will be nan)
+    logger.info(
+        f"Dropping {satellite_features.isna().any(axis=1).sum():,} row(s) where bouding box contains missing pixels."
+    )
+    satellite_features = satellite_features[~satellite_features.isna().any(axis=1)]
+
+    # Winsorize top and bottom 1% of satellite band features
+    satellite_features[config.satellite_image_features] = satellite_features[
+        config.satellite_image_features
+    ].apply(lambda x: winsorize(x, limits=(0.01, 0.01)))
+
     # Add in satellite meta features
     satellite_features = satellite_features.merge(
-        satellite_meta[["item_id", "sample_id"] + config.satellite_meta_features],
+        satellite_meta[
+            list(
+                # use set to avoid duplication since days_before_sample may be in config.satellite_meta_features
+                set(
+                    ["item_id", "sample_id", "days_before_sample", "visual_href"]
+                    + config.satellite_meta_features
+                )
+            )
+        ],
         how="left",
         on=["item_id", "sample_id"],
         validate="1:1",
@@ -71,7 +108,15 @@ def calculate_satellite_features(
             "There are repeat sample / item combinations in the satellite features dataframe"
         )
 
-    return satellite_features.set_index("sample_id").drop(columns=["item_id"]).astype(float)
+    # Use the most recent (and cloud-free if calculated) valid image
+    cols_to_sort_on = ["days_before_sample"] + (
+        ["cloud_pct"] if "cloud_pct" in satellite_features.columns else []
+    )
+    satellite_features = (
+        satellite_features.sort_values(cols_to_sort_on).reset_index().groupby("sample_id").first()
+    )
+
+    return satellite_features
 
 
 def _calculate_satellite_features_for_sample_item(
@@ -84,25 +129,52 @@ def _calculate_satellite_features_for_sample_item(
         Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}/{sample_id}/{item_id}"
     )
 
+    sample_item_features = {"sample_id": sample_id, "item_id": item_id}
+
     # Skip combos we were not able to download
     if not sample_item_dir.exists():
         return None
 
+    # Load SCL band if filtering based on clouds and/or water
+    if config.max_cloud_percent is not None or config.filter_to_water_area:
+        scl_array = np.load(sample_item_dir / "SCL.npy")
+
+    # Don't calculate features for the item if the cloud ratio is too high
+    if config.max_cloud_percent is not None:
+        cloud_ratio = ((scl_array >= 7) & (scl_array <= 10)).sum() / (
+            scl_array.shape[1] * scl_array.shape[2]
+        )
+        sample_item_features["cloud_pct"] = cloud_ratio
+        if cloud_ratio > config.max_cloud_percent:
+            return sample_item_features
+
     # Load band arrays into a dictionary with band names for keys
     band_arrays = {}
-    # If we want to mask image data with water boundaries in some way, add here
     for band in config.use_sentinel_bands:
         if not (sample_item_dir / f"{band}.npy").exists():
             raise FileNotFoundError(
                 f"Band {band} is missing from pystac item directory {sample_item_dir}"
             )
         arr = np.load(sample_item_dir / f"{band}.npy")
-        # set no data value to be nan
-        band_arrays[band] = np.where(arr == 0, np.nan, arr)
+
+        # Set no data value to be nan
+        arr = np.where(arr == 0, np.nan, arr)
+        sample_item_features["num_no_data"] = np.isnan(arr).sum()
+
+        # Filter array to water area
+        if config.filter_to_water_area:
+            if band != "SCL":
+                scaled_scl = cv2.resize(scl_array[0], (arr.shape[2], arr.shape[1]))
+                arr = arr[0][scaled_scl == 6]
+                sample_item_features["num_water_pixels"] = arr.size
+
+        # If the bounding box does not contain any water pixels (if filtering) or has entirely no data pixels, do not calculate features
+        if arr.size == 0 or np.isnan(arr).all():
+            return sample_item_features
+
+        band_arrays[band] = arr
 
     # Iterate over features to generate
-    sample_item_features = {"sample_id": sample_id, "item_id": item_id}
-
     for feature in config.satellite_image_features:
         # note: features will be nan if any pixel in bounding box is nan
         sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
@@ -196,27 +268,26 @@ def generate_all_features(
             is saved
 
     Returns:
-        pd.DataFrame: Dataframe where the index is sample_id and there is one
+        (selected_image_meta, features): Tuple of dataframes.
+
+            'selected_image_meta' is a DataFrame with metadata and the
+            visual_href link to the selected Sentinel image for each sample point.
+
+            'features' is a dataframe where the index is sample_id and there is one
             column for each feature. Each row is a unique combination of
             sample and pystac item. Only samples that have at least one valid
             non-metadata feature are included in the features dataframe
     """
-    # Generate satellite features
-    # May be >1 row per sample, only includes samples with imagery
+    # Generate satellite features, only includes samples with imagery
     satellite_features = calculate_satellite_features(satellite_meta, config, cache_dir)
-
-    # drop rows where bounding box contained any no data pixels
-    logger.info(
-        f"Dropping {satellite_features.isna().any(axis=1).sum()} row(s) where satellite images have a bounding box with missing data."
-    )
-    satellite_features = satellite_features.dropna()
 
     ct_with_satellite = satellite_features.index.nunique()
     if ct_with_satellite < samples.shape[0]:
         logger.warning(
-            f"Satellite data is not available for all sample points. Predictions will only be generated for {ct_with_satellite} sample points with satellite imagery ({(ct_with_satellite / samples.shape[0]):.0%} of sample points)"
+            f"Relevant satellite data is not available for all sample points. Features will only be generated for {ct_with_satellite:,} sample points with valid satellite imagery ({(ct_with_satellite / samples.shape[0]):.0%} of sample points)"
         )
-    features = satellite_features.copy()
+
+    features = satellite_features.drop(columns=["item_id"])
 
     # Generate non-satellite features. Each has only one row per sample
     if config.sample_meta_features:
@@ -233,16 +304,29 @@ def generate_all_features(
     )
     features = features[all_feature_cols]
     ct_with_features = features.index.nunique()
+    num_sat_features = len(config.satellite_image_features) + len(config.satellite_meta_features)
     if config.sample_meta_features:
         logger.info(
-            f"Generated {satellite_features.shape[1]:,} satellite feature(s) and {sample_meta_features.shape[1]:,} sample metadata feature(s) for {ct_with_features:,} sample points ({(ct_with_features / samples.shape[0]):.0%} of sample points)"
+            f"Generated {num_sat_features:,} satellite feature(s) and {len(config.sample_meta_features):,} sample metadata feature(s) for {ct_with_features:,} sample points ({(ct_with_features / samples.shape[0]):.0%} of sample points)"
         )
     else:
         logger.info(
-            f"Generated {satellite_features.shape[1]:,} satellite feature(s) for {ct_with_features:,} sample points ({(ct_with_features / samples.shape[0]):.0%} of sample points)"
+            f"Generated {num_sat_features:,} satellite feature(s) for {ct_with_features:,} sample points ({(ct_with_features / samples.shape[0]):.0%} of sample points)"
         )
 
     # Process string column values (eg replace `:` from satellite meta)
     features.columns = [col.replace(":", "_") for col in features.columns]
 
-    return features
+    # save out metadata on chosen satellite image for use in visualization later
+    # only some of these are calculated depending on what filters are used (e.g. cloud and water)
+    possible_meta_columns = [
+        "item_id",
+        "cloud_pct",
+        "num_water_pixels",
+        "days_before_sample",
+        "visual_href",
+    ]
+    selected_image_meta = satellite_features[
+        [c for c in possible_meta_columns if c in satellite_features.columns]
+    ]
+    return selected_image_meta, features

@@ -7,6 +7,7 @@ from repro_zipfile import ReproducibleZipFile as ZipFile
 import lightgbm as lgb
 from loguru import logger
 import pandas as pd
+from scipy.stats.mstats import winsorize
 from sklearn.model_selection import StratifiedGroupKFold
 
 from cyfi.config import FeaturesConfig, CyFiModelConfig
@@ -75,6 +76,12 @@ class CyFiPipeline:
             )
             labels = labels.drop_duplicates()
 
+        # Winsorize top 1% of density values to exclude outliers
+        if "density_cells_per_ml" in labels.columns:
+            labels["density_cells_per_ml"] = winsorize(
+                labels.density_cells_per_ml, limits=(0, 0.01)
+            )
+
         # Add log density if needed
         if (self.target_col == "log_density") and ("log_density" not in labels):
             labels["log_density"] = convert_density_to_log_density(labels.density_cells_per_ml)
@@ -111,12 +118,12 @@ class CyFiPipeline:
         logger.info(f"Satellite imagery saved to {self.cache_dir}")
 
         ## Generate features
-        features = generate_all_features(
+        selected_image_meta, features = generate_all_features(
             samples, satellite_meta, self.features_config, self.cache_dir
         )
-        save_features_to = self.cache_dir / f"features_{split}.csv"
-        features.to_csv(save_features_to, index=True)
 
+        features.to_csv(self.cache_dir / f"features_{split}.csv", index=True)
+        selected_image_meta.to_csv(self.cache_dir / f"sentinel_metadata_{split}.csv", index=True)
         return features
 
     def _prepare_train_features(self):

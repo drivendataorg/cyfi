@@ -43,6 +43,7 @@ test: clean lint
 
 ## Make assets
 assets:
+	rm -r tests/assets/experiment
 	python cyfi/experiment.py tests/assets/experiment_config.yaml
 
 #################################################################################

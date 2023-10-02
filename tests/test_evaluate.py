@@ -24,8 +24,8 @@ def test_evaluate_preds(experiment_config, tmp_path):
     assert ep.missing_predictions_mask.sum() == 1
     assert len(ep.missing_predictions_mask) == 5
 
-    # y_true and y_pred dfs should have four observations
-    assert len(ep.y_pred_df) == 4
+    # y_true and y_pred dfs should have two observations since they only contain non-missing (missing = 1 of 5)
+    assert len(ep.y_pred_df) == len(ep.y_true_df) == 4
 
     assert experiment_config.cyfi_model_config.target_col == "log_density"
     # check we have density_cells_per_ml and severity (which are always predicted)

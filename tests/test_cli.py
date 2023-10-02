@@ -35,10 +35,9 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, local_model_path
     assert (preds.index == predict_data.index).all()
     assert Path(tmp_path / "sample_features.csv").exists()
 
-    # Check that the missing / non missing values are expected
-    missing_sample_mask = preds.sample_id == "e66ea0c31ba500d5d4ac4c610b8cf508"
-    assert preds[~missing_sample_mask].severity.notna().all()
-    assert preds[missing_sample_mask].severity.isna().all()
+    # Check that the missing values are expected
+    assert pd.isna(preds.set_index("sample_id").loc["e66ea0c31ba500d5d4ac4c610b8cf508"].severity)
+    assert preds.severity.isna().sum() == 1
 
     # Check that log level is expected
     assert "SUCCESS" in result.stdout

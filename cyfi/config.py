@@ -2,7 +2,8 @@ import hashlib
 from typing import List, Optional
 
 import numpy as np
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic.types import confloat
 
 
 def check_field_is_subset(field_value: List, accepted_values: List) -> List:
@@ -27,19 +28,25 @@ class FeaturesConfig(BaseModel):
     Args:
         pc_days_search_window (Optional[int], optional): Number of days before a given sample was
             collected to include when searching the planetary computer for satellite imagery.
-            Defaults to 15.
+            Defaults to 30.
         pc_meters_search_window (Optional[int], optional): Buffer in meters to add on each side
             of a given sample's location when searching the planetary computer for satellite imagery.
-            Defaults to 5000.
+            Defaults to 2000.
         use_sentinel_bands (Optional[List], optional): All Sentinel-2 bands that are needed to
             generate satellite imagery featues. For all options see AVAILABLE_SENTINEL_BANDS.
             Defaults to ['AOT', 'B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09',
             'B11', 'B12', 'B8A', 'SCL', 'WVP'].
         image_feature_meter_window (Optional[int], optional): Buffer in meters to add on each side of a
             given sample's location when creating the bounding box for the subset of a satellite image
-            that will be used to generate features. Defaults to 200.
-        n_sentinel_items (Optional[int], optional): Maximum number of Sentinel-2 items to use for each
-            sample. Defaults to 15.
+            that will be used to generate features. Defaults to 2000.
+        max_cloud_percent (Optional[float], optional): Maximum portion of cloud pixels allowed in bounding box.
+            If the portion of cloud pixels is above this, the image will not be used. Defaults to 0.05.
+            Ranges from 0-1.
+        filter_to_water_area (bool): Whether to filter to water pixels in the bounding box using the scene
+            classification band. Defaults to True.
+        n_sentinel_items (Optional[int], optional): Maximum number of Sentinel-2 items to download for each
+            sample. Defaults to 15. Only the most recent one containing water and passing the max_cloud_percent
+            filter (if using) will be used to generate features.
         satellite_image_features (Optional[List], optional): List of satellite imagery features to
             include. For all options see SATELLITE_FEATURE_CALCULATORS. Defaults to ['AOT_mean',
             'AOT_min', 'AOT_max', 'AOT_range', 'B01_mean', 'B01_min', 'B01_max', 'B01_range',
@@ -58,8 +65,8 @@ class FeaturesConfig(BaseModel):
             options see AVAILABLE_SAMPLE_META_FEATURES. Defaults to ['land_cover'].
     """
 
-    pc_days_search_window: Optional[int] = 15
-    pc_meters_search_window: Optional[int] = 5000
+    pc_days_search_window: Optional[int] = 30
+    pc_meters_search_window: Optional[int] = 2000
     use_sentinel_bands: Optional[List] = [
         "AOT",
         "B01",
@@ -77,95 +84,69 @@ class FeaturesConfig(BaseModel):
         "SCL",
         "WVP",
     ]
-    image_feature_meter_window: Optional[int] = 200
+    image_feature_meter_window: Optional[int] = 2000
+    max_cloud_percent: Optional[confloat(ge=0, le=1)] = 0.05
+    filter_to_water_area: bool = True
     n_sentinel_items: Optional[int] = 15
     satellite_meta_features: Optional[List] = ["month", "days_before_sample"]
     sample_meta_features: Optional[List] = ["land_cover"]
     satellite_image_features: Optional[List] = [
-        "AOT_mean",
-        "AOT_min",
-        "AOT_max",
-        "AOT_range",
         "B01_mean",
-        "B01_min",
-        "B01_max",
-        "B01_range",
         "B02_mean",
-        "B02_min",
-        "B02_max",
-        "B02_range",
         "B03_mean",
-        "B03_min",
-        "B03_max",
-        "B03_range",
         "B04_mean",
-        "B04_min",
-        "B04_max",
-        "B04_range",
         "B05_mean",
-        "B05_min",
-        "B05_max",
-        "B05_range",
         "B06_mean",
-        "B06_min",
-        "B06_max",
-        "B06_range",
         "B07_mean",
-        "B07_min",
-        "B07_max",
-        "B07_range",
         "B08_mean",
-        "B08_min",
-        "B08_max",
-        "B08_range",
         "B09_mean",
-        "B09_min",
-        "B09_max",
-        "B09_range",
         "B11_mean",
-        "B11_min",
-        "B11_max",
-        "B11_range",
         "B12_mean",
-        "B12_min",
-        "B12_max",
-        "B12_range",
         "B8A_mean",
-        "B8A_min",
-        "B8A_max",
-        "B8A_range",
-        "SCL_mean",
-        "SCL_min",
-        "SCL_max",
-        "SCL_range",
         "WVP_mean",
-        "WVP_min",
-        "WVP_max",
-        "WVP_range",
+        "AOT_mean",
+        "percent_water",
+        "green95th",
+        "green5th",
+        "green_red_ratio",
+        "green_blue_ratio",
+        "red_blue_ratio",
+        "green95th_blue_ratio",
+        "green5th_blue_ratio",
         "NDVI_B04",
         "NDVI_B05",
         "NDVI_B06",
         "NDVI_B07",
+        "AOT_range",
     ]
 
     # Do not allow extra fields
     model_config = ConfigDict(extra="forbid")
 
     @field_validator("use_sentinel_bands")
-    def validate_sentinel_bands(cls, path_field):
-        return check_field_is_subset(path_field, AVAILABLE_SENTINEL_BANDS)
+    def validate_sentinel_bands(cls, field):
+        return check_field_is_subset(field, AVAILABLE_SENTINEL_BANDS)
+
+    @model_validator(mode="after")
+    def include_SCL_for_water_or_cloud_filtering(self):
+        if (
+            self.max_cloud_percent is not None or self.filter_to_water_area
+        ) and "SCL" not in self.use_sentinel_bands:
+            # add SCL which is used for water and cloud filtering
+            self.use_sentinel_bands = self.use_sentinel_bands + ["SCL"]
+        return self
 
     @field_validator("satellite_image_features")
-    def validate_satellite_image_features(cls, path_field):
-        return check_field_is_subset(path_field, list(SATELLITE_FEATURE_CALCULATORS.keys()))
+    def validate_satellite_image_features(cls, field):
+        return check_field_is_subset(field, list(SATELLITE_FEATURE_CALCULATORS.keys()))
 
     @field_validator("satellite_meta_features")
-    def validate_satellite_meta_features(cls, path_field):
-        return check_field_is_subset(path_field, AVAILABLE_SATELLITE_META_FEATURES)
+    def validate_satellite_meta_features(cls, field):
+        return check_field_is_subset(field, AVAILABLE_SATELLITE_META_FEATURES)
 
     @field_validator("sample_meta_features")
-    def validate_sample_meta_features(cls, path_field):
-        return check_field_is_subset(path_field, AVAILABLE_SAMPLE_META_FEATURES)
+    def validate_sample_meta_features(cls, field):
+        return check_field_is_subset(field, AVAILABLE_SAMPLE_META_FEATURES)
 
     def get_cached_path(self) -> str:
         """Get the hash used for the features cache directory name"""
@@ -242,8 +223,8 @@ class CyFiModelConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @field_validator("target_col")
-    def validate_target_col(cls, path_field):
-        return check_field_is_subset(path_field, AVAILABLE_TARGET_COLS)
+    def validate_target_col(cls, field):
+        return check_field_is_subset(field, AVAILABLE_TARGET_COLS)
 
 
 AVAILABLE_TARGET_COLS = ["severity", "log_density", "density_cells_per_ml"]
@@ -282,19 +263,21 @@ AVAILABLE_SAMPLE_META_FEATURES = ["land_cover", "rounded_latitude", "rounded_lon
 
 SATELLITE_FEATURE_CALCULATORS = {
     "NDVI_B04": lambda x: (x["B08"].mean() - x["B04"].mean())
-    / (x["B08"].mean() + x["B04"].mean() + 1),
+    / (x["B08"].mean() + x["B04"].mean()),
     "NDVI_B05": lambda x: (x["B08"].mean() - x["B05"].mean())
-    / (x["B08"].mean() + x["B05"].mean() + 1),
+    / (x["B08"].mean() + x["B05"].mean()),
     "NDVI_B06": lambda x: (x["B08"].mean() - x["B06"].mean())
-    / (x["B08"].mean() + x["B06"].mean() + 1),
+    / (x["B08"].mean() + x["B06"].mean()),
     "NDVI_B07": lambda x: (x["B08"].mean() - x["B07"].mean())
-    / (x["B08"].mean() + x["B07"].mean() + 1),
-    "green_red_ratio": lambda x: x["B03"].mean() / (x["B04"].mean() + 1),
-    "green_blue_ratio": lambda x: x["B03"].mean() / (x["B02"].mean() + 1),
-    "red_blue_ratio": lambda x: x["B04"].mean() / (x["B02"].mean() + 1),
-    "green95th_blue_ratio": lambda x: np.percentile(x["B03"], 95) / (x["B02"].mean() + 1),
-    "green5th_blue_ratio": lambda x: np.percentile(x["B03"], 5) / (x["B02"].mean() + 1),
-    "prop_water": lambda x: (x["SCL"] == 6).mean(),
+    / (x["B08"].mean() + x["B07"].mean()),
+    "green_red_ratio": lambda x: x["B03"].mean() / (x["B04"].mean()),
+    "green_blue_ratio": lambda x: x["B03"].mean() / (x["B02"].mean()),
+    "red_blue_ratio": lambda x: x["B04"].mean() / (x["B02"].mean()),
+    "green95th": lambda x: np.percentile(x["B03"], 95),
+    "green5th": lambda x: np.percentile(x["B03"], 5),
+    "green95th_blue_ratio": lambda x: np.percentile(x["B03"], 95) / (x["B02"].mean()),
+    "green5th_blue_ratio": lambda x: np.percentile(x["B03"], 5) / (x["B02"].mean()),
+    "percent_water": lambda x: (x["SCL"] == 6).mean(),
     "AOT_mean": lambda x: x["AOT"].mean(),
     "AOT_min": lambda x: x["AOT"].min(),
     "AOT_max": lambda x: x["AOT"].max(),

@@ -27,6 +27,7 @@ dependencies = [
   "matplotlib<3.8.0",
   "numpy",
   "odc-stac",
+  "opencv-python",
   "pandas",
   "pathlib",
   "planetary-computer",

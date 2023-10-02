@@ -21,7 +21,7 @@ def test_lgbparams():
 def test_features_config():
     config = FeaturesConfig()
     assert config.sample_meta_features == ["land_cover"]
-    assert config.pc_days_search_window == 15
+    assert config.pc_days_search_window == 30
 
     config = FeaturesConfig(pc_meters_search_window=100, image_feature_meter_window="200")
     assert config.pc_meters_search_window == 100
@@ -46,6 +46,22 @@ def test_features_config():
     # Errors with unrecognized metadata feature
     with pytest.raises(ValueError):
         FeaturesConfig(sample_meta_features=["surprise_feature"])
+
+    # Errors with value greater than 1
+    with pytest.raises(ValidationError):
+        FeaturesConfig(max_cloud_percent=2)
+
+    # SCL is needed for filtering based on clouds
+    config = FeaturesConfig(
+        use_sentinel_bands=["B01"], max_cloud_percent=0.05, filter_to_water_area=False
+    )
+    assert "SCL" in config.use_sentinel_bands
+
+    # SCL is needed for filtering based on water
+    config = FeaturesConfig(
+        use_sentinel_bands=["B01"], max_cloud_percent=None, filter_to_water_area=True
+    )
+    assert "SCL" in config.use_sentinel_bands
 
 
 def test_features_config_cache_path(features_config):

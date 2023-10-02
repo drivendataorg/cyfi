@@ -165,12 +165,12 @@ def get_items_metadata(
             if optional_item_property in item.properties:
                 item_meta.update({optional_item_property: item.properties[optional_item_property]})
 
-        # Add link to visual image for display later
-        item_meta.update({"visual_href": item.assets["visual"].href})
+        # Add unsigned link to visual image for display later
+        item_meta.update({"visual_href": item.assets["visual"].href.split("?")[0]})
 
-        # Add links to download each band needed for features
+        # Add unsigned links to download each band needed for features
         for band in config.use_sentinel_bands:
-            item_meta.update({f"{band}_href": item.assets[band].href})
+            item_meta.update({f"{band}_href": item.assets[band].href.split("?")[0]})
         items_meta.append(item_meta)
     items_meta = pd.DataFrame(items_meta)
     if len(items_meta) == 0:
@@ -392,10 +392,8 @@ def download_row(
             # Check if the file already exists
             array_save_path = sample_image_dir / f"{band}.npy"
             if not array_save_path.exists():
-                # Get unsigned URL so we don't use expired token
-                unsigned_href = row[f"{band}_href"].split("?")[0]
                 band_array = (
-                    rioxarray.open_rasterio(pc.sign(unsigned_href))
+                    rioxarray.open_rasterio(pc.sign(row[f"{band}_href"]))
                     .rio.clip_box(
                         minx=minx,
                         miny=miny,

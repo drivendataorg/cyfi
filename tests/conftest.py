@@ -51,7 +51,7 @@ def evaluate_data_path() -> Path:
 
 @pytest.fixture(scope="session")
 def evaluate_data_features() -> pd.DataFrame:
-    return pd.read_csv(ASSETS_DIR / "evaluate_data_features.csv", index_col=0)
+    return pd.read_csv(ASSETS_DIR / "experiment" / "features_test.csv", index_col=0)
 
 
 @pytest.fixture(scope="session")
@@ -70,6 +70,8 @@ def features_config():
         n_sentinel_items=1,
         satellite_meta_features=[],
         sample_meta_features=[],
+        filter_to_water_area=False,
+        max_cloud_percent=None,
     )
 
 
