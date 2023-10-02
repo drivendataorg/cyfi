@@ -108,12 +108,12 @@ def calculate_satellite_features(
             "There are repeat sample / item combinations in the satellite features dataframe"
         )
 
-    # Use the most recent, valid image
+    # Use the most recent (and cloud-free if calculated) valid image
+    cols_to_sort_on = ["days_before_sample"] + (
+        ["cloud_pct"] if "cloud_pct" in satellite_features.columns else []
+    )
     satellite_features = (
-        satellite_features.sort_values("days_before_sample")
-        .reset_index()
-        .groupby("sample_id")
-        .first()
+        satellite_features.sort_values(cols_to_sort_on).reset_index().groupby("sample_id").first()
     )
 
     return satellite_features
