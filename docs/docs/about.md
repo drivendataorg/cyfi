@@ -1,4 +1,4 @@
-# About the proejct
+# About the project
 
 Inland water bodies provide a variety of critical services for both human and aquatic life, including drinking water, recreational and economic opportunities, and marine habitats. A significant challenge water quality managers face is the formation of harmful algal blooms, which can harm human health, threaten other mammals like pets, and damage aquatic ecosystems.
 
@@ -8,7 +8,7 @@ Manual water sampling, or “in situ” sampling, is generally used to monitor c
 
 **The goal of CyFi is to help water quality managers better allocate resources for in situ sampling, and make more informed decisions around public health warnings for critical resources like drinking water reservoirs.** Ultimately, more accurate and more timely detection of algal blooms helps keep both the human and marine life that rely on these water bodies safe and healthy.
 
-# Additional resources
+## Additional resources
 
 **Machine learning competition**
 
