@@ -46,6 +46,12 @@ assets:
 	rm -r tests/assets/experiment
 	python cyfi/experiment.py tests/assets/experiment_config.yaml
 
+docs:  ## build the static version of the docs
+	cd docs && mkdocs build
+
+docs-serve: ## serve documentation to livereload while you work
+	cd docs && mkdocs serve
+
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################
