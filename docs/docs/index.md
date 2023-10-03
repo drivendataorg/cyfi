@@ -1,8 +1,9 @@
 # CyFi: Cyanobacteria Finder
 
-Cyfi is a command line tool that uses satellite imagery and machine learning to estimate cyanobacteria levels, one type of harmful algal bloom. The goal of CyFi is to help water quality managers better allocate resources for in situ sampling, and make more informed decisions around public health warnings for critical resources like drinking water reservoirs. Ultimately, more accurate and more timely detection of algal blooms helps keep both the human and marine life that rely on these water bodies safe and healthy.
+CyFi is a command line tool that uses satellite imagery and machine learning to estimate cyanobacteria levels, one type of harmful algal bloom. The goal of CyFi is to help water quality managers better allocate resources for in situ sampling, and make more informed decisions around public health warnings for critical resources like drinking water reservoirs. Ultimately, more accurate and more timely detection of algal blooms helps keep both the human and marine life that rely on these water bodies safe and healthy.
 
 ------
+
 ## Quickstart
 
 ### Install
@@ -13,7 +14,7 @@ Install CyFi with pip:
 pip install cyfi
 ```
 
-For detailed instructions for those installing python for the first time, see the [Installation](installation.md) page.
+For detailed instructions for those installing python for the first time, see the [Installation](https://cyfi.drivendata.org/stable/installation) docs.
 
 ### Generate batch predictions
 

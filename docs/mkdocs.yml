@@ -4,8 +4,6 @@ site_description: A python package to predict cyanobacteria density based on Sen
 repo_url: https://github.com/drivendataorg/cyfi
 theme:
   name: flatly
-  logo: logo-no-text.svg
-  favicon: favicon.svg
 
 nav:
   - Quickstart: "./#quickstart"
