@@ -3,6 +3,8 @@
 black
 flake8
 jupyter
+mkdocs
+mkdocs-bootswatch
 pytest
 pytest-cov
 pytest_mock
