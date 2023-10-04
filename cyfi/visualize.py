@@ -1,4 +1,5 @@
 from pathlib import Path
+import tempfile
 
 import gradio as gr
 import geopy.distance as distance
@@ -7,14 +8,11 @@ import rioxarray
 import planetary_computer as pc
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
+import typer
 
-DIR = Path("experiments/results/2000_30days_filter_cloud_water_winsorize_labels")
 
-preds = pd.read_csv(DIR / "preds.csv")
-preds = preds[preds.severity.notnull()]
-meta = pd.read_csv(DIR / "sentinel_metadata_test.csv")
-df = preds.merge(meta, on="sample_id")
-df.to_csv("demo/log.csv", index=False)
+cyfi_examples_dir = Path(tempfile.gettempdir()) / "cyfi_explorer"
+cyfi_examples_dir.mkdir(exist_ok=True, parents=True)
 
 
 def get_bounding_box(latitude: float, longitude: float, meters_window: int):
@@ -43,6 +41,7 @@ def plot_image(
     lon,
     density,
 ):
+    df = pd.read_csv(cyfi_examples_dir / "log.csv")
     sample = df.set_index("sample_id").loc[sample_id].squeeze()
 
     distance_search = distance.distance(meters=2000)
@@ -86,18 +85,14 @@ def plot_image(
 
 def make_map():
     # set column order
-    DIR = Path("experiments/results/2000_30days_filter_cloud_water_winsorize_labels")
-    preds = pd.read_csv(DIR / "preds.csv")
-    meta = pd.read_csv(DIR / "sentinel_metadata_test.csv")
-    df = preds.merge(meta, on="sample_id")[
-        ["date", "latitude", "longitude", "density_cells_per_ml", "severity"]
-    ]
+    df = pd.read_csv(cyfi_examples_dir / "log.csv")
+    map_df = df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]]
 
     fig = go.Figure(
         go.Scattermapbox(
-            customdata=df,
-            lat=df["latitude"].tolist(),
-            lon=df["longitude"].tolist(),
+            customdata=map_df,
+            lat=map_df["latitude"].tolist(),
+            lon=map_df["longitude"].tolist(),
             mode="markers",
             marker=go.scattermapbox.Marker(size=6),
             hoverinfo="text",
@@ -105,7 +100,7 @@ def make_map():
         )
     )
 
-    sample = preds.iloc[1].squeeze()
+    sample = map_df.iloc[1].squeeze()
 
     fig.update_layout(
         mapbox_style="carto-positron",
@@ -123,39 +118,56 @@ def make_map():
     return fig
 
 
-with gr.Blocks() as demo:
-    gr.Markdown("CyFi Explorer")
+def visualize(
+    output_directory: Path = typer.Argument(
+        Path.cwd(),
+        help="CyFi output directory containing preds.csv and sentinel_metadata.csv from a prior prediction run.",
+    )
+):
+    """Launch CyFi Explorer to see Sentinel-2 imagery alongside predictions."""
 
-    with gr.Tab("Imagery Explorer"):
-        with gr.Row():
-            image = gr.Image(label="Sentinel-2 imagery")
-            with gr.Column():
-                density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
-                severity = gr.Textbox(label="Severity level")
-                date = gr.Textbox(label="date")
-                lat = gr.Number(label="latitude")
-                lon = gr.Number(label="longitude")
+    # merge preds and sentinel metadata into single csv and write out to temp directory
+    preds = pd.read_csv(output_directory / "preds.csv")
+    preds = preds[preds.severity.notnull()]
+    meta = pd.read_csv(output_directory / "sentinel_metadata.csv")
+    df = preds.merge(meta, on="sample_id")
 
-        input_sample = gr.Textbox(label="sample_id", visible=False)
-        input_date = gr.Textbox(label="date", visible=False)
-        input_lat = gr.Number(label="latitude", visible=False)
-        input_lon = gr.Number(label="longitude", visible=False)
-        input_density = gr.Textbox(label="density", visible=False)
+    # save out as log.csv (expected filename for gradio examples)
+    df.to_csv(cyfi_examples_dir / "log.csv", index=False)
 
-        gr.Markdown(
-            "Click on a row to see the Sentinel-2 imagery used to generate the cyanobacteria estimate."
-        )
-        gr.Examples(
-            examples="demo",
-            inputs=[input_sample, input_date, input_lat, input_lon, input_density],
-            label="Sample points",
-            fn=plot_image,
-            run_on_click=True,
-            outputs=[image, density, severity, date, lat, lon],
-        )
+    with gr.Blocks() as demo:
+        gr.Markdown("CyFi Explorer")
 
-    with gr.Tab("Map Explorer"):
-        map = gr.Plot()
-        demo.load(make_map, [], map)
+        with gr.Tab("Imagery Explorer"):
+            with gr.Row():
+                image = gr.Image(label="Sentinel-2 imagery")
+                with gr.Column():
+                    density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
+                    severity = gr.Textbox(label="Severity level")
+                    date = gr.Textbox(label="date")
+                    lat = gr.Number(label="latitude")
+                    lon = gr.Number(label="longitude")
 
-demo.launch()
+            input_sample = gr.Textbox(label="sample_id", visible=False)
+            input_date = gr.Textbox(label="date", visible=False)
+            input_lat = gr.Number(label="latitude", visible=False)
+            input_lon = gr.Number(label="longitude", visible=False)
+            input_density = gr.Textbox(label="density", visible=False)
+
+            gr.Markdown(
+                "Click on a row to see the Sentinel-2 imagery used to generate the cyanobacteria estimate."
+            )
+            gr.Examples(
+                examples=str(cyfi_examples_dir),
+                inputs=[input_sample, input_date, input_lat, input_lon, input_density],
+                label="Sample points",
+                fn=plot_image,
+                run_on_click=True,
+                outputs=[image, density, severity, date, lat, lon],
+            )
+
+        with gr.Tab("Map Explorer"):
+            map = gr.Plot()
+            demo.load(make_map, [], map)
+
+    demo.launch()
