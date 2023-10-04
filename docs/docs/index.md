@@ -59,17 +59,17 @@ Or, generate a cyanobacteria estimate for a single point on a single date using 
 Just specify the latitude, longitude, and date as arguments at the command line.
 
 ```
-cyfi predict-point --lat 41.2 --lon -73.2 --date 2023-09-01
+cyfi predict-point --lat 41.2 --lon -73.2 --date 2023-09-14
 ```
 
 This will print out the estimated cyanobacteria density and associated severity level based on WHO thresholds.
 
 ```
-2023-10-03 13:27:22.565 | SUCCESS  | cyfi.cli:predict_point:154 - Estimate generated:
-date                    2023-09-01
+2023-10-04 16:25:40.581 | SUCCESS  | cyfi.cli:predict_point:154 - Estimate generated:
+date                    2023-09-14
 latitude                      41.2
 longitude                    -73.2
-density_cells_per_ml        38,262
+density_cells_per_ml        32,820
 severity                  moderate
 ```
 
