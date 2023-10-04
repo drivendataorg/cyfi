@@ -7,7 +7,7 @@ theme:
 
 nav:
   - Installation: "installation.md"
-  - Quickstart: "index.md/#quickstart"
+  - Quickstart: "./#quickstart"
   - Background: "about.md"
   - Accuracy: "performance.md"
   - Changelog: "changelog.md"
