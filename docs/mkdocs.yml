@@ -6,11 +6,9 @@ theme:
   name: flatly
 
 nav:
-  - Quickstart: "./#quickstart"
   - Installation: "installation.md"
-  - 'About':
-    - 'About the model': "./#about-the-model"
-    - 'About the project': "about.md"
+  - Quickstart: "./#quickstart"
+  - Background: "about.md"
   - Accuracy: "performance.md"
   - Changelog: "changelog.md"
 
