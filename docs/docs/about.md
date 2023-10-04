@@ -32,6 +32,11 @@ There are other groups working on cyanobacteria estimates from satellite imagery
     - [Dashboard](https://qed.epa.gov/cyanweb/)
     - [Paper](https://www.sciencedirect.com/science/article/pii/S1364815218302482?via%3Dihub)
 
+**EPA guidance on HABs**
+
+- [Recommendations for Cyanobacteria and Cyanotoxin Monitoring in Recreational Waters](https://www.epa.gov/sites/default/files/2019-09/documents/recommend-cyano-rec-water-2019-update.pdf)
+- [Recommended Human Health Recreational Ambient Water Quality Criteria or Swimming Advisories for Microcystins and Cylindrospermopsin](https://www.epa.gov/sites/default/files/2019-05/documents/hh-rec-criteria-habs-document-2019.pdf)
+
 **Related research on using satellite imagery to monitor HABs**
 
 - [Quantifying national and regional cyanobacterial occurrence in US lakes using satellite remote sensing](https://www.sciencedirect.com/science/article/pii/S1470160X19309719?ref=pdf_download&fr=RR-2&rr=8109976f78329642)
