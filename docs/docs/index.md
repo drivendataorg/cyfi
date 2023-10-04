@@ -107,7 +107,7 @@ latitude,longitude,date
 41.424144,-73.206937,2023-06-22
 ```
 
-The feature generation for each observation is as follows:
+Satellite imagery feature generation for each observation is as follows:
 
 - identify relevant Sentinel-2 tiles based on
     - a bounding box of 2,000m around the sampling point
