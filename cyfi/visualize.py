@@ -5,7 +5,16 @@ import geopy.distance as distance
 import pandas as pd
 import rioxarray
 import planetary_computer as pc
+import plotly.graph_objects as go
 import matplotlib.pyplot as plt
+
+DIR = Path("experiments/results/2000_30days_filter_cloud_water_winsorize_labels")
+
+preds = pd.read_csv(DIR / "preds.csv")
+preds = preds[preds.severity.notnull()]
+meta = pd.read_csv(DIR / "sentinel_metadata_test.csv")
+df = preds.merge(meta, on="sample_id")
+df.to_csv("demo/log.csv", index=False)
 
 
 def get_bounding_box(latitude: float, longitude: float, meters_window: int):
@@ -28,29 +37,16 @@ def get_bounding_box(latitude: float, longitude: float, meters_window: int):
 
 
 def plot_image(
-    num,
-    # df,
-    # sample_id=None,
-    # degree_buffer=0.01,
-    # severity_pred_col="severity_pred",
-    # severity_actual_col="severity",
+    sample_id,
+    date,
+    lat,
+    lon,
+    density,
 ):
-    # if sample_id is not None:
-        # sample = df[df.sample_id == sample_id]
-    # else:
-        # sample = df.sample(1)
-
-    sample_crs="EPSG:4326"
-
-    DIR = Path("experiments/results/2000_30days_filter_cloud_water_winsorize_labels")
-    preds = pd.read_csv(DIR / "preds.csv")
-    meta = pd.read_csv(DIR / "sentinel_metadata_test.csv")
-
-    df = preds.merge(meta, on="sample_id")
-    sample = df.iloc[num]
-    sample = sample.squeeze()
+    sample = df.set_index("sample_id").loc[sample_id].squeeze()
 
     distance_search = distance.distance(meters=2000)
+    sample_crs = "EPSG:4326"
 
     # calculate the lat/long bounds based on ground distance
     # bearings are cardinal directions to move (south, west, north, and east)
@@ -78,31 +74,14 @@ def plot_image(
     # cropped_img_array.plot.imshow(ax=ax)
     # ax.plot(sample.longitude, sample.latitude, "ro", markersize=4)
 
-    return cropped_img_array.to_numpy().transpose(1, 2, 0), sample.density_cells_per_ml
-    # plt.title(
-    #     f"Predicted cyanobacteria density: {sample[severity_pred_col]:,.0f}\nActual advisory: {sample[severity_actual_col]}"
-    # )
-
-    # print(f"Sample ID: {sample.sample_id}")
-    # print(f"Date: {sample.date}")
-    # print(
-    #     f"Number of days before sampling date image is taken: {sample.days_before_sample}"
-    # )
-    # print(f"Water body: {sample.Water_Body_Name}")
-    # print(f"Advisory detail description: {sample.Advisory_Detail_Description}")
-
-
-# demo = gr.Interface(
-#     fn=plot_image,
-#     inputs=gr.Slider(0, 100),
-#     outputs=["image", gr.Label()],
-# )
-# demo.launch()
-
-
-
-import plotly.graph_objects as go
-
+    return (
+        cropped_img_array.to_numpy().transpose(1, 2, 0),
+        sample.density_cells_per_ml,
+        sample.severity,
+        sample.date,
+        sample.latitude,
+        sample.longitude,
+    )
 
 
 def make_map():
@@ -110,25 +89,27 @@ def make_map():
     DIR = Path("experiments/results/2000_30days_filter_cloud_water_winsorize_labels")
     preds = pd.read_csv(DIR / "preds.csv")
     meta = pd.read_csv(DIR / "sentinel_metadata_test.csv")
-    df = preds.merge(meta, on="sample_id")[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]]
+    df = preds.merge(meta, on="sample_id")[
+        ["date", "latitude", "longitude", "density_cells_per_ml", "severity"]
+    ]
 
-    fig = go.Figure(go.Scattermapbox(
-                customdata=df,
-                lat=df['latitude'].tolist(),
-                lon=df['longitude'].tolist(),
-                mode='markers',
-                marker=go.scattermapbox.Marker(
-                    size=6
-                ),
-                hoverinfo="text",
-                hovertemplate='<b>Date</b>: %{customdata[0]}<br><b>Latitude</b>: %{customdata[1]}<br><b>Longitude</b>: %{customdata[2]}<br><b>Predicted density</b>: %{customdata[3]}<br><b>Predicted severity</b>: %{customdata[4]}'
-            ))
+    fig = go.Figure(
+        go.Scattermapbox(
+            customdata=df,
+            lat=df["latitude"].tolist(),
+            lon=df["longitude"].tolist(),
+            mode="markers",
+            marker=go.scattermapbox.Marker(size=6),
+            hoverinfo="text",
+            hovertemplate="<b>Date</b>: %{customdata[0]}<br><b>Latitude</b>: %{customdata[1]}<br><b>Longitude</b>: %{customdata[2]}<br><b>Predicted density</b>: %{customdata[3]}<br><b>Predicted severity</b>: %{customdata[4]}",
+        )
+    )
 
     sample = preds.iloc[1].squeeze()
 
     fig.update_layout(
-        mapbox_style="open-street-map",
-        hovermode='closest',
+        mapbox_style="carto-positron",
+        hovermode="closest",
         mapbox=dict(
             bearing=0,
             center=go.layout.mapbox.Center(
@@ -136,13 +117,45 @@ def make_map():
                 lon=sample.longitude,
             ),
             pitch=0,
-            zoom=9
+            zoom=9,
         ),
     )
     return fig
 
+
 with gr.Blocks() as demo:
-    map = gr.Plot()
-    demo.load(make_map, [], map)
+    gr.Markdown("CyFi Explorer")
+
+    with gr.Tab("Imagery Explorer"):
+        with gr.Row():
+            image = gr.Image(label="Sentinel-2 imagery")
+            with gr.Column():
+                density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
+                severity = gr.Textbox(label="Severity level")
+                date = gr.Textbox(label="date")
+                lat = gr.Number(label="latitude")
+                lon = gr.Number(label="longitude")
+
+        input_sample = gr.Textbox(label="sample_id", visible=False)
+        input_date = gr.Textbox(label="date", visible=False)
+        input_lat = gr.Number(label="latitude", visible=False)
+        input_lon = gr.Number(label="longitude", visible=False)
+        input_density = gr.Textbox(label="density", visible=False)
+
+        gr.Markdown(
+            "Click on a row to see the Sentinel-2 imagery used to generate the cyanobacteria estimate."
+        )
+        gr.Examples(
+            examples="demo",
+            inputs=[input_sample, input_date, input_lat, input_lon, input_density],
+            label="Sample points",
+            fn=plot_image,
+            run_on_click=True,
+            outputs=[image, density, severity, date, lat, lon],
+        )
+
+    with gr.Tab("Map Explorer"):
+        map = gr.Plot()
+        demo.load(make_map, [], map)
 
 demo.launch()
