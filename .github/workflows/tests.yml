@@ -23,12 +23,11 @@ jobs:
           cache: "pip"
           cache-dependency-path: |
             pyproject.toml
-            requirements_dev.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements_dev.txt
+          pip install -e .[dev]
 
       - name: Lint package
         run: |
@@ -61,7 +60,7 @@ jobs:
           conda update pip
           conda install -c conda-forge lightgbm
           conda install -c conda-forge xarray dask netCDF4 bottleneck
-          pip install -r requirements_dev.txt
+          pip install -e .[dev]
 
       - name: Run tests
         run: |
