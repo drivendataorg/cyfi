@@ -1,7 +1,7 @@
 CyFi: Cyanobacteria Finder
 ==============================
 
-CyFi is a command line tool that uses satellite imagery and machine learning to estimate cyanobacteria levels, one type of harmful algal bloom. The goal of CyFi is to help water quality managers better allocate resources for in situ sampling, and make more informed decisions around public health warnings for critical resources like drinking water reservoirs.
+CyFi is a command line tool that uses satellite imagery and machine learning to estimate cyanobacteria levels, one type of harmful algal bloom, in water bodies. The goal of CyFi is to help water quality managers better allocate resources for in situ sampling, and make more informed decisions around public health warnings for critical resources like lakes and reservoirs.
 
 ## Quickstart
 
