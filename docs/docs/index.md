@@ -113,7 +113,7 @@ Satellite imagery feature generation for each observation is as follows:
     - a bounding box of 2,000m around the sampling point
     - a time range of 30 days prior to (and including) the sampling date
 - select the most recent image that has a bouding box containing fewer than 5% of cloud pixels
-- filter the pixels in the bounding box to the water area using the [scene classification (SCL) band]()
+- filter the pixels in the bounding box to the water area using the [scene classification (SCL) band](https://sentinels.copernicus.eu/web/sentinel/technical-guides/sentinel-2-msi/level-2a/algorithm-overview)
 - generate summary statistics (e.g., mean, max, min) and ratios (e.g, NDVI) using the 15 Sentinel-2 bands
 
 The land cover value for each sampling point is looked up from the static land cover map and add that to the satellite features.
