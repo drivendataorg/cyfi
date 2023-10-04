@@ -129,6 +129,7 @@ def visualize(
     # merge preds and sentinel metadata into single csv and write out to temp directory
     preds = pd.read_csv(output_directory / "preds.csv")
     preds = preds[preds.severity.notnull()]
+    preds["density_cells_per_ml"] = preds.density_cells_per_ml.astype(int)
     meta = pd.read_csv(output_directory / "sentinel_metadata.csv")
     df = preds.merge(meta, on="sample_id")
 
