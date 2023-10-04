@@ -2,7 +2,7 @@
 
 CyFi requires python 3.10 or later.
 
-If you already have python 3.10+ installed, simply run `pip install cyfi` and then head over to the [Quickstart](index.md/#quickstart) page to learn how to generate cyanobacteria predictions.
+If you already have python 3.10+ installed, simply run `pip install cyfi` and then head over to the [Quickstart](../#quickstart) page to learn how to generate cyanobacteria predictions.
 
 If you don't have python installed, we strongly recommend using Miniconda. Miniconda is a tool to manage your Python environments and package dependencies. It is a lightweight version of Anaconda that includes only conda, Python, the packages they both depend on, and a small number of other useful packages (like pip).
 
