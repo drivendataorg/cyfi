@@ -83,7 +83,7 @@ CyFi was born out of the [Tick Tick BLoom](https://www.drivendata.org/competitio
 
 ### Why use machine learning
 
-Machine learning is particularly well-suited to this task because indicators of cyanobacteria are visible from free, routinely collected data sources. Whereas manual water sampling is time and resource intensive, machine learning models can generate estimates in seconds. This allows water managers to prioritize where the water sampling is most beneficial and can provide a birds-eye view of water conditions across the state.
+Machine learning is particularly well-suited to this task because indicators of cyanobacteria are visible from free, routinely collected data sources. Whereas manual water sampling is time and resource intensive, machine learning models can generate estimates in seconds. This allows water managers to prioritize where water sampling will be most beneficial, and can provide a birds-eye view of water conditions across the state.
 
 ### Data sources
 
