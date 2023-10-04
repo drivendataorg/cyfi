@@ -116,7 +116,7 @@ Satellite imagery feature generation for each observation is as follows:
 - filter the pixels in the bounding box to the water area using the [scene classification (SCL) band](https://sentinels.copernicus.eu/web/sentinel/technical-guides/sentinel-2-msi/level-2a/algorithm-overview)
 - generate summary statistics (e.g., mean, max, min) and ratios (e.g, NDVI) using the 15 Sentinel-2 bands
 
-The land cover value for each sampling point is looked up from the static land cover map and add that to the satellite features.
+The land cover value for each sampling point is looked up from the static land cover map, and added to the satellite features.
 
 ```
 # example features csv row
