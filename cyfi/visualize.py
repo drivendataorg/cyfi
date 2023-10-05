@@ -1,14 +1,14 @@
 from pathlib import Path
 import tempfile
 
-import gradio as gr
 import geopy.distance as distance
+import gradio as gr
+import matplotlib.pyplot as plt
 import pandas as pd
-import rioxarray
 import planetary_computer as pc
 import plotly.graph_objects as go
-import matplotlib.pyplot as plt
 import typer
+import rioxarray
 
 
 def get_bounding_box(latitude: float, longitude: float, meters_window: int):
@@ -65,8 +65,6 @@ def visualize(
         evt: gr.SelectData,
     ):
         sample = df.iloc[evt.index[0]].squeeze()
-
-        distance_search = distance.distance(meters=2000)
         sample_crs = "EPSG:4326"
 
         # calculate the lat/long bounds based on ground distance
@@ -122,8 +120,6 @@ def visualize(
             )
         )
 
-        sample = map_df.iloc[1].squeeze()
-
         fig.update_layout(
             mapbox_style="carto-positron",
             hovermode="closest",
@@ -158,7 +154,7 @@ def visualize(
                     with gr.Row():
                         gr.Markdown(
                             """
-                            ## Sentinel-2 Imagery 
+                            ## Sentinel-2 Imagery
                             """
                         )
                     with gr.Row():
@@ -170,7 +166,7 @@ def visualize(
                 """
             )
 
-            with gr.Row():
+            with gr.Row(equal_height=True):
                 density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
                 severity = gr.Textbox(label="Estimated severity level")
                 date = gr.Textbox(label="Date")
