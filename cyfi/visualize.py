@@ -62,7 +62,7 @@ def visualize(
     df.to_csv(cyfi_examples_dir / "log.csv", index=False)
 
     def plot_image(
-        evt: gr.SelectData
+        evt: gr.SelectData,
         # sample_id,
         # date,
         # lat,
@@ -151,16 +151,27 @@ def visualize(
         )
 
         with gr.Tab("Imagery Explorer"):
-
             with gr.Row():
                 with gr.Column(scale=3):
-                    data = gr.DataFrame(df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]])
+                    data = gr.DataFrame(
+                        df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]]
+                    )
 
                 with gr.Column(scale=2):
                     with gr.Row():
-                        image = gr.Image(label="Sentinel-2 imagery")
+                        gr.Markdown(
+                            """
+                                   ## Sentinel-2 Imagery 
+                                    """
+                        )
+                    with gr.Row():
+                        image = gr.Image(label="Sentinel-2 imagery", container=False)
 
-            gr.Markdown("CyFi estimates")
+            gr.Markdown(
+                """
+                        ### CyFi data
+                        """
+            )
 
             with gr.Row():
                 density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
@@ -171,36 +182,9 @@ def visualize(
                     label="Number of days before sample date imagery was taken"
                 )
 
-                data.select(plot_image, None, [image, density, severity, date, loc, days_before_sample])
-
-
-            #     with gr.Row():
-            #         image = gr.Image(label="Sentinel-2 imagery")
-            #     with gr.Row():
-            #         density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
-            #         severity = gr.Textbox(label="Estimated severity level")
-            #         date = gr.Textbox(label="Date")
-            #         loc = gr.Textbox(label="Location")
-            #         days_before_sample = gr.Textbox(
-            #             label="Number of days before sample date imagery was taken"
-            #         )
-
-            # with gr.Column():
-
-            #     input_sample = gr.Textbox(label="sample_id", visible=False)
-            #     input_date = gr.Textbox(label="date", visible=False)
-            #     input_lat = gr.Number(label="latitude", visible=False)
-            #     input_lon = gr.Number(label="longitude", visible=False)
-            #     input_density = gr.Textbox(label="density", visible=False)
-            
-            #     gr.Examples(
-            #         examples=str(cyfi_examples_dir),
-            #         inputs=[input_sample, input_date, input_lat, input_lon, input_density],
-            #         label="Sample points",
-            #         fn=plot_image,
-            #         run_on_click=True,
-            #         outputs=[image, density, severity, date, loc, days_before_sample],
-            #     )
+                data.select(
+                    plot_image, None, [image, density, severity, date, loc, days_before_sample]
+                )
 
         with gr.Tab("Map Explorer"):
             map = gr.Plot()
