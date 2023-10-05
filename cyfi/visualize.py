@@ -38,6 +38,16 @@ def visualize(
 ):
     """Launch CyFi Explorer to see Sentinel-2 imagery alongside predictions."""
 
+    if not (output_directory / "preds.csv").exists():
+        raise ValueError(
+            f"Output directory {output_directory} does not contain a preds.csv file. Be sure to run `cyfi predict` first and make sure to use the flag `--keep-metadata`."
+        )
+
+    if not (output_directory / "sentinel_metadata.csv").exists():
+        raise ValueError(
+            f"Output directory {output_directory} does not contain a sentinel_metadata.csv file. Make sure to specify `--keep-metadata` when running `cyfi predict."
+        )
+
     # merge preds and sentinel metadata into single csv and write out to temp directory
     preds = pd.read_csv(output_directory / "preds.csv")
     preds = preds[preds.severity.notnull()]
@@ -94,8 +104,8 @@ def visualize(
             sample.density_cells_per_ml,
             sample.severity,
             sample.date,
-            sample.latitude,
-            sample.longitude,
+            f"({sample.longitude}, {sample.latitude})",
+            sample.days_before_sample,
         )
 
     def make_map():
@@ -131,18 +141,25 @@ def visualize(
         )
         return fig
 
-    with gr.Blocks() as demo:
-        gr.Markdown("CyFi Explorer")
+    with gr.Blocks(title="CyFi Explorer") as demo:
+        gr.Markdown(
+            """
+            # CyFi Explorer
+            Click on a row to see the Sentinel-2 imagery used to generate the cyanobacteria estimate.
+            """
+        )
 
         with gr.Tab("Imagery Explorer"):
             with gr.Row():
                 image = gr.Image(label="Sentinel-2 imagery")
                 with gr.Column():
                     density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
-                    severity = gr.Textbox(label="Severity level")
-                    date = gr.Textbox(label="date")
-                    lat = gr.Number(label="latitude")
-                    lon = gr.Number(label="longitude")
+                    severity = gr.Textbox(label="Estimated severity level")
+                    date = gr.Textbox(label="Date")
+                    loc = gr.Textbox(label="Location")
+                    days_before_sample = gr.Textbox(
+                        label="Number of days before sample date imagery was taken"
+                    )
 
             input_sample = gr.Textbox(label="sample_id", visible=False)
             input_date = gr.Textbox(label="date", visible=False)
@@ -150,16 +167,14 @@ def visualize(
             input_lon = gr.Number(label="longitude", visible=False)
             input_density = gr.Textbox(label="density", visible=False)
 
-            gr.Markdown(
-                "Click on a row to see the Sentinel-2 imagery used to generate the cyanobacteria estimate."
-            )
+            gr.Markdown()
             gr.Examples(
                 examples=str(cyfi_examples_dir),
                 inputs=[input_sample, input_date, input_lat, input_lon, input_density],
                 label="Sample points",
                 fn=plot_image,
                 run_on_click=True,
-                outputs=[image, density, severity, date, lat, lon],
+                outputs=[image, density, severity, date, loc, days_before_sample],
             )
 
         with gr.Tab("Map Explorer"):
