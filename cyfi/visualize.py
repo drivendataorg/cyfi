@@ -11,10 +11,6 @@ import matplotlib.pyplot as plt
 import typer
 
 
-cyfi_examples_dir = Path(tempfile.gettempdir()) / "cyfi_explorer"
-cyfi_examples_dir.mkdir(exist_ok=True, parents=True)
-
-
 def get_bounding_box(latitude: float, longitude: float, meters_window: int):
     """
     Given a latitude, longitude, and buffer in meters, returns a bounding
@@ -34,90 +30,6 @@ def get_bounding_box(latitude: float, longitude: float, meters_window: int):
     return [min_long, min_lat, max_long, max_lat]
 
 
-def plot_image(
-    sample_id,
-    date,
-    lat,
-    lon,
-    density,
-):
-    df = pd.read_csv(cyfi_examples_dir / "log.csv")
-    sample = df.set_index("sample_id").loc[sample_id].squeeze()
-
-    distance_search = distance.distance(meters=2000)
-    sample_crs = "EPSG:4326"
-
-    # calculate the lat/long bounds based on ground distance
-    # bearings are cardinal directions to move (south, west, north, and east)
-    (minx, miny, maxx, maxy) = get_bounding_box(
-        sample.latitude,
-        sample.longitude,
-        2000,
-    )
-
-    # crop image and reproject
-    cropped_img_array = (
-        rioxarray.open_rasterio(pc.sign(sample.visual_href))
-        .rio.clip_box(
-            minx=minx,
-            miny=miny,
-            maxx=maxx,
-            maxy=maxy,
-            crs=sample_crs,
-        )
-        .rio.reproject(sample_crs)
-    )
-
-    fig, ax = plt.subplots()
-
-    # cropped_img_array.plot.imshow(ax=ax)
-    # ax.plot(sample.longitude, sample.latitude, "ro", markersize=4)
-
-    return (
-        cropped_img_array.to_numpy().transpose(1, 2, 0),
-        sample.density_cells_per_ml,
-        sample.severity,
-        sample.date,
-        sample.latitude,
-        sample.longitude,
-    )
-
-
-def make_map():
-    # set column order
-    df = pd.read_csv(cyfi_examples_dir / "log.csv")
-    map_df = df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]]
-
-    fig = go.Figure(
-        go.Scattermapbox(
-            customdata=map_df,
-            lat=map_df["latitude"].tolist(),
-            lon=map_df["longitude"].tolist(),
-            mode="markers",
-            marker=go.scattermapbox.Marker(size=6),
-            hoverinfo="text",
-            hovertemplate="<b>Date</b>: %{customdata[0]}<br><b>Latitude</b>: %{customdata[1]}<br><b>Longitude</b>: %{customdata[2]}<br><b>Predicted density</b>: %{customdata[3]}<br><b>Predicted severity</b>: %{customdata[4]}",
-        )
-    )
-
-    sample = map_df.iloc[1].squeeze()
-
-    fig.update_layout(
-        mapbox_style="carto-positron",
-        hovermode="closest",
-        mapbox=dict(
-            bearing=0,
-            center=go.layout.mapbox.Center(
-                lat=sample.latitude,
-                lon=sample.longitude,
-            ),
-            pitch=0,
-            zoom=9,
-        ),
-    )
-    return fig
-
-
 def visualize(
     output_directory: Path = typer.Argument(
         Path.cwd(),
@@ -133,8 +45,91 @@ def visualize(
     meta = pd.read_csv(output_directory / "sentinel_metadata.csv")
     df = preds.merge(meta, on="sample_id")
 
+    cyfi_examples_dir = Path(tempfile.gettempdir()) / "cyfi_explorer"
+    cyfi_examples_dir.mkdir(exist_ok=True, parents=True)
+
     # save out as log.csv (expected filename for gradio examples)
     df.to_csv(cyfi_examples_dir / "log.csv", index=False)
+
+    def plot_image(
+        sample_id,
+        date,
+        lat,
+        lon,
+        density,
+    ):
+        sample = df.set_index("sample_id").loc[sample_id].squeeze()
+
+        distance_search = distance.distance(meters=2000)
+        sample_crs = "EPSG:4326"
+
+        # calculate the lat/long bounds based on ground distance
+        # bearings are cardinal directions to move (south, west, north, and east)
+        (minx, miny, maxx, maxy) = get_bounding_box(
+            sample.latitude,
+            sample.longitude,
+            2000,
+        )
+
+        # crop image and reproject
+        cropped_img_array = (
+            rioxarray.open_rasterio(pc.sign(sample.visual_href))
+            .rio.clip_box(
+                minx=minx,
+                miny=miny,
+                maxx=maxx,
+                maxy=maxy,
+                crs=sample_crs,
+            )
+            .rio.reproject(sample_crs)
+        )
+
+        fig, ax = plt.subplots()
+
+        # cropped_img_array.plot.imshow(ax=ax)
+        # ax.plot(sample.longitude, sample.latitude, "ro", markersize=4)
+
+        return (
+            cropped_img_array.to_numpy().transpose(1, 2, 0),
+            sample.density_cells_per_ml,
+            sample.severity,
+            sample.date,
+            sample.latitude,
+            sample.longitude,
+        )
+
+    def make_map():
+        # set column order
+        map_df = df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]]
+
+        fig = go.Figure(
+            go.Scattermapbox(
+                customdata=map_df,
+                lat=map_df["latitude"].tolist(),
+                lon=map_df["longitude"].tolist(),
+                mode="markers",
+                marker=go.scattermapbox.Marker(size=6),
+                hoverinfo="text",
+                hovertemplate="<b>Date</b>: %{customdata[0]}<br><b>Latitude</b>: %{customdata[1]}<br><b>Longitude</b>: %{customdata[2]}<br><b>Predicted density</b>: %{customdata[3]}<br><b>Predicted severity</b>: %{customdata[4]}",
+            )
+        )
+
+        sample = map_df.iloc[1].squeeze()
+
+        fig.update_layout(
+            mapbox_style="carto-positron",
+            hovermode="closest",
+            mapbox=dict(
+                bearing=0,
+                center=go.layout.mapbox.Center(
+                    lat=sample.latitude,
+                    lon=sample.longitude,
+                ),
+                pitch=0,
+                zoom=9,
+            ),
+        )
+        return fig
 
     with gr.Blocks() as demo:
         gr.Markdown("CyFi Explorer")
