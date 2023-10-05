@@ -139,50 +139,48 @@ def visualize(
         gr.Markdown(
             """
             # CyFi Explorer
+
             Click on a row to see the Sentinel-2 imagery used to generate the cyanobacteria estimate.
             """
         )
 
-        with gr.Tab("Imagery Explorer"):
-            with gr.Row():
-                with gr.Column(scale=3):
-                    data = gr.DataFrame(
-                        df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]]
+        with gr.Row():
+            with gr.Column(scale=3):
+                data = gr.DataFrame(
+                    df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]]
+                )
+
+            with gr.Column(scale=2):
+                with gr.Row():
+                    gr.Markdown(
+                        """
+                        ## Sentinel-2 Imagery
+                        """
                     )
+                with gr.Row():
+                    image = gr.Image(label="Sentinel-2 imagery", container=False)
 
-                with gr.Column(scale=2):
-                    with gr.Row():
-                        gr.Markdown(
-                            """
-                            ## Sentinel-2 Imagery
-                            """
-                        )
-                    with gr.Row():
-                        image = gr.Image(label="Sentinel-2 imagery", container=False)
+        gr.Markdown(
+            """
+            ### CyFi data
+            """
+        )
 
-            gr.Markdown(
-                """
-                ### CyFi data
-                """
+        with gr.Row(equal_height=True):
+            density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
+            severity = gr.Textbox(label="Estimated severity level")
+            date = gr.Textbox(label="Date")
+            loc = gr.Textbox(label="Location")
+            days_before_sample = gr.Textbox(
+                label="Number of days before sample date imagery was taken"
             )
 
-            with gr.Row(equal_height=True):
-                density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
-                severity = gr.Textbox(label="Estimated severity level")
-                date = gr.Textbox(label="Date")
-                loc = gr.Textbox(label="Location")
-                days_before_sample = gr.Textbox(
-                    label="Number of days before sample date imagery was taken"
-                )
+            data.select(
+                plot_image, None, [image, density, severity, date, loc, days_before_sample]
+            )
 
-                data.select(
-                    plot_image, None, [image, density, severity, date, loc, days_before_sample]
-                )
-
-        with gr.Tab("Map Explorer"):
-            with gr.Row():
-                map = gr.Plot()
-
-                demo.load(make_map, [], map)
+        with gr.Row():
+            map = gr.Plot()
+            demo.load(make_map, [], map)
 
     demo.launch()
