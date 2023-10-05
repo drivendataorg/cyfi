@@ -161,16 +161,16 @@ def visualize(
                     with gr.Row():
                         gr.Markdown(
                             """
-                                   ## Sentinel-2 Imagery 
-                                    """
+                            ## Sentinel-2 Imagery 
+                            """
                         )
                     with gr.Row():
                         image = gr.Image(label="Sentinel-2 imagery", container=False)
 
             gr.Markdown(
                 """
-                        ### CyFi data
-                        """
+                ### CyFi data
+                """
             )
 
             with gr.Row():
