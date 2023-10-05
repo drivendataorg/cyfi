@@ -17,12 +17,24 @@ cyfi predict sample_points.csv
 
 Where your sample_points.csv looks like:
 
-```
-latitude,longitude,date
-41.424144,-73.206937,2023-06-22
-36.045,-79.0919415,2023-07-01
-35.884524,-78.953997,2023-08-04
-```
+<div class="table-container-class">
+    <table>
+        <tr>
+            <th>latitude</th>
+            <th>longitude</th>
+            <th>date</th>
+        </tr>
+        <tr>
+            <td>41.424144</td><td>-73.206937</td><td>2023-06-22</td>
+        </tr>
+        <tr>
+            <td>36.045</td><td>-79.0919415</td><td>2023-07-01</td>
+        </tr>
+        <tr>
+            <td>35.884524</td><td>-78.953997</td><td>2023-08-04</td>
+        </tr>
+    </table>
+</div>
 
 #### Generate prediction for a single point
 
