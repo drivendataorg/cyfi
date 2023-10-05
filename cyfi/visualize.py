@@ -50,7 +50,7 @@ def visualize(
 
     # merge preds and sentinel metadata into single csv and write out to temp directory
     preds = pd.read_csv(output_directory / "preds.csv")
-    preds = preds[preds.severity.notnull()]
+    preds = preds[preds.severity.notnull()].copy()
     preds["density_cells_per_ml"] = preds.density_cells_per_ml.astype(int)
     meta = pd.read_csv(output_directory / "sentinel_metadata.csv")
     df = preds.merge(meta, on="sample_id")
@@ -63,11 +63,6 @@ def visualize(
 
     def plot_image(
         evt: gr.SelectData,
-        # sample_id,
-        # date,
-        # lat,
-        # lon,
-        # density,
     ):
         sample = df.iloc[evt.index[0]].squeeze()
 
@@ -111,15 +106,17 @@ def visualize(
 
     def make_map():
         # set column order
-        map_df = df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]]
+        map_df = df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]].copy()
 
+        color_map = {"low": "teal", "moderate": "gold", "high": "red"}
+        map_df["color"] = map_df.severity.map(color_map)
         fig = go.Figure(
             go.Scattermapbox(
                 customdata=map_df,
                 lat=map_df["latitude"].tolist(),
                 lon=map_df["longitude"].tolist(),
                 mode="markers",
-                marker=go.scattermapbox.Marker(size=6),
+                marker=dict(size=6, color=map_df.color),
                 hoverinfo="text",
                 hovertemplate="<b>Date</b>: %{customdata[0]}<br><b>Latitude</b>: %{customdata[1]}<br><b>Longitude</b>: %{customdata[2]}<br><b>Predicted density</b>: %{customdata[3]}<br><b>Predicted severity</b>: %{customdata[4]}",
             )
@@ -133,11 +130,11 @@ def visualize(
             mapbox=dict(
                 bearing=0,
                 center=go.layout.mapbox.Center(
-                    lat=sample.latitude,
-                    lon=sample.longitude,
+                    lat=37.0902,
+                    lon=-95.7129,
                 ),
                 pitch=0,
-                zoom=9,
+                zoom=3,
             ),
         )
         return fig
@@ -187,7 +184,9 @@ def visualize(
                 )
 
         with gr.Tab("Map Explorer"):
-            map = gr.Plot()
-            demo.load(make_map, [], map)
+            with gr.Row():
+                map = gr.Plot()
+
+                demo.load(make_map, [], map)
 
     demo.launch()
