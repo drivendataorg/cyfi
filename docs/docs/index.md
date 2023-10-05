@@ -4,7 +4,7 @@
     <div >
         CyFi is a command line tool that uses satellite imagery and machine learning to estimate cyanobacteria levels in small, inland water bodies. The goal of CyFi is to help water quality managers better allocate resources for in situ sampling, and make more informed decisions around public health warnings for critical resources like lakes and reservoirs. Ultimately, more accurate and more timely detection of algal blooms helps keep both the human and marine life that rely on these water bodies safe and healthy.
     </div>
-    <div style="padding-left: 20px; font-size: 0.7em">
+    <div style="padding-left: 25px; font-size: 0.7em">
         <img src="images/lake_st_clair.png" alt="Example lake annotated with points of severity" style="max-height: 320px;">
         <br/>
         Image source: <a href="https://landsat.visibleearth.nasa.gov/view.php?id=86327" target="_blank">NASA Landsat Image Gallery</a>
