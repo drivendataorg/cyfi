@@ -1,10 +1,8 @@
 import io
 from pathlib import Path
 import tempfile
-import cv2
 import gradio as gr
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from PIL import Image
 import planetary_computer as pc
@@ -108,7 +106,9 @@ def visualize(
 
     def make_map():
         # set column order
-        map_df = df[["sample_id", "date", "latitude", "longitude", "density_cells_per_ml", "severity"]].copy()
+        map_df = df[
+            ["sample_id", "date", "latitude", "longitude", "density_cells_per_ml", "severity"]
+        ].copy()
 
         color_map = {"low": "teal", "moderate": "gold", "high": "red"}
         map_df["color"] = map_df.severity.map(color_map)
