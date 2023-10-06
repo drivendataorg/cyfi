@@ -46,7 +46,7 @@ def visualize(
 
     if not (output_directory / "sentinel_metadata.csv").exists():
         raise ValueError(
-            f"Output directory {output_directory} does not contain a sentinel_metadata.csv file. Make sure to specify `--keep-metadata` when running `cyfi predict."
+            f"Output directory {output_directory} does not contain a sentinel_metadata.csv file. Make sure to specify `--keep-metadata` when running `cyfi predict`."
         )
 
     # merge preds and sentinel metadata into single csv and write out to temp directory
