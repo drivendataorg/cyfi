@@ -50,12 +50,15 @@ def visualize(
     cyfi_examples_dir.mkdir(exist_ok=True, parents=True)
 
     # save out as log.csv (expected filename for gradio examples)
-    df.to_csv(cyfi_examples_dir / "log.csv", index=False)
+    df.to_csv(cyfi_examples_dir / "log.csv")
 
     def plot_image(
         evt: gr.SelectData,
     ):
-        sample = df.iloc[evt.index[0]].squeeze()
+        if evt.index[1] != 0:
+            raise gr.Error("Please click on the sample_id for the row")
+
+        sample = df[df.sample_id == evt.value].squeeze()
         sample_crs = "EPSG:4326"
 
         # calculate the lat/long bounds based on ground distance
@@ -118,7 +121,7 @@ def visualize(
                 marker=dict(size=6, color=map_df.color),
                 hoverinfo="text",
                 hovertemplate="<b>Date</b>: %{customdata[0]}<br><b>Latitude</b>: %{customdata[1]}<br><b>Longitude</b>: %{customdata[2]}<br><b>Predicted density</b>: %{customdata[3]}<br><b>Predicted severity</b>: %{customdata[4]}",
-                name=""
+                name="",
             )
         )
 
@@ -143,7 +146,7 @@ def visualize(
                 """
                 # CyFi Explorer
 
-                Click on a row in the table see the Sentinel-2 imagery used to generate the cyanobacteria estimate.
+                Click on the `sample_id` for a row in the table to see the Sentinel-2 imagery used to generate the cyanobacteria estimate.
                 """
             )
         with gr.Row():
@@ -154,7 +157,16 @@ def visualize(
             )
         with gr.Row():
             data = gr.DataFrame(
-                df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]],
+                df[
+                    [
+                        "sample_id",
+                        "date",
+                        "latitude",
+                        "longitude",
+                        "density_cells_per_ml",
+                        "severity",
+                    ]
+                ],
                 height=200,
             )
 
