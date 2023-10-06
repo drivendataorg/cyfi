@@ -133,19 +133,20 @@ def visualize(
                 Click on a row in the table see the Sentinel-2 imagery used to generate the cyanobacteria estimate.
                 """
             )
+        with gr.Row():
+            gr.Markdown(
+                """
+                ### CyFi estimates
+                """
+            )
+        with gr.Row():
+            data = gr.DataFrame(
+                df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]],
+                height=200,
+            )
 
         with gr.Row():
             with gr.Column(scale=3):
-                gr.Markdown(
-                    """
-                    ### CyFi estimates
-                    """
-                )
-                data = gr.DataFrame(
-                    df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]]
-                )
-
-            with gr.Column(scale=2):
                 gr.Markdown(
                     """
                     ### Sentinel-2 Imagery
@@ -153,22 +154,21 @@ def visualize(
                 )
                 image = gr.Image(label="Sentinel-2 imagery", container=False)
 
-        with gr.Row():
-            gr.Markdown(
-                """
-                ### Details on the selected sample
-                """
-            )
-        with gr.Row(equal_height=True):
-            density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
-            severity = gr.Textbox(label="Estimated severity level")
-            date = gr.Textbox(label="Sampling date")
-            loc = gr.Textbox(label="Location")
-            days_before_sample = gr.Textbox(label="Satellite imagery date")
+            with gr.Column(scale=3):
+                gr.Markdown(
+                    """
+                    ### Details on the selected sample
+                    """
+                )
+                density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
+                severity = gr.Textbox(label="Estimated severity level")
+                loc = gr.Textbox(label="Location")
+                date = gr.Textbox(label="Sampling date")
+                days_before_sample = gr.Textbox(label="Satellite imagery date")
 
-            data.select(
-                plot_image, None, [image, density, severity, loc, date, days_before_sample]
-            )
+                data.select(
+                    plot_image, None, [image, density, severity, loc, date, days_before_sample]
+                )
 
         with gr.Row():
             gr.Markdown(
@@ -176,6 +176,7 @@ def visualize(
                 ### Map of all estimates
                 """
             )
+
         with gr.Row():
             map = gr.Plot()
             demo.load(make_map, [], map)
