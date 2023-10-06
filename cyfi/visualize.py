@@ -1,9 +1,12 @@
+import io
 from pathlib import Path
 import tempfile
-
+import cv2
 import gradio as gr
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+from PIL import Image
 import planetary_computer as pc
 import plotly.graph_objects as go
 import typer
@@ -76,14 +79,23 @@ def visualize(
             .rio.reproject(sample_crs)
         )
 
-        fig, ax = plt.subplots()
+        # plot imagery with point on it
+        fig, ax = plt.subplots(frameon=False)
+        cropped_img_array.plot.imshow(ax=ax)
+        ax.plot(sample.longitude, sample.latitude, "ro", markersize=5)
+        ax.axis("equal")
+        ax.set_axis_off()
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        ax.set_title("")
 
-        # TODO: add point on image
-        # cropped_img_array.plot.imshow(ax=ax)
-        # ax.plot(sample.longitude, sample.latitude, "ro", markersize=4)
+        # convert to PIL image for rendering
+        img_buf = io.BytesIO()
+        ax.figure.savefig(img_buf, format="png", bbox_inches="tight")
+        im = Image.open(img_buf)
 
         return (
-            cropped_img_array.to_numpy().transpose(1, 2, 0),
+            im,
             sample.density_cells_per_ml,
             sample.severity,
             f"({sample.longitude}, {sample.latitude})",
@@ -152,7 +164,8 @@ def visualize(
                     ### Sentinel-2 Imagery
                     """
                 )
-                image = gr.Image(label="Sentinel-2 imagery", container=False)
+
+                image = gr.Image(type="pil", label="Sentinel-2 imagery", container=False)
 
             with gr.Column(scale=2):
                 gr.Markdown(
