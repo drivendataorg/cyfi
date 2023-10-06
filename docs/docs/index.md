@@ -1,17 +1,20 @@
 # CyFi: Cyanobacteria Finder
 
-<div style="text-align: left; display: grid; grid-template-columns: 1fr 1fr;">
-    <div >
-        CyFi is a command line tool that uses satellite imagery and machine learning to estimate cyanobacteria levels in small, inland water bodies. The goal of CyFi is to help water quality managers better allocate resources for in situ sampling, and make more informed decisions around public health warnings for critical resources like lakes and reservoirs. Ultimately, more accurate and more timely detection of algal blooms helps keep both the human and marine life that rely on these water bodies safe and healthy.
+<div class="row">
+  <div class="col-md-6">
+    <div>
+      <p>CyFi is a command line tool that uses satellite imagery and machine learning to estimate cyanobacteria levels in small, inland water bodies.</p>
+      <p>The goal of CyFi is to help water quality managers better allocate resources for in situ sampling, and make more informed decisions around public health warnings for critical resources like lakes and reservoirs.</p><p>Ultimately, more accurate and more timely detection of algal blooms helps keep both the human and marine life that rely on these water bodies safe and healthy.</p>
     </div>
-    <div style="padding-left: 25px; font-size: 0.7em">
-        <img src="images/lake_st_clair.png" alt="Example lake annotated with points of severity" style="max-height: 320px;">
-        <br/>
-        Image source: <a href="https://landsat.visibleearth.nasa.gov/view.php?id=86327" target="_blank">NASA Landsat Image Gallery</a>
+  </div>
+  <div class="col-md-6 align-items-center">
+    <div>
+      <img style="max-height: 240px;" class="img-fluid" src="images/lake_st_clair.jpg" alt="Example lake annotated with points of severity"/>
+      <p style="font-size: 0.7em"><em>Stylized view of severity estimates for points on a lake with a cyanobacteria bloom.</em><br>Base image from <a href="https://landsat.visibleearth.nasa.gov/view.php?id=86327">NASA Landsat Image Gallery</a></p>
     </div>
+  </div>
 </div>
 
-------
 
 ## Quickstart
 
