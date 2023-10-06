@@ -86,8 +86,8 @@ def visualize(
             cropped_img_array.to_numpy().transpose(1, 2, 0),
             sample.density_cells_per_ml,
             sample.severity,
-            sample.date,
             f"({sample.longitude}, {sample.latitude})",
+            sample.date,
             sample.imagery_date,
         )
 
@@ -125,36 +125,40 @@ def visualize(
         return fig
 
     with gr.Blocks(title="CyFi Explorer") as demo:
-        gr.Markdown(
-            """
-            # CyFi Explorer
+        with gr.Row():
+            gr.Markdown(
+                """
+                # CyFi Explorer
 
-            Click on a row to see the Sentinel-2 imagery used to generate the cyanobacteria estimate.
-            """
-        )
+                Click on a row in the table see the Sentinel-2 imagery used to generate the cyanobacteria estimate.
+                """
+            )
 
         with gr.Row():
             with gr.Column(scale=3):
+                gr.Markdown(
+                    """
+                    ### CyFi estimates
+                    """
+                )
                 data = gr.DataFrame(
                     df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]]
                 )
 
             with gr.Column(scale=2):
-                with gr.Row():
-                    gr.Markdown(
-                        """
-                        ## Sentinel-2 Imagery
-                        """
-                    )
-                with gr.Row():
-                    image = gr.Image(label="Sentinel-2 imagery", container=False)
+                gr.Markdown(
+                    """
+                    ### Sentinel-2 Imagery
+                    """
+                )
+                image = gr.Image(label="Sentinel-2 imagery", container=False)
 
-        gr.Markdown(
-            """
-            ### CyFi data
-            """
-        )
-
+        with gr.Row():
+            gr.Markdown(
+                """
+                ### Details on the selected sample
+                """
+            )
         with gr.Row(equal_height=True):
             density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
             severity = gr.Textbox(label="Estimated severity level")
@@ -163,9 +167,15 @@ def visualize(
             days_before_sample = gr.Textbox(label="Satellite imagery date")
 
             data.select(
-                plot_image, None, [image, density, severity, date, loc, days_before_sample]
+                plot_image, None, [image, density, severity, loc, date, days_before_sample]
             )
 
+        with gr.Row():
+            gr.Markdown(
+                """
+                ### Map of all estimates
+                """
+            )
         with gr.Row():
             map = gr.Plot()
             demo.load(make_map, [], map)
