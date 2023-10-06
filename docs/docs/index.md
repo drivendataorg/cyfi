@@ -68,42 +68,46 @@ cyfi predict sample_points.csv
 
 This will output a `preds.csv` that contains a column for cyanobacteria density and a column for the associated severity level:
 
-<table class="table-bordered table-sm table-light">
-  <thead>
-    <tr>
-        <th>sample_id</th>
-        <th>date</th>
-        <th>latitude</th>
-        <th>longitude</th>
-        <th>density_cells_per_ml</th>
-        <th>severity</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-        <td>7ff4b4a56965d80f6aa501cc25aa1883</td>
-        <td>2023-06-22</td>
-        <td>41.424144</td>
-        <td>-73.206937</td>
-        <td>34,173</td>
-        <td>moderate</td>
-    </tr>
-    <tr>
-        <td>882b9804a3e28d8805f98432a1a9d9af</td>
-        <td>2023-07-01</td>
-        <td>36.045</td>
-        <td>-79.0919415</td>
-        <td>7,701</td>
-        <td>low</td>
-    </tr>
-        <td>10468e709dcb6133d19a230419efbb24</td>
-        <td>2023-08-04</td>
-        <td>35.884524</td>
-        <td>-78.953997</td>
-        <td>4,053</td>
-        <td>low</td>
-  </tbody>
-</table>
+<div class="table-responsive">
+  <table class="table-bordered table-sm table-light">
+    <thead>
+      <tr>
+          <th>sample_id</th>
+          <th>date</th>
+          <th>latitude</th>
+          <th>longitude</th>
+          <th>density_cells_per_ml</th>
+          <th>severity</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+          <td>7ff4b4a56965d80f6aa501cc25aa1883</td>
+          <td>2023-06-22</td>
+          <td>41.424144</td>
+          <td>-73.206937</td>
+          <td>34,173</td>
+          <td>moderate</td>
+      </tr>
+      <tr>
+          <td>882b9804a3e28d8805f98432a1a9d9af</td>
+          <td>2023-07-01</td>
+          <td>36.045</td>
+          <td>-79.0919415</td>
+          <td>7,701</td>
+          <td>low</td>
+      </tr>
+      <tr>
+          <td>10468e709dcb6133d19a230419efbb24</td>
+          <td>2023-08-04</td>
+          <td>35.884524</td>
+          <td>-78.953997</td>
+          <td>4,053</td>
+          <td>low</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
 To see all of the available options, run `cyfi predict --help`.
 
