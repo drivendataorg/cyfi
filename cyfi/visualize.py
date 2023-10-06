@@ -108,7 +108,7 @@ def visualize(
 
     def make_map():
         # set column order
-        map_df = df[["date", "latitude", "longitude", "density_cells_per_ml", "severity"]].copy()
+        map_df = df[["sample_id", "date", "latitude", "longitude", "density_cells_per_ml", "severity"]].copy()
 
         color_map = {"low": "teal", "moderate": "gold", "high": "red"}
         map_df["color"] = map_df.severity.map(color_map)
@@ -120,7 +120,7 @@ def visualize(
                 mode="markers",
                 marker=dict(size=6, color=map_df.color),
                 hoverinfo="text",
-                hovertemplate="<b>Date</b>: %{customdata[0]}<br><b>Latitude</b>: %{customdata[1]}<br><b>Longitude</b>: %{customdata[2]}<br><b>Predicted density</b>: %{customdata[3]}<br><b>Predicted severity</b>: %{customdata[4]}",
+                hovertemplate="<b>Sample ID</b>: %{customdata[0]}<br>Date</b>: %{customdata[1]}<br><b>Latitude</b>: %{customdata[2]}<br><b>Longitude</b>: %{customdata[3]}<br><b>Predicted density</b>: %{customdata[4]}<br><b>Predicted severity</b>: %{customdata[5]}",
                 name="",
             )
         )
