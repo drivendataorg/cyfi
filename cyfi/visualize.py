@@ -90,6 +90,7 @@ def visualize(
 
         fig, ax = plt.subplots()
 
+        # TODO: add point on image
         # cropped_img_array.plot.imshow(ax=ax)
         # ax.plot(sample.longitude, sample.latitude, "ro", markersize=4)
 
