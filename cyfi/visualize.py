@@ -38,6 +38,11 @@ def visualize(
     meta = pd.read_csv(output_directory / "sentinel_metadata.csv")
     df = preds.merge(meta, on="sample_id")
 
+    # Add date of satellite imagery
+    df["imagery_date"] = (
+        pd.to_datetime(df.date) - pd.to_timedelta(df.days_before_sample, unit="d")
+    ).dt.date
+
     cyfi_examples_dir = Path(tempfile.gettempdir()) / "cyfi_explorer"
     cyfi_examples_dir.mkdir(exist_ok=True, parents=True)
 
@@ -83,7 +88,7 @@ def visualize(
             sample.severity,
             sample.date,
             f"({sample.longitude}, {sample.latitude})",
-            sample.days_before_sample,
+            sample.imagery_date,
         )
 
     def make_map():
@@ -153,11 +158,9 @@ def visualize(
         with gr.Row(equal_height=True):
             density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
             severity = gr.Textbox(label="Estimated severity level")
-            date = gr.Textbox(label="Date")
+            date = gr.Textbox(label="Sampling date")
             loc = gr.Textbox(label="Location")
-            days_before_sample = gr.Textbox(
-                label="Number of days before sample date imagery was taken"
-            )
+            days_before_sample = gr.Textbox(label="Satellite imagery date")
 
             data.select(
                 plot_image, None, [image, density, severity, date, loc, days_before_sample]
