@@ -154,7 +154,7 @@ def visualize(
                 )
                 image = gr.Image(label="Sentinel-2 imagery", container=False)
 
-            with gr.Column(scale=3):
+            with gr.Column(scale=2):
                 gr.Markdown(
                     """
                     ### Details on the selected sample
