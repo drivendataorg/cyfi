@@ -33,6 +33,7 @@ def get_bounding_box(latitude: float, longitude: float, meters_window: int):
 def visualize(
     output_directory: Path = typer.Argument(
         Path.cwd(),
+        exists=True,
         help="CyFi output directory containing preds.csv and sentinel_metadata.csv from a prior prediction run.",
     )
 ):
