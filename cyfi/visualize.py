@@ -82,7 +82,7 @@ def visualize(
         # plot imagery with point on it
         fig, ax = plt.subplots(frameon=False)
         cropped_img_array.plot.imshow(ax=ax)
-        ax.plot(sample.longitude, sample.latitude, "ro", markersize=5)
+        ax.plot(sample.longitude, sample.latitude, "ro", markersize=4)
         ax.axis("equal")
         ax.set_axis_off()
         ax.set_xlabel("")
@@ -118,6 +118,7 @@ def visualize(
                 marker=dict(size=6, color=map_df.color),
                 hoverinfo="text",
                 hovertemplate="<b>Date</b>: %{customdata[0]}<br><b>Latitude</b>: %{customdata[1]}<br><b>Longitude</b>: %{customdata[2]}<br><b>Predicted density</b>: %{customdata[3]}<br><b>Predicted severity</b>: %{customdata[4]}",
+                name=""
             )
         )
 
