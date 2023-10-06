@@ -1,7 +1,6 @@
 from pathlib import Path
 import tempfile
 
-import geopy.distance as distance
 import gradio as gr
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -10,24 +9,7 @@ import plotly.graph_objects as go
 import typer
 import rioxarray
 
-
-def get_bounding_box(latitude: float, longitude: float, meters_window: int):
-    """
-    Given a latitude, longitude, and buffer in meters, returns a bounding
-    box around the point with the buffer on the left, right, top, and bottom.
-
-    Returns a list of [minx, miny, maxx, maxy]
-    """
-    distance_search = distance.distance(meters=meters_window)
-
-    # calculate the lat/long bounds based on ground distance
-    # bearings are cardinal directions to move (south, west, north, and east)
-    min_lat = distance_search.destination((latitude, longitude), bearing=180)[0]
-    min_long = distance_search.destination((latitude, longitude), bearing=270)[1]
-    max_lat = distance_search.destination((latitude, longitude), bearing=0)[0]
-    max_long = distance_search.destination((latitude, longitude), bearing=90)[1]
-
-    return [min_long, min_lat, max_long, max_lat]
+from cyfi.data.satellite_data import get_bounding_box
 
 
 def visualize(
