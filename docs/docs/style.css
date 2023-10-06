@@ -6,11 +6,13 @@ h2 {
 }
 
 h3 {
+  font-size: 1.5rem;
+}
+
+h4 {
   font-size: 1.3rem;
 }
 
-.table-container-class {
-  overflow-x: auto;
-  max-width: 100%;
-  margin-bottom: 15px;
-}
+.table-striped table {
+  /* Undo any styles from the table-striped class here */
+ }

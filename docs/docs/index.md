@@ -40,13 +40,15 @@ First, specify your sample points in a csv with the following columns:
 
 For example, `sample_points.csv` could be:
 
-<div class="table-container-class">
-    <table>
+<table class="table-bordered table-sm table-light" style="max-width: 60%">
+  <thead>
         <tr>
             <th>latitude</th>
             <th>longitude</th>
             <th>date</th>
         </tr>
+  </thead>
+  <tbody>
         <tr>
             <td>41.424144</td><td>-73.206937</td><td>2023-06-22</td>
         </tr>
@@ -56,52 +58,52 @@ For example, `sample_points.csv` could be:
         <tr>
             <td>35.884524</td><td>-78.953997</td><td>2023-08-04</td>
         </tr>
-    </table>
-</div>
+  </tbody>
+</table>
 
 Then run:
 ```
 cyfi predict sample_points.csv
 ```
 
-This will output a `preds.csv` that contains a column for cyanobacteria density and a column for the associated severity level based on WHO thresholds:
+This will output a `preds.csv` that contains a column for cyanobacteria density and a column for the associated severity level:
 
-<div class="table-container-class">
-    <table>
-        <tr>
-            <th>sample_id</th>
-            <th>date</th>
-            <th>latitude</th>
-            <th>longitude</th>
-            <th>density_cells_per_ml</th>
-            <th>severity</th>
-        </tr>
-        <tr>
-            <td>7ff4b4a56965d80f6aa501cc25aa1883</td>
-            <td>2023-06-22</td>
-            <td>41.424144</td>
-            <td>-73.206937</td>
-            <td>34173.0</td>
-            <td>moderate</td>
-        </tr>
-        <tr>
-            <td>882b9804a3e28d8805f98432a1a9d9af</td>
-            <td>2023-07-01</td>
-            <td>36.045</td>
-            <td>-79.0919415</td>
-            <td>7701.0</td>
-            <td>low</td>
-        </tr>
-            <td>10468e709dcb6133d19a230419efbb24</td>
-            <td>2023-08-04</td>
-            <td>35.884524</td>
-            <td>-78.953997</td>
-            <td>4053.0</td>
-            <td>low</td>
-        <tr>
-        </tr>
-    </table>
-</div>
+<table class="table-bordered table-sm table-light">
+  <thead>
+    <tr>
+        <th>sample_id</th>
+        <th>date</th>
+        <th>latitude</th>
+        <th>longitude</th>
+        <th>density_cells_per_ml</th>
+        <th>severity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+        <td>7ff4b4a56965d80f6aa501cc25aa1883</td>
+        <td>2023-06-22</td>
+        <td>41.424144</td>
+        <td>-73.206937</td>
+        <td>34,173</td>
+        <td>moderate</td>
+    </tr>
+    <tr>
+        <td>882b9804a3e28d8805f98432a1a9d9af</td>
+        <td>2023-07-01</td>
+        <td>36.045</td>
+        <td>-79.0919415</td>
+        <td>7,701</td>
+        <td>low</td>
+    </tr>
+        <td>10468e709dcb6133d19a230419efbb24</td>
+        <td>2023-08-04</td>
+        <td>35.884524</td>
+        <td>-78.953997</td>
+        <td>4,053</td>
+        <td>low</td>
+  </tbody>
+</table>
 
 To see all of the available options, run `cyfi predict --help`.
 
@@ -115,7 +117,7 @@ Just specify the latitude, longitude, and date as arguments at the command line.
 cyfi predict-point --lat 41.2 --lon -73.2 --date 2023-09-14
 ```
 
-This will print out the estimated cyanobacteria density and associated severity level based on WHO thresholds.
+This will print out the estimated cyanobacteria density and associated severity level.
 
 ```
 2023-10-04 16:25:40.581 | SUCCESS  | cyfi.cli:predict_point:154 - Estimate generated:
@@ -127,6 +129,16 @@ severity                  moderate
 ```
 
 To see all of the available options, run `cyfi predict-point --help`.
+
+### A note on severity levels
+
+Severity levels are based on World Health Organization (WHO) cyanobacteria density thresholds.
+
+- Low: 0 - 20,000 cells/ml
+- Moderate: 20,000 - 100,000 cells/ml
+- High: > 100,000 cells/ml
+
+However users should feel free to to use their own thresholds as makes sense for their needs.
 
 ------
 
@@ -154,19 +166,23 @@ CyFi relies on two data sources as input:
 
 Each observation (or "sampling point") is a unique combination of date, latitude, and longitude.
 
-Example input csv row:
+_Example input csv row:_
 
-<table style='width:70%;'>
+<table class="table-bordered table-sm table-light" style="max-width: 60%">
+  <thead>
     <tr>
-        <td>latitude</td>
-        <td>longitude</td>
-        <td>date</td>
+        <th>latitude</th>
+        <th>longitude</th>
+        <th>date</th>
     </tr>
+  </thead>
+  <tbody>
     <tr>
         <td>41.424144</td>
         <td>-73.206937</td>
         <td>2023-06-22</td>
     </tr>
+  </tbody>
 </table>
 
 Satellite imagery feature generation for each observation is as follows:
@@ -180,33 +196,31 @@ Satellite imagery feature generation for each observation is as follows:
 
 The land cover value for each sampling point is looked up from the static land cover map, and added to the satellite features.
 
-Example features csv row:
+_Example features csv row:_
 
-<div class="table-container-class">
-    <table>
+<div class="table-responsive">
+    <table class="table-bordered table-sm table-light">
+    <thead>
         <tr>
             <th>B01_mean</th><th>B02_mean</th><th>B03_mean</th><th>B04_mean</th><th>B05_mean</th><th>B06_mean</th><th>B07_mean</th><th>B08_mean</th><th>B09_mean</th><th>B11_mean</th><th>B12_mean</th><th>B8A_mean</th><th>WVP_mean</th><th>AOT_mean</th><th>percent_water</th><th>green95th</th><th>green5th</th><th>green_red_ratio</th><th>green_blue_ratio</th><th>red_blue_ratio</th><th>green95th_blue_ratio</th><th>green5th_blue_ratio</th><th>NDVI_B04</th><th>NDVI_B05</th><th>NDVI_B06</th><th>NDVI_B07</th><th>AOT_range</th><th>month</th><th>days_before_sample</th><th>land_cover</th>
         </tr>
+    </thead>
+    <tbody>
         <tr>
             <td>548.1</td><td>1341.6</td><td>1607.3</td><td>1613.8</td><td>234.0</td><td>287.7</td><td>265.3</td><td>2929.3</td><td>3316.7</td><td>362.7</td><td>153.3</td><td>171.7</td><td>1742.8</td><td>76.0</td><td>7.14e-05</td><td>3919.0</td><td>711.6</td><td>0.996</td><td>1.2</td><td>1.2</td><td>2.9</td><td>0.5</td><td>0.3</td><td>0.9</td><td>0.8</td><td>0.8</td><td>0.0</td><td>5</td><td>6</td><td>130</td>
         </tr>
+    <tbody>
     </table>
 </div>
 
-Cyanobacteria estimates are then generated by a [LightGBM model](https://github.com/microsoft/LightGBM), a gradient-boosted decision tree algorithm. The model was trained using "in situ" labels collected manually by [many organizations](https://www.drivendata.org/competitions/143/tick-tick-bloom/page/651/#about-the-project-team) across the U.S. 
+Cyanobacteria estimates are then generated by a [LightGBM model](https://github.com/microsoft/LightGBM), a gradient-boosted decision tree algorithm. The model was trained using "in situ" labels collected manually by [many organizations](https://www.drivendata.org/competitions/143/tick-tick-bloom/page/651/#about-the-project-team) across the U.S.
 
-Density values are discretized into severity buckets using the WHO guidlines.
+Density values are discretized into severity levels using the WHO guidlines and a prediction csv is written out.
 
-**Severity buckets**  
+_Example predictions csv row:_
 
-- Low: 0 - 20,000 cells/ml
-- Moderate: 20,000 - 100,000 cells/ml
-- High: > 100,000 cells/ml
-
-Example predictions csv row:
-
-<div class="table-container-class">
-    <table>
+<table class="table-bordered table-sm table-light" style="max-width: 80%">
+    <thead>
         <tr>
             <th>date</th>
             <th>latitude</th>
@@ -214,12 +228,14 @@ Example predictions csv row:
             <th>density_cells_per_ml</th>
             <th>severity</th>
         </tr>
+    </thead>
+    <tbody>
         <tr>
             <td>2019-08-26</td>
             <td>38.9725</td>
             <td>-94.67293</td>
-            <td>426593.0</td>
+            <td>42,6593</td>
             <td>high</td>
         </tr>
-    </table>
-</div>
+    <tbody>
+</table>
