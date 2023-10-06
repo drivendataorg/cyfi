@@ -1,0 +1,31 @@
+site_name: cyfi
+site_url: https://cyfi.drivendata.org/
+site_description: A python package to predict cyanobacteria density based on Sentinel-2 satellite imagery
+repo_url: https://github.com/drivendataorg/cyfi
+theme:
+  name: flatly
+
+nav:
+  - Installation: "installation.md"
+  - Quickstart: "./#quickstart"
+  - Background: "about.md"
+  - Accuracy: "performance.md"
+  - Changelog: "changelog.md"
+
+markdown_extensions:
+  - toc:
+      permalink: True
+      toc_depth: 3
+
+extra:
+  version:
+    provider: mike
+
+extra_css:
+  - style.css
+
+plugins:
+  - search
+
+watch:
+  - ../cyfi

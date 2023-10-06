@@ -1,8 +1,0 @@
--e .
-
-black
-flake8
-jupyter
-pytest
-pytest-cov
-pytest_mock

@@ -1,3 +1,4 @@
+.PHONY: docs
 #################################################################################
 # GLOBALS                                                                       #
 #################################################################################
@@ -45,6 +46,14 @@ test: clean lint
 assets:
 	rm -r tests/assets/experiment
 	python cyfi/experiment.py tests/assets/experiment_config.yaml
+
+docs:  ## build the static version of the docs
+	sed 's|https://cyfi.drivendata.org/stable/|../|g' CHANGELOG.md \
+		> docs/docs/changelog.md
+	cd docs && mkdocs build
+
+docs-serve: ## serve documentation to livereload while you work
+	cd docs && mkdocs serve
 
 #################################################################################
 # Self Documenting Commands                                                     #
