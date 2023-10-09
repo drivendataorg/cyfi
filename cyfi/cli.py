@@ -11,6 +11,7 @@ import typer
 
 from cyfi.pipeline import CyFiPipeline
 from cyfi.evaluate import EvaluatePreds
+from cyfi import visualize
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -59,7 +60,7 @@ def predict(
         "preds.csv", "--output-filename", "-f", help="Name of the saved out predictions csv"
     ),
     output_directory: Path = typer.Option(
-        ".",
+        Path.cwd(),
         "--output-directory",
         "-d",
         help="Directory to save prediction outputs. `output_filename` will be interpreted relative to `output_directory`",
@@ -182,6 +183,10 @@ def evaluate(
     EvaluatePreds(
         y_pred_csv=y_pred_csv, y_true_csv=y_true_csv, save_dir=save_dir
     ).calculate_all_and_save()
+
+
+# add CyFi explorer
+app.command()(visualize.visualize)
 
 
 if __name__ == "__main__":
