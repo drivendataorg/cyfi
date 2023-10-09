@@ -10,9 +10,16 @@ CyFi Explorer lets you see the corresponding Sentinel-2 imagery for each cyanoba
 
 Before you can visualize predictions, you first have to generate them!
 
-Per the [Quickstart](../#quickstart) page, you'll want to run `cyfi predict` and specify an input csv containing sampling points (where each row is a unique combination of latitude, longitude, and date). To use the explorer, you must add the `--keep-metadata` flag which will output a `sentinel_metadata.csv` file containing information about the Sentinel-2 image used for each point. You can choose to output both prediction and metadata files to the same directory by specifying `--output-directory`, or `-d`.
+Per the [Quickstart](../#quickstart) page, you'll want to run `cyfi predict` and specify an input csv containing sampling points (where each row is a unique combination of latitude, longitude, and date).
 
-So your command might look something like this:
+To use the explorer, you must add the `--keep-metadata` flag which will output a `sentinel_metadata.csv` file containing information about the Sentinel-2 image used for each point. For example, to generate predictions from the samples in `california/california_samples.csv`, you'd run:
+
+```
+cyfi predict california/california_samples.csv --keep-metadata
+```
+
+By default, predictions will be saved to your current working directory. You can specify `--output-directory`, or `-d`, to save them to the same folder as your samples instead:
+
 ```
 cyfi predict california/california_samples.csv --keep-metadata -d california/
 ```
