@@ -39,7 +39,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.10", 3.11]
     defaults:
       run:
@@ -65,3 +65,20 @@ jobs:
       - name: Run tests
         run: |
           make test
+
+      # - name: Upload coverage to codecov
+      #   uses: codecov/codecov-action@v3
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     file: ./coverage.xml
+      #     fail_ci_if_error: true
+      #   if: ${{ matrix.os == 'ubuntu-latest' }}
+
+      - name: Build distribution and test installation
+        shell: bash
+        run: |
+          make dist
+          python -m pip install dist/cyfi-*.whl --no-deps --force-reinstall
+          cyfi --version
+          python -m pip install dist/cyfi-*.tar.gz --no-deps --force-reinstall
+          cyfi --version
