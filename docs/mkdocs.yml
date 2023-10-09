@@ -10,7 +10,6 @@ nav:
   - Quickstart: "./#quickstart"
   - Visualize: "explorer.md"
   - Background: "about.md"
-  - Accuracy: "performance.md"
   - Changelog: "changelog.md"
 
 markdown_extensions:
