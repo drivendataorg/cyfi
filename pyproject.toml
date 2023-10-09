@@ -19,6 +19,7 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
   "appdirs",
+  "build",
   "cloudpathlib[s3]>=0.4.1",
   "geopandas",
   "geopy",
