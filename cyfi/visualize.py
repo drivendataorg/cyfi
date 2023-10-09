@@ -83,7 +83,7 @@ def visualize(
         # plot imagery with point on it
         fig, ax = plt.subplots(frameon=False)
         cropped_img_array.plot.imshow(ax=ax)
-        ax.plot(sample.longitude, sample.latitude, "ro", markersize=4)
+        ax.plot(sample.longitude, sample.latitude, "ro", markersize=4, markerfacecolor="None")
         ax.axis("equal")
         ax.set_axis_off()
         ax.set_xlabel("")
