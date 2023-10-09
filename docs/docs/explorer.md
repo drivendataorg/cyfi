@@ -1,6 +1,6 @@
 # CyFi Explorer
 
-The focus of CyFi making it easy to generate predictions using a trained machine learning model. That said, we know it can often be helpful to view predictions in context. That's why we've created CyFi Explorer!
+The focus of CyFi is making it easy to generate predictions using a trained machine learning model. That said, we know it can often be helpful to view predictions in context. That's why we've created CyFi Explorer!
 
 CyFi Explorer lets you see the corresponding Sentinel-2 imagery for each cyanobacteria estimate. The explorer runs locally on your machine and is intended to help you get a sense of where the model is performing well and where it might be getting tripped up. It is not intended to replace more robust data analytics tools and decision-making workflows.
 
