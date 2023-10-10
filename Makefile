@@ -1,4 +1,4 @@
-.PHONY: docs
+.PHONY: clean clean-docs clean-pyc clean-test clean-build docs format lint test help
 #################################################################################
 # GLOBALS                                                                       #
 #################################################################################
@@ -75,6 +75,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 dist: clean ## builds source and wheel package
+	python3 -m pip install --upgrade build
 	python -m build
 	ls -l dist
 
