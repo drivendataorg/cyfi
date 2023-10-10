@@ -1,4 +1,4 @@
-.PHONY: docs
+.PHONY: clean clean-docs clean-pyc clean-test clean-build docs format lint test help
 #################################################################################
 # GLOBALS                                                                       #
 #################################################################################
@@ -25,9 +25,7 @@ create_environment:
 	
 ## Install Python Dependencies
 requirements:
-	conda install -c conda-forge lightgbm -y
-	conda install -c conda-forge xarray dask netCDF4 bottleneck -y
-	pip install -r requirements_dev.txt
+	pip install -e .[dev]
 
 ## Format using black
 format:
@@ -54,6 +52,31 @@ docs:  ## build the static version of the docs
 
 docs-serve: ## serve documentation to livereload while you work
 	cd docs && mkdocs serve
+
+clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+
+clean-build: ## remove build artifacts
+	rm -fr build/
+	rm -fr dist/
+	rm -fr .eggs/
+	find . -name '*.egg-info' -exec rm -fr {} +
+	find . -name '*.egg' -exec rm -f {} +
+
+clean-pyc: ## remove Python file artifacts
+	find . -name '*.pyc' -exec rm -f {} +
+	find . -name '*.pyo' -exec rm -f {} +
+	find . -name '*~' -exec rm -f {} +
+	find . -name '__pycache__' -exec rm -fr {} +
+
+clean-test: ## remove test and coverage artifacts
+	rm -fr .tox/
+	rm -f .coverage
+	rm -fr htmlcov/
+	rm -fr .pytest_cache
+
+dist: clean ## builds source and wheel package
+	python -m build
+	ls -l dist
 
 #################################################################################
 # Self Documenting Commands                                                     #
