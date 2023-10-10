@@ -121,7 +121,7 @@ def visualize(
                 mode="markers",
                 marker=dict(size=6, color=map_df.color),
                 hoverinfo="text",
-                hovertemplate="<b>Sample ID</b>: %{customdata[0]}<br>Date</b>: %{customdata[1]}<br><b>Latitude</b>: %{customdata[2]}<br><b>Longitude</b>: %{customdata[3]}<br><b>Predicted density</b>: %{customdata[4]}<br><b>Predicted severity</b>: %{customdata[5]}",
+                hovertemplate="<b>Sample ID</b>: %{customdata[0]}<br>Date</b>: %{customdata[1]}<br><b>Latitude</b>: %{customdata[2]}<br><b>Longitude</b>: %{customdata[3]}<br><b>Predicted density</b>: %{customdata[4]:,.0f}<br><b>Predicted severity</b>: %{customdata[5]}",
                 name="",
             )
         )
