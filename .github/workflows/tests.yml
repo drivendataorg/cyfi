@@ -41,18 +41,17 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.10", 3.11]
-    defaults:
-      run:
-        shell: bash -l {0}
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python 3.10 with Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
-          channels: conda-forge
+          python-version: ${{ matrix.python-version }}
+          cache: "pip" # caching pip dependencies
+          cache-dependency-path: |
+            pyproject.toml
 
       - name: Install dependencies
         run: |

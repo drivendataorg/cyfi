@@ -75,7 +75,6 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 dist: clean ## builds source and wheel package
-	python3 -m pip install --upgrade build
 	python -m build
 	ls -l dist
 
