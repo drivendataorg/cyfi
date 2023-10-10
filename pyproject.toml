@@ -61,7 +61,6 @@ dev = [
   "black",
   "flake8",
   "jupyter",
-  "mike",
   "mkdocs",
   "mkdocs-bootswatch",
   "pytest",
