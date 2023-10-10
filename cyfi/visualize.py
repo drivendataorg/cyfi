@@ -102,6 +102,7 @@ def visualize(
             f"({sample.longitude}, {sample.latitude})",
             sample.date,
             sample.imagery_date,
+            sample.item_id,
         )
 
     def make_map():
@@ -191,9 +192,12 @@ def visualize(
                 loc = gr.Textbox(label="Location")
                 date = gr.Textbox(label="Sampling date")
                 days_before_sample = gr.Textbox(label="Satellite imagery date")
+                tile = gr.Textbox(label="Sentinel-2 tile")
 
                 data.select(
-                    plot_image, None, [image, density, severity, loc, date, days_before_sample]
+                    plot_image,
+                    None,
+                    [image, density, severity, loc, date, days_before_sample, tile],
                 )
 
         with gr.Row():
