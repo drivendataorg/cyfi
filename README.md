@@ -75,3 +75,19 @@ severity                  moderate
 ```
 
 To see all of the available options, run `cyfi predict-point --help`.
+
+### A note on severity levels
+
+Severity levels are based on World Health Organization (WHO) cyanobacteria density thresholds.
+
+- Low: 0 - 20,000 cells/ml
+- Moderate: 20,000 - 100,000 cells/ml
+- High: > 100,000 cells/ml
+
+However users should feel free to to use their own thresholds as makes sense for their needs.
+
+### Visualizing predictions
+
+Launch the [CyFi Explorer](https://cyfi.drivendata.org/explorer/) to view the Sentinel-2 imagery used to generate each cyanobacteria estimate!
+
+![Screenshot of CyFi explorer showing the predictions table along with the Sentinel-2 imagery.](docs/docs/images/explorer_screenshot_2.jpg)

@@ -144,6 +144,10 @@ Severity levels are based on World Health Organization (WHO) cyanobacteria densi
 
 However users should feel free to to use their own thresholds as makes sense for their needs.
 
+### Visualizing predictions
+
+Launch the [CyFi Explorer](explorer.md) to view the Sentinel-2 imagery used to generate each cyanobacteria estimate!
+
 ------
 
 ## About the model
