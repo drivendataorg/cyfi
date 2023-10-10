@@ -12,6 +12,7 @@ import typer
 from cyfi.pipeline import CyFiPipeline
 from cyfi.evaluate import EvaluatePreds
 from cyfi import visualize
+from cyfi.version import __version__
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -45,6 +46,26 @@ verbose_option = typer.Option(
 )
 
 
+def version_callback(version: bool):
+    """Print CyFi version to console."""
+    if version:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        None,
+        "--version",
+        callback=version_callback,
+        is_eager=True,
+        help="Show CyFi version.",
+    ),
+):
+    pass
+
+
 @app.command()
 def predict(
     samples_path: Path = typer.Argument(
@@ -74,7 +95,7 @@ def predict(
     overwrite: bool = typer.Option(False, "--overwrite", "-o", help="Overwrite existing files"),
     verbose: int = verbose_option,
 ):
-    """Generate cyanobacteria predictions for a set of sample points saved at `samples_path`. By
+    """Estimate cyanobacteria density for a set of sample points saved at `samples_path`. By
     default, cyanobacteria estimates will be saved to `preds.csv` in the current directory.
     """
     output_path = output_directory / output_filename
@@ -173,7 +194,7 @@ def evaluate(
     ),
     verbose: int = verbose_option,
 ):
-    """Evaluate cyanobacteria model predictions"""
+    """Evaluate cyanobacteria estimates"""
     if not overwrite and save_dir.exists():
         logger.warning(
             f"Not running evaluation because overwrite is False and {save_dir} exists. To overwrite existing files, add `-o`"
