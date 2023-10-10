@@ -70,3 +70,11 @@ jobs:
           cyfi --version
           python -m pip install dist/cyfi-*.tar.gz --no-deps --force-reinstall
           cyfi --version
+
+      - name: Upload coverage to codecov
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          fail_ci_if_error: true
