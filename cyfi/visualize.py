@@ -97,7 +97,7 @@ def visualize(
 
         return (
             im,
-            sample.density_cells_per_ml,
+            f"{sample.density_cells_per_ml:,.0f}",
             sample.severity,
             f"({sample.longitude}, {sample.latitude})",
             sample.date,
@@ -167,7 +167,7 @@ def visualize(
                         "density_cells_per_ml",
                         "severity",
                     ]
-                ],
+                ].style.format({"density_cells_per_ml": "{:,.0f}"}),
                 height=200,
             )
 
