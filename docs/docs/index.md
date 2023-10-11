@@ -26,7 +26,7 @@ Install CyFi with pip:
 pip install cyfi
 ```
 
-For detailed instructions for those installing python for the first time, see the [Installation](https://cyfi.drivendata.org/stable/installation) docs.
+For detailed instructions for those installing python for the first time, see the [Installation](installation.md) docs.
 
 ### Generate batch predictions
 
