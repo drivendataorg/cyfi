@@ -61,7 +61,6 @@ dev = [
   "black",
   "flake8",
   "jupyter",
-  "mike",
   "mkdocs",
   "mkdocs-bootswatch",
   "pytest",
@@ -73,7 +72,7 @@ dev = [
 "Repository" = "https://github.com/drivendataorg/cyfi"
 "Documentation" = "https://cyfi.drivendata.org/"
 "Bug Tracker" = "https://github.com/drivendataorg/cyfi/issues"
-"Changelog" = "https://cyfi.drivendata.org/stable/changelog/"
+"Changelog" = "https://cyfi.drivendata.org/changelog/"
 
 [tool.black]
 line-length = 99

@@ -144,6 +144,10 @@ Severity levels are based on World Health Organization (WHO) cyanobacteria densi
 
 However users should feel free to to use their own thresholds as makes sense for their needs.
 
+### Visualizing predictions
+
+Launch the [CyFi Explorer](explorer.md) to view the Sentinel-2 imagery used to generate each cyanobacteria estimate!
+
 ------
 
 ## About the model
@@ -164,7 +168,7 @@ CyFi relies on two data sources as input:
 
 **Land cover map**
 
-* The Climate Research Data Package (CRDP) Land Cover Gridded Map (2020) classifies land surface into 22 classes, which have been defined using the United Nations Food and Agriculture Organization's Land Cover Classification System (LCCS). This map is based on data from the Medium Resolution Imaging Spectrometer (MERIS) sensor on board the polar-orbiting Envisat-1 environmental research satellite by the European Space Agency. This data comes from the CCI-LC database hosted by the ESA Climate Change Initiative's Land Cover project.
+* The Climate Research Data Package (CRDP) Land Cover Gridded Map (2020) classifies land surface into 22 classes, which have been defined using the United Nations Food and Agriculture Organization's Land Cover Classification System (LCCS). This map is based on data from the Medium Resolution Imaging Spectrometer (MERIS) sensor on board the polar-orbiting Envisat-1 environmental research satellite by the European Space Agency. This data comes from the CCI-LC database hosted by the [ESA Climate Change Initiative's Land Cover project](https://www.esa-landcover-cci.org/?q=node/164).
 
 ### Overview of the model
 
