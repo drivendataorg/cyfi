@@ -177,7 +177,7 @@ class LGBParams(BaseModel):
         verbosity (Optional[int], optional): Level of LightGBM's verbosity. Defaults to -1.
         feature_fraction (Optional[float], optional): If smaller than 1.0, LightGBM will
             randomly select this percentage subset of features on each iteration before
-            training. Defaults to 1.0.
+            training. Defaults to 0.6
         early_stopping_round (Optional[int], optional): If provided, stop training if one
             metric of one validation data doesn't improve in the last `early_stopping_round`
             rounds. Defaults to 100.
@@ -191,7 +191,7 @@ class LGBParams(BaseModel):
     num_leaves: Optional[int] = 31
     learning_rate: Optional[float] = 0.1
     verbosity: Optional[int] = -1
-    feature_fraction: Optional[float] = 1.0
+    feature_fraction: Optional[float] = 0.6
     early_stopping_round: Optional[int] = 100
     seed: Optional[int] = 40
 
