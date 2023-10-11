@@ -2,6 +2,7 @@ import pandas as pd
 from pathlib import Path
 from pyproj import Transformer
 from pytest_mock import mocker  # noqa: F401
+import subprocess
 from typer.testing import CliRunner
 
 from cyfi.cli import app
@@ -222,3 +223,14 @@ def test_cli_evaluate(tmp_path, evaluate_data_path):
         "results.json",
     ]:
         assert (eval_dir / file).exists()
+
+
+def test_python_m_execution():
+    result = subprocess.run(
+        ["python", "-m", "cyfi", "--help"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
+    assert result.returncode == 0
+    assert result.stdout.startswith("Usage: python -m cyfi")
