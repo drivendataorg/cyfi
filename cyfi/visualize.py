@@ -97,11 +97,12 @@ def visualize(
 
         return (
             im,
-            sample.density_cells_per_ml,
+            f"{sample.density_cells_per_ml:,.0f}",
             sample.severity,
             f"({sample.longitude}, {sample.latitude})",
             sample.date,
             sample.imagery_date,
+            sample.item_id,
         )
 
     def make_map():
@@ -120,7 +121,7 @@ def visualize(
                 mode="markers",
                 marker=dict(size=6, color=map_df.color),
                 hoverinfo="text",
-                hovertemplate="<b>Sample ID</b>: %{customdata[0]}<br>Date</b>: %{customdata[1]}<br><b>Latitude</b>: %{customdata[2]}<br><b>Longitude</b>: %{customdata[3]}<br><b>Predicted density</b>: %{customdata[4]}<br><b>Predicted severity</b>: %{customdata[5]}",
+                hovertemplate="<b>Sample ID</b>: %{customdata[0]}<br>Date</b>: %{customdata[1]}<br><b>Latitude</b>: %{customdata[2]}<br><b>Longitude</b>: %{customdata[3]}<br><b>Predicted density</b>: %{customdata[4]:,.0f}<br><b>Predicted severity</b>: %{customdata[5]}",
                 name="",
             )
         )
@@ -166,7 +167,7 @@ def visualize(
                         "density_cells_per_ml",
                         "severity",
                     ]
-                ],
+                ].style.format({"density_cells_per_ml": "{:,.0f}"}),
                 height=200,
             )
 
@@ -191,9 +192,12 @@ def visualize(
                 loc = gr.Textbox(label="Location")
                 date = gr.Textbox(label="Sampling date")
                 days_before_sample = gr.Textbox(label="Satellite imagery date")
+                tile = gr.Textbox(label="Sentinel-2 tile")
 
                 data.select(
-                    plot_image, None, [image, density, severity, loc, date, days_before_sample]
+                    plot_image,
+                    None,
+                    [image, density, severity, loc, date, days_before_sample, tile],
                 )
 
         with gr.Row():
