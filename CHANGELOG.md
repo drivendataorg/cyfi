@@ -1,5 +1,9 @@
 # CyFi changelog
 
+### Unreleased
+
+- Added support for calling the CLI with `python -m cyfi` ([PR #122](https://github.com/drivendataorg/cyfi/pull/122))
+
 ### v1.0.0 - 2023-10-10
 
 CyFi is a command line tool that uses satellite imagery and machine learning to estimate cyanobacteria levels in small, inland water bodies.
