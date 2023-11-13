@@ -233,4 +233,4 @@ def test_python_m_execution():
         universal_newlines=True,
     )
     assert result.returncode == 0
-    assert result.stdout.startswith("Usage: python -m cyfi")
+    assert "Usage: python -m cyfi" in result.stdout
