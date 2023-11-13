@@ -3,13 +3,13 @@ import functools
 import tarfile
 from typing import Union
 
-import appdirs
 from cloudpathlib import AnyPath, S3Path
 import cv2
 from loguru import logger
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import platformdirs
 from scipy.stats.mstats import winsorize
 from tqdm.contrib.concurrent import process_map
 import xarray as xr
@@ -199,7 +199,7 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
 
     # Pull in land cover classification from CDRP
     if "land_cover" in config.sample_meta_features:
-        lc_cache_dir = Path(appdirs.user_cache_dir()) / "cyfi"
+        lc_cache_dir = Path(platformdirs.user_cache_dir()) / "cyfi"
         lc_cache_dir.mkdir(exist_ok=True)
         land_cover_map_filepath = lc_cache_dir / "C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
 
