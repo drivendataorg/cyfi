@@ -94,4 +94,4 @@ However users should feel free to to use their own thresholds as makes sense for
 
 Launch the [CyFi Explorer](https://cyfi.drivendata.org/explorer/) to view the Sentinel-2 imagery used to generate each cyanobacteria estimate!
 
-![Screenshot of CyFi explorer showing the predictions table along with the Sentinel-2 imagery.](docs/docs/images/explorer_screenshot_2.jpg)
+![Screenshot of CyFi explorer showing the predictions table along with the Sentinel-2 imagery.](https://s3.amazonaws.com/drivendata-public-assets/cyfi_explorer_screenshot.jpg)
