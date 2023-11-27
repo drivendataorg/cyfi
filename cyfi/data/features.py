@@ -3,7 +3,7 @@ import functools
 import tarfile
 from typing import Union
 
-from cloudpathlib import AnyPath, S3Client, S3Path
+from cloudpathlib import AnyPath, S3Client
 import cv2
 from loguru import logger
 import numpy as np
