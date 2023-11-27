@@ -3,7 +3,7 @@ import functools
 import tarfile
 from typing import Union
 
-from cloudpathlib import AnyPath, S3Client
+from cloudpathlib import S3Client
 import cv2
 from loguru import logger
 import numpy as np
@@ -120,7 +120,7 @@ def calculate_satellite_features(
 
 
 def _calculate_satellite_features_for_sample_item(
-    sample_id: str, item_id: str, config: FeaturesConfig, cache_dir: AnyPath
+    sample_id: str, item_id: str, config: FeaturesConfig, cache_dir: Path
 ):
     """Generate the satellite features for specific combination of
     sample and pystac item ID
