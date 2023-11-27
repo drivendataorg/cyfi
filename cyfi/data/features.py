@@ -3,7 +3,7 @@ import functools
 import tarfile
 from typing import Union
 
-from cloudpathlib import AnyPath, S3Path
+from cloudpathlib import AnyPath, S3Client, S3Path
 import cv2
 from loguru import logger
 import numpy as np
@@ -205,7 +205,9 @@ def calculate_metadata_features(samples: pd.DataFrame, config: FeaturesConfig) -
 
         if not land_cover_map_filepath.exists():
             logger.debug(f"Downloading ~2GB land cover map to {lc_cache_dir}")
-            s3p = S3Path("s3://drivendata-public-assets/land_cover_map.tar.gz")
+            s3p = S3Client(no_sign_request=True).S3Path(
+                "s3://drivendata-public-assets/land_cover_map.tar.gz"
+            )
             s3p.download_to(lc_cache_dir)
             file = tarfile.open(lc_cache_dir / "land_cover_map.tar.gz")
             file.extractall(lc_cache_dir)
