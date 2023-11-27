@@ -1,5 +1,9 @@
 # CyFi changelog
 
+### v1.1.1 - 2023-11-27
+
+- Use the `no-sign-request` flag to download the land cover map from s3 ([PR #130](https://github.com/drivendataorg/cyfi/pull/130))
+
 ### v1.1.0 - 2023-10-13
 
 - Added support for calling the CLI with `python -m cyfi` ([PR #122](https://github.com/drivendataorg/cyfi/pull/122))
