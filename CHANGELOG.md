@@ -1,5 +1,9 @@
 # CyFi changelog
 
+### v1.1.2 - 2024-01-05
+
+- Clean up runtime requirements ([PR #133](https://github.com/drivendataorg/cyfi/pull/133))
+
 ### v1.1.1 - 2023-11-27
 
 - Use the `no-sign-request` flag to download the land cover map from s3 ([PR #130](https://github.com/drivendataorg/cyfi/pull/130))
