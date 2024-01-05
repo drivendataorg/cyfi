@@ -26,6 +26,12 @@ Install CyFi with pip:
 pip install cyfi
 ```
 
+Note: if you're on a Mac, you should install from conda-forge instead.
+
+```
+conda install -c conda-forge cyfi -y
+```
+
 For detailed instructions for those installing python for the first time, see the [Installation](installation.md) docs.
 
 ### Generate batch predictions
