@@ -26,7 +26,7 @@ Install CyFi with pip:
 pip install cyfi
 ```
 
-Note: if you're on a Mac, you should install from conda-forge instead.
+If you're on a Mac, you should install from conda-forge instead:
 
 ```
 conda install -c conda-forge cyfi -y
