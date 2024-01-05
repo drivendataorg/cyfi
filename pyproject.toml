@@ -27,7 +27,6 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-  "build",
   "cloudpathlib[s3]>=0.4.1",
   "geopandas",
   "geopy",
@@ -40,7 +39,6 @@ dependencies = [
   "odc-stac",
   "opencv-python",
   "pandas",
-  "pathlib",
   "planetary-computer",
   "platformdirs",
   "plotly",
@@ -58,6 +56,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "build",
   "black",
   "flake8",
   "jupyter",
