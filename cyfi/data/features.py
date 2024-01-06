@@ -284,7 +284,12 @@ def generate_all_features(
     satellite_features = calculate_satellite_features(satellite_meta, config, cache_dir)
 
     ct_with_satellite = satellite_features.index.nunique()
-    if ct_with_satellite < samples.shape[0]:
+    if ct_with_satellite == 0:
+        logger.error(
+            "Relevant satellite data is not available for any of the provided sample points. Please try a different location or date."
+        )
+        exit(1)
+    elif ct_with_satellite < samples.shape[0]:
         logger.warning(
             f"Relevant satellite data is not available for all sample points. Features will only be generated for {ct_with_satellite:,} sample points with valid satellite imagery ({(ct_with_satellite / samples.shape[0]):.0%} of sample points)"
         )
