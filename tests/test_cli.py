@@ -199,6 +199,27 @@ def test_cli_predict_point_crs(mocker, local_model_path):  # noqa: F811
     assert "Invalid value for '--crs" in result.stdout
 
 
+def test_graceful_exit_when_no_satellite_data():
+    # use location and date in SF where it was cloudy all month and there is no valid imagery
+    result = runner.invoke(
+        app,
+        [
+            "predict-point",
+            "--date",
+            "2024-01-04",
+            "--lat",
+            "37.753",
+            "--lon",
+            "-122.364",
+        ],
+    )
+    assert result.exit_code == 1
+    assert (
+        "Relevant satellite data is not available for any of the provided sample points. Please try a different location or date"
+        in result.stdout
+    )
+
+
 def test_cli_evaluate(tmp_path, evaluate_data_path):
     df = pd.read_csv(evaluate_data_path)
     df = add_unique_identifier(df)
