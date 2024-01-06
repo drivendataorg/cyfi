@@ -26,6 +26,14 @@ Install CyFi with pip:
 pip install cyfi
 ```
 
+Alternatively, CyFi can be installed with conda:
+
+```
+conda install -c conda-forge cyfi
+```
+
+There is a known issue with the pip installation on M1 Macs due to LightGBM. If you encounter this, we recommend installing CyFi with conda.
+
 For detailed instructions for those installing python for the first time, see the [Installation](installation.md) docs.
 
 ### Generate batch predictions
