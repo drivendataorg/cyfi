@@ -64,9 +64,11 @@ Once the Miniconda installation has finished,
 
 1. Open the terminal by typing ⌘+space (to open spotlight search) and then typing "Terminal". Hit enter.
 
-2. Type `conda install -c conda-forge cyfi` and hit enter. When prompted with "Proceed ([y]/n)?", hit enter again.
+2. Type `conda install -c conda-forge cyfi` and hit enter.
 
-3. To check that CyFi has been installed, run `pip show cyfi`
+3. When prompted with "Proceed ([y]/n)?", hit enter again.
+
+4. To check that CyFi has been installed, run `pip show cyfi`
 
 ```
 $ pip show cyfi
