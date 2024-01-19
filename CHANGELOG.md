@@ -1,5 +1,9 @@
 # CyFi changelog
 
+### v1.1.3 - 2024-01-19
+
+- Log error and exit gracefully when there is no valid satellite imagery for any point ([PR #136](https://github.com/drivendataorg/cyfi/pull/136))
+
 ### v1.1.2 - 2024-01-05
 
 - Clean up runtime requirements ([PR #133](https://github.com/drivendataorg/cyfi/pull/133))
