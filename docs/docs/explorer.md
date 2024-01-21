@@ -1,12 +1,3 @@
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-4DJJ6JZ04E"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-4DJJ6JZ04E');
-</script>
-
 # CyFi Explorer
 
 The focus of CyFi is making it easy to generate predictions using a trained machine learning model. That said, we know it can often be helpful to view predictions in context. That's why we've created CyFi Explorer!

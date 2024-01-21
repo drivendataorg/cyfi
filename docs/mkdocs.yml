@@ -5,6 +5,8 @@ repo_url: https://github.com/drivendataorg/cyfi
 edit_uri: ""
 theme:
   name: flatly
+  analytics:
+    gtag: G-4DJJ6JZ04E
 
 nav:
   - Installation: "installation.md"
