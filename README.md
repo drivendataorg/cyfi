@@ -2,6 +2,7 @@ CyFi: Cyanobacteria Finder
 ==============================
 
 [![PyPI](https://img.shields.io/pypi/v/cyfi.svg)](https://pypi.org/project/cyfi/)
+[![conda-forge](https://img.shields.io/conda/vn/conda-forge/cyfi.svg)](https://anaconda.org/conda-forge/cyfi)
 [![tests](https://github.com/drivendataorg/cyfi/workflows/tests/badge.svg?branch=main)](https://github.com/drivendataorg/cyfi/actions?query=workflow%3Atests+branch%3Amain)
 [![codecov](https://codecov.io/gh/drivendataorg/cyfi/branch/main/graph/badge.svg)](https://codecov.io/gh/drivendataorg/cyfi)
 
@@ -13,10 +14,19 @@ Read more at [cyfi.drivendata.org](https://cyfi.drivendata.org)
 
 ### Install
 
+> [!NOTE]
+> There is a known [issue](https://github.com/drivendataorg/cyfi/issues/114) with the pip installation on M1 Macs due to LightGBM. If you're on a Mac, we recommend installing CyFi with conda, shown in the second option below.
+
 Install CyFi with pip:
 
 ```
 pip install cyfi
+```
+
+Alternatively, CyFi can be installed with conda:
+
+```
+conda install -c conda-forge cyfi
 ```
 
 For detailed instructions for those installing python for the first time, see the [Installation](https://cyfi.drivendata.org/installation/) page.

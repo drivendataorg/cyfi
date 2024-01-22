@@ -39,7 +39,7 @@ Once the Miniconda installation has finished,
 ```
 $ pip show cyfi
 Name: cyfi
-Version: 0.1.0
+Version: 1.1.2
 Summary: CyFi is a Python package to estimate cyanobacteria density in small, inland water bodies using Sentinel-2 satellite imagery.
 ```
 
@@ -64,14 +64,16 @@ Once the Miniconda installation has finished,
 
 1. Open the terminal by typing ⌘+space (to open spotlight search) and then typing "Terminal". Hit enter.
 
-2. Type `pip install cyfi` and hit enter
+2. Type `conda install -c conda-forge cyfi` and hit enter.
 
-3. To check that CyFi has been installed, run `pip show cyfi`
+3. When prompted with "Proceed ([y]/n)?", hit enter again.
+
+4. To check that CyFi has been installed, run `pip show cyfi`
 
 ```
 $ pip show cyfi
 Name: cyfi
-Version: 0.1.0
+Version: 1.1.2
 Summary: CyFi is a Python package to estimate cyanobacteria density in small, inland water bodies using Sentinel-2 satellite imagery.
 ```
 
@@ -102,6 +104,6 @@ Summary: CyFi is a Python package to estimate cyanobacteria density in small, in
 ```
 $ pip show cyfi
 Name: cyfi
-Version: 0.1.0
+Version: 1.1.2
 Summary: CyFi is a Python package to estimate cyanobacteria density in small, inland water bodies using Sentinel-2 satellite imagery.
 ```

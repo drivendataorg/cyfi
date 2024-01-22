@@ -20,10 +20,20 @@
 
 ### Install
 
+!!! note ""
+
+    Note: There is a known [issue](https://github.com/drivendataorg/cyfi/issues/114) with the pip installation on M1 Macs due to LightGBM. If you're on a Mac, we recommend installing CyFi with conda, shown in the second option below.
+
 Install CyFi with pip:
 
 ```
 pip install cyfi
+```
+
+Alternatively, CyFi can be installed with conda:
+
+```
+conda install -c conda-forge cyfi
 ```
 
 For detailed instructions for those installing python for the first time, see the [Installation](installation.md) docs.
