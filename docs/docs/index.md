@@ -5,7 +5,7 @@
     <div>
       <p>CyFi is a command line tool that uses satellite imagery and machine learning to estimate cyanobacteria levels in small, inland water bodies. Cyanobacteria is a type of harmful algal bloom (HAB), which can produce toxins that are poisonous to humans and their pets, and can threaten marine ecosystems.</p>
       <p>The goal of CyFi is to help water quality managers better allocate resources for in situ sampling, and make more informed decisions around public health warnings for critical resources like lakes and reservoirs.</p><p>Ultimately, more accurate and more timely detection of algal blooms helps keep both the human and marine life that rely on these water bodies safe and healthy.</p>
-      <p>For a brief overview of CyFi's main capabilities and uses, check out the <a href="https://s3.amazonaws.com/drivendata-public-assets/CyFi_demo_deck.pdf">CyFi demo deck</a>.</p>
+      <p>For a brief overview of CyFi's main capabilities and uses, check out the <a href="https://s3.amazonaws.com/drivendata-public-assets/CyFi_demo_deck.pdf" target="_blank">CyFi demo deck</a>.</p>
     </div>
   </div>
   <div class="col-md-6">
