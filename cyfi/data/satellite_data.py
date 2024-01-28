@@ -223,9 +223,9 @@ def _generate_candidate_metadata_for_sample(
 
     sample_map = {
         sample_id: {
-            "sentinel_item_ids": sample_items_meta.item_id.tolist()
-            if len(sample_items_meta) > 0
-            else []
+            "sentinel_item_ids": (
+                sample_items_meta.item_id.tolist() if len(sample_items_meta) > 0 else []
+            )
         }
     }
 
