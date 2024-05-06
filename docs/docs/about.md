@@ -42,7 +42,7 @@ There are other groups working on cyanobacteria estimates from satellite imagery
 **Related research on using satellite imagery to monitor HABs**
 
 - [Quantifying national and regional cyanobacterial occurrence in US lakes using satellite remote sensing](https://www.sciencedirect.com/science/article/pii/S1470160X19309719?ref=pdf_download&fr=RR-2&rr=8109976f78329642)
-- [Evaluation of a satellite-based cyanobacteria bloom detection algorithm using field-measured microcystin data](https://www.sciencedirect.com/science/article/pii/S0048969721005301?ref=pdf_download&fr=RR-2&rr=7ee00136c8e396d1#f0015)
+- [Evaluation of a satellite-based cyanobacteria bloom detection algorithm using field-measured microcystin data](https://www.sciencedirect.com/science/article/pii/S0048969721005301)
 - [Satellite monitoring of cyanobacterial harmful algal bloom frequency in recreational waters and drinking water sources](https://www.sciencedirect.com/science/article/pii/S1470160X17302194?ref=pdf_download&fr=RR-2&rr=805b0d4bedb0642f)
 - [Satellite remote sensing to assess cyanobacterial bloom frequency across the United States at multiple spatial scales](https://www.sciencedirect.com/science/article/pii/S1470160X21004878)
 - [Challenges for mapping cyanotoxin patterns from remote sensing of cyanobacteria](https://pubmed.ncbi.nlm.nih.gov/28073474/)
