@@ -208,7 +208,7 @@ class CyFiModelConfig(BaseModel):
             Defaults to LGBParams().
         num_boost_round (Optional[int], optional): Number of boosting iterations. Defaults to 100000.
         n_folds (Optional[int], optional): Number of different model folds to train. If greater than
-            5, the models will be ensembled for a final prediction. Defaults to 1.
+            1, the models will be ensembled for a final prediction. Defaults to 5.
         target_col (Optional[str], optional):  Target column to predict. For possible
             values, see AVAILABLE_TARGET_COLS. Defaults to "log_density".
     """
