@@ -105,3 +105,7 @@ However users should feel free to to use their own thresholds as makes sense for
 Launch the [CyFi Explorer](https://cyfi.drivendata.org/explorer/) to view the Sentinel-2 imagery used to generate each cyanobacteria estimate!
 
 ![Screenshot of CyFi explorer showing the predictions table along with the Sentinel-2 imagery.](https://s3.amazonaws.com/drivendata-public-assets/cyfi_explorer_screenshot.jpg)
+
+## Reference paper
+
+Dorne, E., Wetstone, K., Cerquera, T. B., & Gupta, S. (2024). Cyanobacteria detection in small, inland water bodies with CyFi. In Proceedings of the 23nd Python in Science Conference (pp. 154–173). <https://doi.org/10.25080/pdhk7238>
