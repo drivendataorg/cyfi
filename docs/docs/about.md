@@ -10,7 +10,11 @@ Manual water sampling, or “in situ” sampling, is generally used to monitor c
 
 CyFi was born out of the [Tick Tick Bloom](https://www.drivendata.org/competitions/143/tick-tick-bloom/) machine learning competition, hosted by DrivenData. The goal in that challenge was to detect and classify the severity of cyanobacteria blooms in small, inland water bodies using publicly available satellite, climate, and elevation data. Labels were based on "in situ" samples that were collected manually by [many organizations](https://www.drivendata.org/competitions/143/tick-tick-bloom/page/651/#about-the-project-team) across the U.S. The model in CyFi is based on the [winning solutions](https://github.com/drivendataorg/tick-tick-bloom) from that challenge, and has been optimized for generalizability and efficiency.
 
-For more details on the model, see the [About the Model](../#about-the-model) section.
+For more details, see the [reference paper](https://doi.org/10.25080/pdhk7238).
+
+## Cite this work
+
+Dorne, E., Wetstone, K., Cerquera, T. B., & Gupta, S. (2024). Cyanobacteria detection in small, inland water bodies with CyFi. In Proceedings of the 23nd Python in Science Conference (pp. 154–173). <https://doi.org/10.25080/pdhk7238>
 
 ## Additional resources
 

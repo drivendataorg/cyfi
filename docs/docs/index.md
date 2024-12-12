@@ -258,3 +258,7 @@ _Example predictions csv row:_
         </tr>
     <tbody>
 </table>
+
+### Reference paper
+
+Dorne, E., Wetstone, K., Cerquera, T. B., & Gupta, S. (2024). Cyanobacteria detection in small, inland water bodies with CyFi. In Proceedings of the 23nd Python in Science Conference (pp. 154–173). <https://doi.org/10.25080/pdhk7238>
