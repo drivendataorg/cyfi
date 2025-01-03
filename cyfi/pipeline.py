@@ -1,6 +1,7 @@
 from pathlib import Path
 import tempfile
 from typing import List, Optional
+import ee
 import yaml
 from repro_zipfile import ReproducibleZipFile as ZipFile
 
@@ -19,6 +20,7 @@ from cyfi.data.utils import (
     convert_density_to_log_density,
     convert_log_density_to_density,
 )
+from cyfi.gee import calculate_features_from_gee, create_feature_collection, prep_features
 
 
 class CyFiPipeline:
@@ -124,6 +126,21 @@ class CyFiPipeline:
 
         features.to_csv(self.cache_dir / f"features_{split}.csv", index=True)
         selected_image_meta.to_csv(self.cache_dir / f"sentinel_metadata_{split}.csv", index=True)
+        return features
+
+    def _prepare_gee_features(self, samples, train_split: bool = True):
+        ee.Authenticate()
+        ee.Initialize()
+
+        if train_split:
+            split = "train"
+        else:
+            split = "test"
+
+        points_fc = create_feature_collection(samples)
+        results_fc = points_fc.map(calculate_features_from_gee)
+        features = pd.DataFrame([r["properties"] for r in results_fc.getInfo()["features"]])
+        features.to_csv(self.cache_dir / f"features_{split}.csv", index=True)
         return features
 
     def _prepare_train_features(self):
