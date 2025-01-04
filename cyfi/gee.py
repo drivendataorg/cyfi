@@ -2,6 +2,13 @@ import ee
 import pandas as pd
 
 
+# TODO: filter based on clouds in bbox not image (should be recalculated)
+# TODO: winsorize band values
+# TODO: make bbox rectangular?
+# TODO: parameterize things
+# TODO: calculate averages first for ratios?
+
+
 def create_feature_collection(df):
     """Convert the CSV into an Earth Engine FeatureCollection"""
     features = []
