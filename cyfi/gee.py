@@ -18,16 +18,22 @@ def create_feature_collection(df):
     return ee.FeatureCollection(features)
 
 
-def _calculate_gee_satellite_features_for_sample_item(feature):
+def _calculate_gee_satellite_features_for_sample_item(
+    feature,
+    max_days_before_sample=30,
+    buffer_size_m=2000,
+    cloud_score_var="cs_cdf",
+    cloud_score_threshold=0.6,
+):
     date = ee.Date(feature.get("date"))
 
-    # Define the time range: 30 days before the given date
-    start_date = date.advance(-30, "day")
+    # Define the time range
+    start_date = date.advance(-max_days_before_sample, "day")
     end_date = date
 
-    # Create a 2,000 meter buffer around the point (circular buffer)
+    # Create circular buffer around the point
     point = feature.geometry()
-    buffer = point.buffer(2000)  # Buffer is in meters (2 km radius)
+    buffer = point.buffer(buffer_size_m)  # Buffer is in meters (default is 2 km radius)
 
     s2_collection = ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
     cloud_score_collection = ee.ImageCollection("GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED")
@@ -39,7 +45,7 @@ def _calculate_gee_satellite_features_for_sample_item(feature):
             "CLOUDY_PIXEL_PERCENTAGE < 5"
         )  # exclude images where more than 5% of pixels in image are clouds
         .sort("system:time_start", False)  # sort so we can take most recent image
-        .linkCollection(cloud_score_collection, ["cs_cdf"])  # bring in cloud score
+        .linkCollection(cloud_score_collection, [cloud_score_var])  # bring in cloud score
     ).first()
 
     feature = feature.set(
@@ -53,7 +59,7 @@ def _calculate_gee_satellite_features_for_sample_item(feature):
 
     masked_image = latest_image.updateMask(
         # mask out pixels where cloud score is too high
-        latest_image.select("cs_cdf").gte(0.6)
+        latest_image.select(cloud_score_var).gte(cloud_score_threshold)
     ).updateMask(
         # filter to water area
         latest_image.select("SCL").eq(6)
