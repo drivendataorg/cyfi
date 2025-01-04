@@ -11,12 +11,10 @@ import pandas as pd
 
 def create_feature_collection(df):
     """Convert the CSV into an Earth Engine FeatureCollection"""
-    features = []
-    for row in df.itertuples():
-        feature = ee.Feature(ee.Geometry.Point([row.longitude, row.latitude]), {"date": row.date})
-        features.append(feature)
-
-    # return an Earth Engine FeatureCollection
+    features = [
+        ee.Feature(ee.Geometry.Point([row.longitude, row.latitude]), {"date": row.date})
+        for row in df.itertuples()
+    ]
     return ee.FeatureCollection(features)
 
 
