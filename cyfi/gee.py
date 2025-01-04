@@ -31,7 +31,7 @@ def _calculate_gee_satellite_features_for_sample_item(feature):
         s2_collection.filterBounds(buffer)
         .filterDate(start_date, end_date)
         .filter(
-            "CLOUDY_PIXEL_PERCENTAGE < 15"
+            "CLOUDY_PIXEL_PERCENTAGE < 5"
         )  # exclude images where more than 5% of pixels in image are clouds
         .sort("system:time_start", False)  # sort so we can take most recent image
         .linkCollection(cloud_score_collection, ["cs_cdf"])  # bring in cloud score
