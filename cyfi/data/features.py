@@ -5,6 +5,7 @@ from typing import Union
 
 from cloudpathlib import S3Client
 import cv2
+import ee
 from loguru import logger
 import numpy as np
 import pandas as pd
@@ -16,6 +17,7 @@ import xarray as xr
 
 
 from cyfi.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
+from cyfi.gee import calculate_satellite_features_gee
 
 
 def calculate_satellite_features(
@@ -254,6 +256,7 @@ def generate_all_features(
     satellite_meta: pd.DataFrame,
     config: FeaturesConfig,
     cache_dir: Union[str, Path],
+    use_gee: bool = True,
 ) -> pd.DataFrame:
     """Generate a dataframe of features for the given set of samples.
     Requires that the raw satellite data for the given samples are
@@ -280,8 +283,14 @@ def generate_all_features(
             sample and pystac item. Only samples that have at least one valid
             non-metadata feature are included in the features dataframe
     """
-    # Generate satellite features, only includes samples with imagery
-    satellite_features = calculate_satellite_features(satellite_meta, config, cache_dir)
+    if use_gee:
+        ee.Authenticate()
+        ee.Initialize()
+        satellite_features = calculate_satellite_features_gee(samples, config)
+
+    else:
+        # Generate satellite features, only includes samples with imagery
+        satellite_features = calculate_satellite_features(satellite_meta, config, cache_dir)
 
     ct_with_satellite = satellite_features.index.nunique()
     if ct_with_satellite == 0:

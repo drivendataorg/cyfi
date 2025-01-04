@@ -6,19 +6,14 @@ def create_feature_collection(df):
     """Convert the CSV into an Earth Engine FeatureCollection"""
     features = []
     for row in df.itertuples():
-        lat = row["latitude"]
-        lon = row["longitude"]
-        date = row["date"]
-
-        # Create an ee.Feature for each row
-        feature = ee.Feature(ee.Geometry.Point([lon, lat]), {"date": date})
+        feature = ee.Feature(ee.Geometry.Point([row.longitude, row.latitude]), {"date": row.date})
         features.append(feature)
 
-    # Return an Earth Engine FeatureCollection
+    # return an Earth Engine FeatureCollection
     return ee.FeatureCollection(features)
 
 
-def calculate_features_from_gee(feature):
+def _calculate_gee_satellite_features_for_sample_item(feature):
     date = ee.Date(feature.get("date"))
 
     # Define the time range: 30 days before the given date
@@ -42,7 +37,14 @@ def calculate_features_from_gee(feature):
         .linkCollection(cloud_score_collection, ["cs_cdf"])  # bring in cloud score
     ).first()
 
-    feature = feature.set({"image_id": latest_image.get("system:id")})
+    feature = feature.set(
+        {
+            "image_id": latest_image.get("system:id"),
+            "image_date": ee.Date(latest_image.get("system:time_start")).format(
+                "YYYY-MM-dd HH:mm:ss"
+            ),
+        }
+    )
 
     masked_image = latest_image.updateMask(
         # mask out pixels where cloud score is too high
@@ -98,3 +100,47 @@ def calculate_features_from_gee(feature):
 
     stats = means.combine(percentiles).combine(mean_water).combine(aot_minmax)
     return feature.set(stats)
+
+
+def calculate_satellite_features_gee(samples, features_config):
+    points_fc = create_feature_collection(samples)
+    results_fc = points_fc.map(_calculate_gee_satellite_features_for_sample_item)
+    features = pd.DataFrame([r["properties"] for r in results_fc.getInfo()["features"]])
+    features.index = samples.index
+    features = features.rename(
+        columns={
+            "B1": "B01_mean",
+            "B2": "B02_mean",
+            "B3": "B03_mean",
+            "B4": "B04_mean",
+            "B5": "B05_mean",
+            "B6": "B06_mean",
+            "B7": "B07_mean",
+            "B8": "B08_mean",
+            "B8A": "B8A_mean",
+            "B9": "B09_mean",
+            "B10": "B10_mean",
+            "B11": "B11_mean",
+            "B12": "B12_mean",
+            "WVP": "WVP_mean",
+            "AOT": "AOT_mean",
+            "B3_p5": "green5th",
+            "B3_p95": "green95th",
+            "NDVI_B4": "NDVI_B04",
+            "NDVI_B5": "NDVI_B05",
+            "NDVI_B6": "NDVI_B06",
+            "NDVI_B7": "NDVI_B07",
+            "image_id": "item_id",
+        }
+    )
+
+    # create additional features
+    features["green95th_blue_ratio"] = features.green95th / features.B02_mean
+    features["green5th_blue_ratio"] = features.green5th / features.B02_mean
+    features["AOT_range"] = features.AOT_max - features.AOT_min
+
+    features["days_before_sample"] = (
+        pd.to_datetime(samples.date) - pd.to_datetime(features.image_date)
+    ).dt.days
+    features["month"] = pd.to_datetime(features.image_date).dt.month
+    return features

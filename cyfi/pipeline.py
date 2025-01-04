@@ -20,7 +20,6 @@ from cyfi.data.utils import (
     convert_density_to_log_density,
     convert_log_density_to_density,
 )
-from cyfi.gee import calculate_features_from_gee, create_feature_collection, prep_features
 
 
 class CyFiPipeline:
@@ -103,44 +102,35 @@ class CyFiPipeline:
         self.train_samples = labels[expected_cols]
         self.train_labels = labels[self.target_col]
 
-    def _prepare_features(self, samples, train_split: bool = True):
-        if train_split:
-            split = "train"
-        else:
-            split = "test"
-        ## Identify satellite data
-        satellite_meta = identify_satellite_data(samples, self.features_config)
-        save_satellite_to = self.cache_dir / f"satellite_metadata_{split}.csv"
-        satellite_meta.to_csv(save_satellite_to, index=False)
-        logger.info(f"Satellite imagery metadata saved to {save_satellite_to}")
-
-        ## Download satellite data
-        download_satellite_data(satellite_meta, samples, self.features_config, self.cache_dir)
-        logger.success("Downloaded satellite imagery")
-        logger.info(f"Satellite imagery saved to {self.cache_dir}")
-
-        ## Generate features
-        selected_image_meta, features = generate_all_features(
-            samples, satellite_meta, self.features_config, self.cache_dir
-        )
-
-        features.to_csv(self.cache_dir / f"features_{split}.csv", index=True)
-        selected_image_meta.to_csv(self.cache_dir / f"sentinel_metadata_{split}.csv", index=True)
-        return features
-
-    def _prepare_gee_features(self, samples, train_split: bool = True):
-        ee.Authenticate()
-        ee.Initialize()
-
+    def _prepare_features(self, samples, train_split: bool = True, use_gee: bool = True):
         if train_split:
             split = "train"
         else:
             split = "test"
 
-        points_fc = create_feature_collection(samples)
-        results_fc = points_fc.map(calculate_features_from_gee)
-        features = pd.DataFrame([r["properties"] for r in results_fc.getInfo()["features"]])
+        if use_gee:
+            selected_image_meta, features = generate_all_features(
+                samples, None, self.features_config, self.cache_dir
+            )
+        else:
+            ## Identify satellite data
+            satellite_meta = identify_satellite_data(samples, self.features_config)
+            save_satellite_to = self.cache_dir / f"satellite_metadata_{split}.csv"
+            satellite_meta.to_csv(save_satellite_to, index=False)
+            logger.info(f"Satellite imagery metadata saved to {save_satellite_to}")
+
+            ## Download satellite data
+            download_satellite_data(satellite_meta, samples, self.features_config, self.cache_dir)
+            logger.success("Downloaded satellite imagery")
+            logger.info(f"Satellite imagery saved to {self.cache_dir}")
+
+            ## Generate features
+            selected_image_meta, features = generate_all_features(
+                samples, satellite_meta, self.features_config, self.cache_dir
+            )
+
         features.to_csv(self.cache_dir / f"features_{split}.csv", index=True)
+        # selected_image_meta.to_csv(self.cache_dir / f"sentinel_metadata_{split}.csv", index=True)
         return features
 
     def _prepare_train_features(self):
