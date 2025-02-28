@@ -168,7 +168,7 @@ def visualize(
                         "severity",
                     ]
                 ].style.format({"density_cells_per_ml": "{:,.0f}"}),
-                height=200,
+                max_height=200,
             )
 
         with gr.Row():

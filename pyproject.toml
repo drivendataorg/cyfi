@@ -31,7 +31,7 @@ dependencies = [
   "geopandas",
   "geopy",
   "GitPython",
-  "gradio",
+  "gradio>=5.0",
   "lightgbm",
   "loguru",
   "matplotlib",
