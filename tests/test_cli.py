@@ -1,9 +1,10 @@
+from pathlib import Path
 import shutil
 import signal
 import subprocess
 import time
+
 import pandas as pd
-from pathlib import Path
 from pyproj import Transformer
 from pytest_mock import mocker  # noqa: F401
 from typer.testing import CliRunner
@@ -276,4 +277,5 @@ def test_cyfi_explorer_launches(tmp_path):
     time.sleep(10)
     proc.send_signal(signal.SIGINT)
     stdout, stderr = proc.communicate()
+    proc.kill()  # ensure no zombie processes
     assert "Running on" in stdout
