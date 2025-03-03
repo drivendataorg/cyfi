@@ -11,7 +11,7 @@ import seaborn as sns
 from sklearn.metrics import (
     classification_report,
     mean_absolute_error,
-    mean_squared_error,
+    root_mean_squared_error,
     r2_score,
 )
 from zipfile import ZipFile
@@ -194,7 +194,7 @@ class EvaluatePreds:
     @staticmethod
     def calculate_severity_metrics(y_true, y_pred, region=None):
         results = dict()
-        results["overall_rmse"] = mean_squared_error(y_true, y_pred, squared=False)
+        results["overall_rmse"] = root_mean_squared_error(y_true, y_pred)
         results["overall_mae"] = mean_absolute_error(y_true, y_pred)
 
         if region is not None:
@@ -202,7 +202,7 @@ class EvaluatePreds:
             df.columns = ["y_true", "y_pred", "region"]
             results["regional_rmse"] = (
                 df.groupby("region")
-                .apply(lambda x: mean_squared_error(x.y_true, x.y_pred, squared=False))
+                .apply(lambda x: root_mean_squared_error(x.y_true, x.y_pred))
                 .to_dict()
             )
             results["region_averaged_rmse"] = np.mean(
