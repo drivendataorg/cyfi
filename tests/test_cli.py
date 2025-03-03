@@ -276,6 +276,5 @@ def test_cyfi_explorer_launches(tmp_path):
     )
     time.sleep(10)
     proc.send_signal(signal.SIGINT)
-    proc.wait()
     stdout, stderr = proc.communicate()
     assert "Running on" in stdout
