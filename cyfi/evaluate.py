@@ -202,7 +202,7 @@ class EvaluatePreds:
             df.columns = ["y_true", "y_pred", "region"]
             results["regional_rmse"] = (
                 df.groupby("region")
-                .apply(lambda x: root_mean_squared_error(x.y_true, x.y_pred))
+                .apply(lambda x: root_mean_squared_error(x.y_true, x.y_pred), include_groups=False)
                 .to_dict()
             )
             results["region_averaged_rmse"] = np.mean(
@@ -210,7 +210,7 @@ class EvaluatePreds:
             )
             results["regional_mae"] = (
                 df.groupby("region")
-                .apply(lambda x: mean_absolute_error(x.y_true, x.y_pred))
+                .apply(lambda x: mean_absolute_error(x.y_true, x.y_pred), include_groups=False)
                 .to_dict()
             )
 
@@ -235,7 +235,9 @@ class EvaluatePreds:
             df = pd.concat([y_true, y_pred, region], axis=1)
             df.columns = ["y_true", "y_pred", "region"]
             results["regional_r_squared"] = (
-                df.groupby("region").apply(lambda x: r2_score(x.y_true, x.y_pred)).to_dict()
+                df.groupby("region")
+                .apply(lambda x: r2_score(x.y_true, x.y_pred), include_groups=False)
+                .to_dict()
             )
 
         return results
