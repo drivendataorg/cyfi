@@ -1,3 +1,7 @@
+import shutil
+import signal
+import subprocess
+import time
 import pandas as pd
 from pathlib import Path
 from pyproj import Transformer
@@ -255,3 +259,23 @@ def test_python_m_execution():
     )
     assert result.returncode == 0
     assert "Usage: python -m cyfi" in result.stdout
+
+
+def test_cyfi_explorer_launches(tmp_path):
+    shutil.copy(ASSETS_DIR / "experiment" / "preds.csv", tmp_path / "preds.csv")
+    shutil.copy(
+        ASSETS_DIR / "experiment" / "sentinel_metadata_test.csv",
+        tmp_path / "sentinel_metadata.csv",
+    )
+
+    proc = subprocess.Popen(
+        ["cyfi", "visualize", str(tmp_path)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    time.sleep(10)
+    proc.send_signal(signal.SIGINT)
+    proc.wait()
+    stdout, stderr = proc.communicate()
+    assert "Running on" in stdout
