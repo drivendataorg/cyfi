@@ -34,7 +34,7 @@ dependencies = [
   "gradio",
   "lightgbm",
   "loguru",
-  "matplotlib<3.8.0",
+  "matplotlib",
   "numpy",
   "odc-stac",
   "opencv-python",

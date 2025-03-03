@@ -12,11 +12,8 @@ PYTHON_INTERPRETER = python
 # COMMANDS                                                                      #
 #################################################################################
 
-clean:
-	rm -f .coverage
-	rm -f coverage.xml
-	rm -fr htmlcov/
-	rm -fr .pytest_cache
+## Remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc clean-test
 
 ## Set up python interpreter environment
 create_environment:
@@ -52,8 +49,6 @@ docs:  ## build the static version of the docs
 
 docs-serve: ## serve documentation to livereload while you work
 	cd docs && mkdocs serve
-
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
 clean-build: ## remove build artifacts
 	rm -fr build/
