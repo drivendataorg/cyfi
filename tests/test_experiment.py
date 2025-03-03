@@ -2,6 +2,7 @@ from pathlib import Path
 from pydantic import ValidationError
 import pytest
 from typer.testing import CliRunner
+import yaml
 
 from cyfi.config import FeaturesConfig
 from cyfi.experiment import app, ExperimentConfig
@@ -52,3 +53,8 @@ def test_cli_experiment(experiment_config_path):
         "results.json",
     ]:
         assert (Path(config.save_dir) / "metrics" / file).exists()
+
+    # re-write config to yaml directory without git hash to avoid changing test assets
+    config = ExperimentConfig.from_file(experiment_config_path)
+    with (config.save_dir / "config_artifact.yaml").open("w") as fp:
+        yaml.dump(config.model_dump(exclude={"last_commit_hash"}), fp)
