@@ -29,7 +29,13 @@ def test_experiment_config(train_data_path):
         )
 
 
-def test_cli_experiment(experiment_config_path):
+def test_cli_experiment(experiment_config_path, tmp_path):
+    # use tmp_path as the save location
+    config = ExperimentConfig.from_file(experiment_config_path)
+    config.save_dir = tmp_path
+    with (config.save_dir / "config_artifact.yaml").open("w") as fp:
+        yaml.dump(config.model_dump(), fp)
+
     # Run CLI command
     result = runner.invoke(
         app,
@@ -53,8 +59,3 @@ def test_cli_experiment(experiment_config_path):
         "results.json",
     ]:
         assert (Path(config.save_dir) / "metrics" / file).exists()
-
-    # re-write config to yaml directory without git hash to avoid changing test assets
-    config = ExperimentConfig.from_file(experiment_config_path)
-    with (config.save_dir / "config_artifact.yaml").open("w") as fp:
-        yaml.dump(config.model_dump(exclude={"last_commit_hash"}), fp)

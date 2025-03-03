@@ -32,6 +32,7 @@ features_config:
   use_sentinel_bands:
   - B02
   - SCL
+last_commit_hash: 80b9d62ad0d5150881606da5b23636f1c7214302
 predict_csv: tests/assets/evaluate_data.csv
 save_dir: tests/assets/experiment
 train_csv: tests/assets/train_data.csv
