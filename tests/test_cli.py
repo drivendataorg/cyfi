@@ -6,7 +6,6 @@ import pandas as pd
 from pathlib import Path
 from pyproj import Transformer
 from pytest_mock import mocker  # noqa: F401
-import subprocess
 from typer.testing import CliRunner
 
 from cyfi.cli import app
