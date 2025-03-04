@@ -39,7 +39,7 @@ test: clean lint
 
 ## Make assets
 assets:
-	rm -r tests/assets/experiment
+	rm -fr tests/assets/experiment
 	python cyfi/experiment.py tests/assets/experiment_config.yaml
 
 docs:  ## build the static version of the docs
