@@ -2,6 +2,7 @@ from pathlib import Path
 from pydantic import ValidationError
 import pytest
 from typer.testing import CliRunner
+import yaml
 
 from cyfi.config import FeaturesConfig
 from cyfi.experiment import app, ExperimentConfig
@@ -28,15 +29,24 @@ def test_experiment_config(train_data_path):
         )
 
 
-def test_cli_experiment(experiment_config_path):
+def test_cli_experiment(experiment_config_path, tmp_path):
+    # use tmp_path as the save location
+    with experiment_config_path.open("r") as f:
+        config = yaml.safe_load(f)
+
+    config["save_dir"] = str(tmp_path)
+    new_config_path = tmp_path / "config_artifact.yaml"
+    with new_config_path.open("w") as fp:
+        yaml.dump(config, fp)
+
     # Run CLI command
     result = runner.invoke(
         app,
-        [str(experiment_config_path)],
+        [str(new_config_path)],
     )
     assert result.exit_code == 0
 
-    config = ExperimentConfig.from_file(experiment_config_path)
+    config = ExperimentConfig.from_file(new_config_path)
 
     # Check that artifact config, model zip, and predictions got saved out
     for file in ["config_artifact.yaml", "model.zip", "preds.csv"]:

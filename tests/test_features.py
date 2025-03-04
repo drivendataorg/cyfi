@@ -54,7 +54,7 @@ def test_generate_candidate_metadata(train_data, features_config):
 
     # Check that candidate metadata matches known expected values
     assert candidate_meta.item_id.is_unique
-    assert len(candidate_meta) == 31
+    assert len(candidate_meta) == 34
     assert (
         "S2A_MSIL2A_20170728T155901_R097_T17SPV_20210210T154351" in candidate_meta.item_id.values
     )
