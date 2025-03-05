@@ -1,8 +1,14 @@
-import pandas as pd
 from pathlib import Path
-from pyproj import Transformer
-from pytest_mock import mocker  # noqa: F401
+import platform
+import shutil
+import signal
 import subprocess
+import time
+
+import pandas as pd
+from pyproj import Transformer
+import pytest
+from pytest_mock import mocker  # noqa: F401
 from typer.testing import CliRunner
 
 from cyfi.cli import app
@@ -255,3 +261,24 @@ def test_python_m_execution():
     )
     assert result.returncode == 0
     assert "Usage: python -m cyfi" in result.stdout
+
+
+@pytest.mark.skipif(platform.system() == "Windows", reason="SIGINT is not supported on Windows")
+def test_cyfi_explorer_launches(tmp_path):
+    shutil.copy(ASSETS_DIR / "experiment" / "preds.csv", tmp_path / "preds.csv")
+    shutil.copy(
+        ASSETS_DIR / "experiment" / "sentinel_metadata_test.csv",
+        tmp_path / "sentinel_metadata.csv",
+    )
+
+    proc = subprocess.Popen(
+        ["cyfi", "visualize", str(tmp_path)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    time.sleep(10)
+    proc.send_signal(signal.SIGINT)
+    stdout, stderr = proc.communicate()
+    proc.kill()  # ensure no zombie processes
+    assert "Running on" in stdout
