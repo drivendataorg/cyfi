@@ -1,4 +1,5 @@
 from pathlib import Path
+import platform
 import shutil
 import signal
 import subprocess
@@ -6,6 +7,7 @@ import time
 
 import pandas as pd
 from pyproj import Transformer
+import pytest
 from pytest_mock import mocker  # noqa: F401
 from typer.testing import CliRunner
 
@@ -261,6 +263,7 @@ def test_python_m_execution():
     assert "Usage: python -m cyfi" in result.stdout
 
 
+@pytest.mark.skipif(platform.system() == "Windows", reason="SIGINT is not supported on Windows")
 def test_cyfi_explorer_launches(tmp_path):
     shutil.copy(ASSETS_DIR / "experiment" / "preds.csv", tmp_path / "preds.csv")
     shutil.copy(
