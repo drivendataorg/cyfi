@@ -1,5 +1,9 @@
 # CyFi changelog
 
+### v1.1.4 - 2025-03-10
+
+- Set minimum versions for gradio and scikit-learn; resolve pandas warnings; docstring fix ([PR #152](https://github.com/drivendataorg/cyfi/pull/152), [PR #154](https://github.com/drivendataorg/cyfi/pull/154), [PR #146](https://github.com/drivendataorg/cyfi/pull/146))
+
 ### v1.1.3 - 2024-01-19
 
 - Log error and exit gracefully when there is no valid satellite imagery for any point ([PR #136](https://github.com/drivendataorg/cyfi/pull/136))
