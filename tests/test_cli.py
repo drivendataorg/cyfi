@@ -47,8 +47,8 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, local_model_path
     assert preds.severity.isna().sum() == 1
 
     # Check that log level is expected
-    assert "SUCCESS" in result.stdout
-    assert "INFO" not in result.stdout
+    assert "SUCCESS" in result.stderr
+    assert "INFO" not in result.stderr
 
 
 def test_cli_predict_samples_path(tmp_path, local_model_path):
@@ -65,7 +65,7 @@ def test_cli_predict_samples_path(tmp_path, local_model_path):
         ],
     )
     assert result.exit_code == 2
-    assert "Missing argument" in result.output
+    assert "Missing argument" in result.stderr
 
     # Errors when samples_path does not exist
     result = runner.invoke(
@@ -80,7 +80,7 @@ def test_cli_predict_samples_path(tmp_path, local_model_path):
         ],
     )
     assert result.exit_code == 2
-    assert "does not exist" in result.stdout
+    assert "does not exist" in result.stderr
 
 
 def test_cli_no_overwrite(tmp_path, train_data, train_data_path, local_model_path):
@@ -120,8 +120,8 @@ def test_cli_predict_verbosity(tmp_path, predict_data_path, local_model_path):
         ],
     )
     assert result.exit_code == 0
-    assert "INFO" in result.stdout
-    assert "DEBUG" not in result.stdout
+    assert "INFO" in result.stderr
+    assert "DEBUG" not in result.stderr
 
 
 # mock prediction to just test CLI args
@@ -194,7 +194,7 @@ def test_cli_predict_point_crs(mocker, local_model_path):  # noqa: F811
     assert result.exit_code == 0
 
     # check original location printed out
-    assert str(round(lat, 2)) in result.stdout
+    assert str(round(lat, 2)) in result.stderr
 
     # try predicting with invalid CRS
     result = runner.invoke(
@@ -202,7 +202,7 @@ def test_cli_predict_point_crs(mocker, local_model_path):  # noqa: F811
         inputs + ["--crs", "EPSG:10"],
     )
     assert result.exit_code == 2
-    assert "Invalid value for '--crs" in result.stdout
+    assert "Invalid value for '--crs" in result.stderr
 
 
 def test_graceful_exit_when_no_satellite_data():
@@ -222,7 +222,7 @@ def test_graceful_exit_when_no_satellite_data():
     assert result.exit_code == 1
     assert (
         "Relevant satellite data is not available for any of the provided sample points. Please try a different location or date"
-        in result.stdout
+        in result.stderr
     )
 
 
