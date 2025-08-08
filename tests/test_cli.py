@@ -1,7 +1,9 @@
 from pathlib import Path
 import platform
+import requests
 import shutil
 import signal
+import socket
 import subprocess
 import time
 
@@ -263,6 +265,34 @@ def test_python_m_execution():
     assert "Usage: python -m cyfi" in result.stdout
 
 
+def determine_dashboard_url() -> str:
+    """Determine where the CyFi dashboard will be served based on which ports are already in use"""
+    # Gradio uses 7860 by default, then increments
+    for port in range(7860, 7900):  # Don't check indefinite ports
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        try:
+            # Port is in use
+            sock.connect(("localhost", port))
+            sock.close()
+            continue
+        except (socket.timeout, socket.error):
+            # If an error is raised, the port is not in use
+            return f"http://127.0.0.1:{port}/"
+
+    raise ValueError("No available ports found for the CyFi dashboard, cannot test CyFi explorer.")
+
+
+def url_is_up(url: str) -> bool:
+    """Check if a URL is up by making a GET request."""
+    try:
+        response = requests.get(url)
+        return response.status_code == 200
+
+    except Exception:
+        return False
+
+
 @pytest.mark.skipif(platform.system() == "Windows", reason="SIGINT is not supported on Windows")
 def test_cyfi_explorer_launches(tmp_path):
     shutil.copy(ASSETS_DIR / "experiment" / "preds.csv", tmp_path / "preds.csv")
@@ -270,6 +300,8 @@ def test_cyfi_explorer_launches(tmp_path):
         ASSETS_DIR / "experiment" / "sentinel_metadata_test.csv",
         tmp_path / "sentinel_metadata.csv",
     )
+    # Determine the dashboard's URL based on which ports are already in use
+    dashboard_url = determine_dashboard_url()
 
     proc = subprocess.Popen(
         ["cyfi", "visualize", str(tmp_path)],
@@ -277,7 +309,16 @@ def test_cyfi_explorer_launches(tmp_path):
         stderr=subprocess.PIPE,
         text=True,
     )
-    time.sleep(10)
+    dashboard_up = url_is_up(dashboard_url)
+    elapsed_time = 0
+    # Give max 2 minutes for the dashboard to start up
+    while dashboard_up is False and elapsed_time < 120:
+        time.sleep(10)
+        elapsed_time += 10
+        dashboard_up = url_is_up(dashboard_url)
+
+    assert dashboard_up, f"CyFi Explorer took too long to start up at {dashboard_url}."
+
     proc.send_signal(signal.SIGINT)
     stdout, stderr = proc.communicate()
     proc.kill()  # ensure no zombie processes
