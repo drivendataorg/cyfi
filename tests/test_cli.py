@@ -265,8 +265,8 @@ def test_python_m_execution():
     assert "Usage: python -m cyfi" in result.stdout
 
 
-def determine_dashboard_url() -> str:
-    """Determine where the CyFi dashboard will be served based on which ports are already in use"""
+def determine_explorer_url() -> str:
+    """Determine where the CyFi Explorer will be served based on which ports are already in use"""
     # Gradio uses 7860 by default, then increments
     for port in range(7860, 7900):  # Don't check indefinite ports
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -280,7 +280,9 @@ def determine_dashboard_url() -> str:
             # If an error is raised, the port is not in use
             return f"http://127.0.0.1:{port}/"
 
-    raise ValueError("No available ports found for the CyFi dashboard, cannot test CyFi explorer.")
+    raise ValueError(
+        "No available ports between 7860 and 7900 found for the CyFi explorer, cannot test CyFi explorer."
+    )
 
 
 def url_is_up(url: str) -> bool:
@@ -300,8 +302,8 @@ def test_cyfi_explorer_launches(tmp_path):
         ASSETS_DIR / "experiment" / "sentinel_metadata_test.csv",
         tmp_path / "sentinel_metadata.csv",
     )
-    # Determine the dashboard's URL based on which ports are already in use
-    dashboard_url = determine_dashboard_url()
+    # Determine the site's URL based on which ports are already in use
+    explorer_url = determine_explorer_url()
 
     proc = subprocess.Popen(
         ["cyfi", "visualize", str(tmp_path)],
@@ -309,15 +311,15 @@ def test_cyfi_explorer_launches(tmp_path):
         stderr=subprocess.PIPE,
         text=True,
     )
-    dashboard_up = url_is_up(dashboard_url)
+    explorer_up = url_is_up(explorer_url)
     elapsed_time = 0
-    # Give max 2 minutes for the dashboard to start up
-    while dashboard_up is False and elapsed_time < 120:
+    # Give max 2 minutes for the explorer to start up
+    while explorer_up is False and elapsed_time < 120:
         time.sleep(10)
         elapsed_time += 10
-        dashboard_up = url_is_up(dashboard_url)
+        explorer_up = url_is_up(explorer_url)
 
-    assert dashboard_up, f"CyFi Explorer took too long to start up at {dashboard_url}."
+    assert explorer_up, f"CyFi Explorer took too long to start up at {explorer_url}."
 
     proc.send_signal(signal.SIGINT)
     stdout, stderr = proc.communicate()
