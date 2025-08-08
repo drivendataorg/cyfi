@@ -18,7 +18,11 @@ def visualize(
         Path.cwd(),
         exists=True,
         help="CyFi output directory containing preds.csv and sentinel_metadata.csv from a prior prediction run.",
-    )
+    ),
+    port: int = typer.Option(
+        7860,
+        help="Port to run the CyFi Explorer on.",
+    ),
 ):
     """Launch CyFi Explorer to see Sentinel-2 imagery alongside predictions."""
 
@@ -211,4 +215,4 @@ def visualize(
             map = gr.Plot()
             demo.load(make_map, [], map)
 
-    demo.launch()
+    demo.launch(server_port=port)

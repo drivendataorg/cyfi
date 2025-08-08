@@ -3,7 +3,6 @@ import platform
 import requests
 import shutil
 import signal
-import socket
 import subprocess
 import time
 
@@ -265,33 +264,13 @@ def test_python_m_execution():
     assert "Usage: python -m cyfi" in result.stdout
 
 
-def determine_explorer_url() -> str:
-    """Determine where the CyFi Explorer will be served based on which ports are already in use"""
-    # Gradio uses 7860 by default, then increments
-    for port in range(7860, 7900):  # Don't check indefinite ports
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        try:
-            # Port is in use
-            sock.connect(("localhost", port))
-            sock.close()
-            continue
-        except (socket.timeout, socket.error):
-            # If an error is raised, the port is not in use
-            return f"http://127.0.0.1:{port}/"
-
-    raise ValueError(
-        "No available ports between 7860 and 7900 found for the CyFi explorer, cannot test CyFi explorer."
-    )
-
-
 def url_is_up(url: str) -> bool:
     """Check if a URL is up by making a GET request."""
     try:
         response = requests.get(url)
         return response.status_code == 200
 
-    except Exception:
+    except requests.RequestException:
         return False
 
 
@@ -302,11 +281,11 @@ def test_cyfi_explorer_launches(tmp_path):
         ASSETS_DIR / "experiment" / "sentinel_metadata_test.csv",
         tmp_path / "sentinel_metadata.csv",
     )
-    # Determine the site's URL based on which ports are already in use
-    explorer_url = determine_explorer_url()
+    use_port = 7860
+    explorer_url = f"http://127.0.0.1:{use_port}/"
 
     proc = subprocess.Popen(
-        ["cyfi", "visualize", str(tmp_path)],
+        ["cyfi", "visualize", str(tmp_path), "--port", str(use_port)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -314,9 +293,9 @@ def test_cyfi_explorer_launches(tmp_path):
     explorer_up = url_is_up(explorer_url)
     elapsed_time = 0
     # Give max 2 minutes for the explorer to start up
-    while explorer_up is False and elapsed_time < 120:
-        time.sleep(10)
-        elapsed_time += 10
+    while not explorer_up and elapsed_time < 120:
+        time.sleep(5)
+        elapsed_time += 5
         explorer_up = url_is_up(explorer_url)
 
     assert explorer_up, f"CyFi Explorer took too long to start up at {explorer_url}."
