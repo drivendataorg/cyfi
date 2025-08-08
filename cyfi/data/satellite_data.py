@@ -358,7 +358,7 @@ def download_row(
     samples: pd.DataFrame,
     imagery_dir: Path,
     config: FeaturesConfig,
-):
+) -> bool:
     """Download image arrays for one row of satellite metadata containing a
     unique combination of sample ID and item ID
 
@@ -372,6 +372,9 @@ def download_row(
         imagery_dir (Path): Image cache directory for a specific satellite
             source and bounding box size
         config (FeaturesConfig): Features config
+
+    Returns:
+        bool: True if the download was successful, False otherwise
     """
     _, row = iterrow
 
@@ -405,6 +408,8 @@ def download_row(
                 )
                 np.save(array_save_path, band_array)
 
+        return True
+
     except Exception as e:
         # Delete item directory if it has already been created
         if sample_image_dir.exists():
@@ -412,8 +417,9 @@ def download_row(
 
         # Return error type
         logger.debug(
-            f"{e.__class__.__module__}.{e.__class__.__name__} raised for sample ID {row.sample_id}, Sentinel-2 item ID {row.item_id}"
+            f"{e.__class__.__module__}.{e.__class__.__name__} raised for sample ID {row.sample_id}, Sentinel-2 item ID {row.item_id}:\n{str(e)}"
         )
+        return False
 
 
 def download_satellite_data(
@@ -421,7 +427,7 @@ def download_satellite_data(
     samples: pd.DataFrame,
     config: FeaturesConfig,
     cache_dir: Union[str, Path],
-):
+) -> int:
     """Download satellite images as one stacked numpy arrays per pystac item
 
     Args:
@@ -432,6 +438,9 @@ def download_satellite_data(
             there are columns for date, longitude, and latitude
         config (FeaturesConfig): Features config
         cache_dir (Union[str, Path]): Cache directory to save raw imagery
+
+    Returns:
+        int: Number of items that were successfully downloaded
     """
     # Iterate over all rows (item / sample combos)
     imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"
@@ -439,7 +448,7 @@ def download_satellite_data(
         progress_log_level.name,
         f"Downloading satellite imagery for {satellite_meta.shape[0]:,} Sentinel-2 items.",
     )
-    _ = process_map(
+    results = process_map(
         functools.partial(
             download_row,
             samples=samples,
@@ -452,3 +461,17 @@ def download_satellite_data(
         # Only log progress bar if debug message is logged
         disable=(logger._core.min_level >= progress_log_level.no),
     )
+    n_successes = sum(results)
+
+    if n_successes == len(satellite_meta):
+        logger.success("Downloaded all satellite imagery successfully.")
+    elif n_successes == 0:
+        raise ValueError(
+            "No satellite imagery was successfully downloaded. Check the per-item debug logs for details."
+        )
+    else:
+        logger.warning(
+            f"{len(satellite_meta) - n_successes} items could not be downloaded. {n_successes} items were downloaded successfully."
+        )
+
+    return n_successes

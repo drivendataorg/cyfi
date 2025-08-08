@@ -114,7 +114,6 @@ class CyFiPipeline:
 
         ## Download satellite data
         download_satellite_data(satellite_meta, samples, self.features_config, self.cache_dir)
-        logger.success("Downloaded satellite imagery")
         logger.info(f"Satellite imagery saved to {self.cache_dir}")
 
         ## Generate features
