@@ -417,7 +417,7 @@ def download_row(
 
         # Return error type
         logger.debug(
-            f"{e.__class__.__module__}.{e.__class__.__name__} raised for sample ID {row.sample_id}, Sentinel-2 item ID {row.item_id}:\n{str(e)}"
+            f"{e.__class__.__module__}.{e.__class__.__name__} raised for sample ID {row.sample_id}, Sentinel-2 item ID {row.item_id} - {str(e)}"
         )
         return False
 
