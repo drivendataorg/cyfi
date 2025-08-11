@@ -1,5 +1,6 @@
 from pathlib import Path
 import platform
+import requests
 import shutil
 import signal
 import subprocess
@@ -263,6 +264,16 @@ def test_python_m_execution():
     assert "Usage: python -m cyfi" in result.stdout
 
 
+def url_is_up(url: str) -> bool:
+    """Check if a URL is up by making a GET request."""
+    try:
+        response = requests.get(url, timeout=10)
+        return response.status_code == 200
+
+    except requests.RequestException:
+        return False
+
+
 @pytest.mark.skipif(platform.system() == "Windows", reason="SIGINT is not supported on Windows")
 def test_cyfi_explorer_launches(tmp_path):
     shutil.copy(ASSETS_DIR / "experiment" / "preds.csv", tmp_path / "preds.csv")
@@ -270,14 +281,25 @@ def test_cyfi_explorer_launches(tmp_path):
         ASSETS_DIR / "experiment" / "sentinel_metadata_test.csv",
         tmp_path / "sentinel_metadata.csv",
     )
+    use_port = 17865
+    explorer_url = f"http://127.0.0.1:{use_port}/"
 
     proc = subprocess.Popen(
-        ["cyfi", "visualize", str(tmp_path)],
+        ["cyfi", "visualize", str(tmp_path), "--port", str(use_port)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
     )
-    time.sleep(10)
+    explorer_up = url_is_up(explorer_url)
+    elapsed_time = 0
+    # Give max 2 minutes for the explorer to start up
+    while not explorer_up and elapsed_time < 120:
+        time.sleep(5)
+        elapsed_time += 5
+        explorer_up = url_is_up(explorer_url)
+
+    assert explorer_up, f"CyFi Explorer took too long to start up at {explorer_url}."
+
     proc.send_signal(signal.SIGINT)
     stdout, stderr = proc.communicate()
     proc.kill()  # ensure no zombie processes
