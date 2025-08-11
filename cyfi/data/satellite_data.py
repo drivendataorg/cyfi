@@ -463,12 +463,13 @@ def download_satellite_data(
     )
     n_successes = sum(results)
 
-    if n_successes == len(satellite_meta):
-        logger.success("Downloaded all satellite imagery successfully.")
-    elif n_successes == 0:
+    if n_successes == 0:
         raise ValueError(
             "No satellite imagery was successfully downloaded. Check the per-item debug logs for details."
         )
+
+    if n_successes == len(satellite_meta):
+        logger.success("Downloaded all satellite imagery successfully.")
     else:
         logger.warning(
             f"{len(satellite_meta) - n_successes} item(s) could not be downloaded. "

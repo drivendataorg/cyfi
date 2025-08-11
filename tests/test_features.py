@@ -93,8 +93,6 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
     assert "item(s) could not be downloaded." in captured.out
 
     # Test case when all imagery is downloaded successfully
-    features_config.use_sentinel_bands = ["B02", "B03"]
-    train_data = add_unique_identifier(train_data)
     download_satellite_data(satellite_meta, train_data, features_config, tmp_path)
 
     # Check that logged message includes a success and expected text
