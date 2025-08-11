@@ -281,7 +281,7 @@ def test_cyfi_explorer_launches(tmp_path):
         ASSETS_DIR / "experiment" / "sentinel_metadata_test.csv",
         tmp_path / "sentinel_metadata.csv",
     )
-    use_port = 7865
+    use_port = 17865
     explorer_url = f"http://127.0.0.1:{use_port}/"
 
     proc = subprocess.Popen(
