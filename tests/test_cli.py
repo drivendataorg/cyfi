@@ -267,7 +267,7 @@ def test_python_m_execution():
 def url_is_up(url: str) -> bool:
     """Check if a URL is up by making a GET request."""
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         return response.status_code == 200
 
     except requests.RequestException:
