@@ -66,6 +66,20 @@ def test_generate_candidate_metadata(train_data, features_config):
 
 
 def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_config):
+    # Test a case when nothing is downloaded, download_row errors for every item
+    new_satellite_meta = satellite_meta.copy()
+    for href_col in new_satellite_meta.filter(regex="_href").columns:
+        new_satellite_meta[href_col] = "bad-href"
+    with pytest.raises(
+        ValueError,
+        match="No satellite imagery was successfully downloaded. Check the per-item debug logs for details.",
+    ):
+        download_satellite_data(satellite_meta, train_data, features_config, tmp_path)
+
+    # Test a case when some items are downloaded, but not all
+    new_satellite_meta = satellite_meta.copy()
+    new_satellite_meta["B01_href"] = "bad-href"
+
     # Download imagery
     features_config.use_sentinel_bands = ["B02", "B03"]
     train_data = add_unique_identifier(train_data)
