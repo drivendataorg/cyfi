@@ -471,7 +471,8 @@ def download_satellite_data(
         )
     else:
         logger.warning(
-            f"{len(satellite_meta) - n_successes} items could not be downloaded. {n_successes} items were downloaded successfully."
+            f"{len(satellite_meta) - n_successes} item(s) could not be downloaded. "
+            f"{n_successes} item(s) were downloaded successfully."
         )
 
     return n_successes
