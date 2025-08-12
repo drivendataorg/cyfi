@@ -1,7 +1,9 @@
 from distutils.util import strtobool
 import os
 from pathlib import Path
+import sys
 
+from loguru import logger
 import numpy as np
 import pytest
 
@@ -65,13 +67,40 @@ def test_generate_candidate_metadata(train_data, features_config):
     assert "visual_href" in candidate_meta.columns
 
 
-def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_config):
-    # Download imagery
+def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_config, capsys):
     features_config.use_sentinel_bands = ["B02", "B03"]
     train_data = add_unique_identifier(train_data)
+
+    # Test case when nothing is downloaded, and download_row errors for every item
+    new_satellite_meta = satellite_meta.copy()
+    new_satellite_meta["B02_href"] = "bad-href"
+    with pytest.raises(
+        ValueError,
+        match="No satellite imagery was successfully downloaded. Check the per-item debug logs for details.",
+    ):
+        download_satellite_data(new_satellite_meta, train_data, features_config, tmp_path)
+
+    # Log to stdout so we can check the results with capsys
+    logger.add(sys.stdout, level="DEBUG")
+
+    # Test case when some items are downloaded, but not all
+    new_satellite_meta = satellite_meta.copy()
+    new_satellite_meta.loc[0, "B02_href"] = "bad-href"
+    download_satellite_data(new_satellite_meta, train_data, features_config, tmp_path)
+    captured = capsys.readouterr()
+    assert "SUCCESS" not in captured.out
+    assert "WARNING" in captured.out
+    assert "item(s) could not be downloaded." in captured.out
+
+    # Test case when all imagery is downloaded successfully
     download_satellite_data(satellite_meta, train_data, features_config, tmp_path)
 
-    # Sentinel image cache directory exists
+    # Check that logged message includes a success and expected text
+    captured = capsys.readouterr()
+    assert "SUCCESS" in captured.out
+    assert "Downloaded all satellite imagery successfully." in captured.out
+
+    # Check that Sentinel image cache directory exists
     sentinel_dir = tmp_path / f"sentinel_{features_config.image_feature_meter_window}"
     assert sentinel_dir.exists()
     assert len(list(sentinel_dir.rglob("*.npy"))) > 0
