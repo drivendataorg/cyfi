@@ -1,7 +1,8 @@
 from datetime import timedelta
 import functools
 import shutil
-from typing import Dict, List, Tuple, Union
+import sys
+from typing import Dict, List, Optional, Tuple, Union
 
 import geopy.distance as distance
 from loguru import logger
@@ -358,6 +359,7 @@ def download_row(
     samples: pd.DataFrame,
     imagery_dir: Path,
     config: FeaturesConfig,
+    log_level: Optional[int] = None,
 ) -> bool:
     """Download image arrays for one row of satellite metadata containing a
     unique combination of sample ID and item ID
@@ -372,10 +374,18 @@ def download_row(
         imagery_dir (Path): Image cache directory for a specific satellite
             source and bounding box size
         config (FeaturesConfig): Features config
+        log_level (Optional[int]): Log level to use for this download.
+            If None, makes no changes to the logger. Defaults to None.
 
     Returns:
         bool: True if the download was successful, False otherwise
     """
+    # process_map runs in separate worker processes
+    # update to use the same log level specified in the CLI
+    if log_level is not None:
+        logger.remove()
+        logger.add(sys.stderr, level=log_level)
+
     _, row = iterrow
 
     sample_row = samples.loc[row.sample_id]
@@ -454,11 +464,12 @@ def download_satellite_data(
             samples=samples,
             imagery_dir=imagery_dir,
             config=config,
+            log_level=logger._core.min_level,
         ),
         satellite_meta.iterrows(),
         chunksize=1,
         total=len(satellite_meta),
-        # Only log progress bar if debug message is logged
+        # Only log progress bar if progress message is logged
         disable=(logger._core.min_level >= progress_log_level.no),
     )
     n_successes = sum(results)
@@ -466,6 +477,7 @@ def download_satellite_data(
     if n_successes == 0:
         raise ValueError(
             "No satellite imagery was successfully downloaded. Check the per-item debug logs for details."
+            " To show debug-level logs, run with `-vv`."
         )
 
     if n_successes == len(satellite_meta):
