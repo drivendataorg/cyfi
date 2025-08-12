@@ -37,8 +37,8 @@ def calculate_satellite_features(
     Returns:
         pd.DataFrame: Dataframe where the index is sample ID and there is one column
             for each satellite feature. There will only be rows for samples with
-            satellite imagery. Each row is a unique combination of sample ID and
-            item ID
+            satellite imagery. Each row is a unique sample ID, with features from
+            the best available pystac item.
     """
     # Calculate satellite metadata features
     if "month" in config.satellite_meta_features:
@@ -112,6 +112,7 @@ def calculate_satellite_features(
     cols_to_sort_on = ["days_before_sample"] + (
         ["cloud_pct"] if "cloud_pct" in satellite_features.columns else []
     )
+    # Get one row per sample ID
     satellite_features = (
         satellite_features.sort_values(cols_to_sort_on).reset_index().groupby("sample_id").first()
     )
@@ -276,8 +277,8 @@ def generate_all_features(
             visual_href link to the selected Sentinel image for each sample point.
 
             'features' is a dataframe where the index is sample_id and there is one
-            column for each feature. Each row is a unique combination of
-            sample and pystac item. Only samples that have at least one valid
+            column for each feature. Each row is a unique sample.
+            Only samples that have at least one valid
             non-metadata feature are included in the features dataframe
     """
     # Generate satellite features, only includes samples with imagery
