@@ -1,5 +1,9 @@
 # CyFi changelog
 
+### v1.1.5 - 2025-08-20
+
+- Error gracefully if no imagery is downloaded ([PR #165](https://github.com/drivendataorg/cyfi/pull/165)); fix failing CyFi explorer test ([PR #164](https://github.com/drivendataorg/cyfi/pull/164)); fix failing tests due to click update ([PR #160](https://github.com/drivendataorg/cyfi/pull/160))
+
 ### v1.1.4 - 2025-03-10
 
 - Set minimum versions for gradio and scikit-learn; resolve pandas warnings; docstring fix ([PR #152](https://github.com/drivendataorg/cyfi/pull/152), [PR #154](https://github.com/drivendataorg/cyfi/pull/154), [PR #146](https://github.com/drivendataorg/cyfi/pull/146))
