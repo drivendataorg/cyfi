@@ -3,7 +3,7 @@ CyFi: Cyanobacteria Finder
 
 [![PyPI](https://img.shields.io/pypi/v/cyfi.svg)](https://pypi.org/project/cyfi/)
 [![conda-forge](https://img.shields.io/conda/vn/conda-forge/cyfi.svg)](https://anaconda.org/conda-forge/cyfi)
-[![tests](https://github.com/drivendataorg/cyfi/workflows/tests/badge.svg?branch=main)](https://github.com/drivendataorg/cyfi/actions?query=workflow%3Atests+branch%3Amain)
+[![tests](https://github.com/drivendataorg/cyfi/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/drivendataorg/cyfi/actions/workflows/tests.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/drivendataorg/cyfi/branch/main/graph/badge.svg)](https://codecov.io/gh/drivendataorg/cyfi)
 
 CyFi is a command line tool that uses satellite imagery and machine learning to estimate cyanobacteria levels in small, inland water bodies. The goal of CyFi is to help water quality managers better allocate resources for in situ sampling, and make more informed decisions around public health warnings for critical resources like lakes and reservoirs.
