@@ -17,38 +17,38 @@ clean: clean-build clean-pyc clean-test
 
 ## Set up python interpreter environment
 create_environment:
-	conda create --name $(PROJECT_NAME) python=$(PYTHON_VERSION) -y
-	@echo ">>> conda env created. Activate with:\nconda activate $(PROJECT_NAME)"
+	uv venv --python $(PYTHON_VERSION)
+	@echo ">>> uv environment created at .venv. Activate with:\nsource .venv/bin/activate"
 	
 ## Install Python Dependencies
 requirements:
-	pip install -e .[dev]
+	uv sync --extra dev
 
 ## Format using black
 format:
-	black cyfi tests
+	uv run black cyfi tests
 
 ## Lint using flake8 + black
 lint:
-	flake8 cyfi tests
-	black --check cyfi tests
+	uv run flake8 cyfi tests
+	uv run black --check cyfi tests
 
 ## Run tests
 test: clean lint
-	pytest tests -vv
+	uv run pytest tests -vv
 
 ## Make assets
 assets:
 	rm -fr tests/assets/experiment
-	python cyfi/experiment.py tests/assets/experiment_config.yaml
+	uv run python cyfi/experiment.py tests/assets/experiment_config.yaml
 
 docs:  ## build the static version of the docs
 	sed 's|https://cyfi.drivendata.org/stable/|../|g' CHANGELOG.md \
 		> docs/docs/changelog.md
-	cd docs && mkdocs build
+	cd docs && uv run mkdocs build
 
 docs-serve: ## serve documentation to livereload while you work
-	cd docs && mkdocs serve
+	cd docs && uv run mkdocs serve
 
 clean-build: ## remove build artifacts
 	rm -fr build/
@@ -70,7 +70,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 dist: clean ## builds source and wheel package
-	python -m build
+	uv run python -m build
 	ls -l dist
 
 #################################################################################
