@@ -85,7 +85,7 @@ def visualize(
         )
 
         # plot imagery with point on it
-        fig, ax = plt.subplots(frameon=False)
+        fig, ax = plt.subplots(figsize=(8, 8), frameon=False)
         cropped_img_array.plot.imshow(ax=ax)
         ax.plot(sample.longitude, sample.latitude, "ro", markersize=4, markerfacecolor="None")
         ax.axis("equal")
@@ -183,7 +183,7 @@ def visualize(
                     """
                 )
 
-                image = gr.Image(type="pil", label="Sentinel-2 imagery", container=False)
+                image = gr.Image(type="pil", label="Sentinel-2 imagery", container=False, width="100%")
 
             with gr.Column(scale=2):
                 gr.Markdown(

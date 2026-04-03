@@ -90,3 +90,7 @@ target/
 
 # Experimentation s3 dir
 experiments/
+
+# test points
+sample_points.csv
+.venv/
