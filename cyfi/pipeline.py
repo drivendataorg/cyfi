@@ -5,7 +5,7 @@ import yaml
 from repro_zipfile import ReproducibleZipFile as ZipFile
 
 import lightgbm as lgb
-from loguru import logger
+from cyfi.logger import logger
 import pandas as pd
 from scipy.stats.mstats import winsorize
 from sklearn.model_selection import StratifiedGroupKFold
@@ -18,6 +18,7 @@ from cyfi.data.utils import (
     convert_density_to_severity,
     convert_density_to_log_density,
     convert_log_density_to_density,
+    validate_coordinates,
 )
 
 
@@ -66,6 +67,7 @@ class CyFiPipeline:
             )
 
         labels = add_unique_identifier(labels)
+        validate_coordinates(labels)
         if debug:
             labels = labels.head(10)
 
@@ -268,7 +270,14 @@ class CyFiPipeline:
 
     def _prep_predict_data(self, data, debug: bool = False):
         df = pd.read_csv(data)
+
+        # Check that we have required columns
+        for col in ["latitude", "longitude", "date"]:
+            if col not in [c.strip() for c in df.columns]:
+                raise ValueError(f"Predict dataframe is missing required column {col}")
+
         df = add_unique_identifier(df)
+        validate_coordinates(df)
 
         samples = df[["date", "latitude", "longitude"]]
 
