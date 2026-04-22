@@ -18,6 +18,7 @@ from cyfi.data.utils import (
     convert_density_to_severity,
     convert_density_to_log_density,
     convert_log_density_to_density,
+    validate_coordinates,
 )
 
 
@@ -66,6 +67,7 @@ class CyFiPipeline:
             )
 
         labels = add_unique_identifier(labels)
+        validate_coordinates(labels)
         if debug:
             labels = labels.head(10)
 
@@ -275,6 +277,7 @@ class CyFiPipeline:
                 raise ValueError(f"Predict dataframe is missing required column {col}")
 
         df = add_unique_identifier(df)
+        validate_coordinates(df)
 
         samples = df[["date", "latitude", "longitude"]]
 

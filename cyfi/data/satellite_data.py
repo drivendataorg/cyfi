@@ -265,10 +265,16 @@ def generate_candidate_metadata(
     )
 
     # Consolidate parallel results
-    sentinel_meta = [res[0] for res in results]
-    sentinel_meta = (
-        pd.concat(sentinel_meta).groupby("item_id", as_index=False).first().reset_index(drop=True)
-    )
+    sentinel_meta = [res[0] for res in results if not res[0].empty]
+    if sentinel_meta:
+        sentinel_meta = (
+            pd.concat(sentinel_meta)
+            .groupby("item_id", as_index=False)
+            .first()
+            .reset_index(drop=True)
+        )
+    else:
+        sentinel_meta = pd.DataFrame()
 
     sample_item_map = {}
     for res in results:
@@ -344,6 +350,12 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
         sample_items_meta["sample_id"] = sample.Index
 
         selected_satellite_meta.append(sample_items_meta)
+
+    if not selected_satellite_meta:
+        raise ValueError(
+            "No satellite imagery was found for any of the provided sample points and date ranges. "
+            "Check that your coordinates and dates are correct and that the locations are in areas covered by Sentinel-2."
+        )
 
     selected_satellite_meta = pd.concat(selected_satellite_meta).reset_index(drop=True)
     samples_with_imagery = selected_satellite_meta.sample_id.nunique()

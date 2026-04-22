@@ -42,6 +42,27 @@ def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
     return df.set_index("sample_id")
 
 
+def validate_coordinates(df: pd.DataFrame):
+    """Check that latitude and longitude are within valid ranges.
+
+    Args:
+        df (pd.DataFrame): Dataframe with latitude and longitude columns
+    """
+    if "latitude" in df.columns:
+        if not df.latitude.between(-90, 90).all():
+            invalid = df[~df.latitude.between(-90, 90)].latitude
+            raise ValueError(
+                f"Latitude values must be between -90 and 90. Found invalid values: {invalid.tolist()}"
+            )
+
+    if "longitude" in df.columns:
+        if not df.longitude.between(-180, 180).all():
+            invalid = df[~df.longitude.between(-180, 180)].longitude
+            raise ValueError(
+                f"Longitude values must be between -180 and 180. Found invalid values: {invalid.tolist()}"
+            )
+
+
 def convert_density_to_severity(density_series: pd.Series) -> pd.Series:
     """Convert exact density to binned severity
 
