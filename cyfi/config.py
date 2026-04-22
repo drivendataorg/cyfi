@@ -1,5 +1,6 @@
 import hashlib
-from typing import List, Optional
+from pathlib import Path
+from typing import List, Optional, Union
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator

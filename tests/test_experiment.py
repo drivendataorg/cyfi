@@ -29,6 +29,7 @@ def test_experiment_config(train_data_path):
         )
 
 
+@pytest.mark.network
 def test_cli_experiment(experiment_config_path, tmp_path):
     # use tmp_path as the save location
     with experiment_config_path.open("r") as f:

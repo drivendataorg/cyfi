@@ -21,6 +21,7 @@ ASSETS_DIR = Path(__file__).parent / "assets"
 runner = CliRunner()
 
 
+@pytest.mark.network
 def test_cli_predict(tmp_path, predict_data_path, predict_data, local_model_path):
     ## Run CLI command
     result = runner.invoke(
@@ -52,6 +53,7 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, local_model_path
     assert "INFO" not in result.stderr
 
 
+@pytest.mark.network
 def test_cli_predict_cache_dir(tmp_path, predict_data_path, local_model_path):
     ## Run CLI command with cache dir
     cache_dir = tmp_path / "my_cache"
@@ -258,7 +260,12 @@ def test_cli_predict_point_cache_dir(mocker, tmp_path):  # noqa: F811
     from_disk.assert_called_once_with(DEFAULT_MODEL_PATH, cache_dir=cache_dir)
 
 
-def test_graceful_exit_when_no_satellite_data():
+def test_graceful_exit_when_no_satellite_data(mocker):
+    # Mock search to return no results
+    mock_search = mocker.Mock()
+    mock_search.item_collection.return_value = []
+    mocker.patch("cyfi.data.satellite_data.search_planetary_computer", return_value=mock_search)
+
     # use location and date in SF where it was cloudy all month and there is no valid imagery
     result = runner.invoke(
         app,
