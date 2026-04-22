@@ -12,6 +12,7 @@ nav:
   - Installation: "installation.md"
   - Quickstart: "./#quickstart"
   - Visualize: "explorer.md"
+  - Performance: "performance.md"
   - Background: "about.md"
   - Changelog: "changelog.md"
 
