@@ -2,7 +2,13 @@
 
 CyFi requires python 3.10 or later.
 
-If you already have python 3.10+ installed, simply run `pip install cyfi` and then head over to the [Quickstart](../#quickstart) page to learn how to generate cyanobacteria predictions.
+If you primarily want to use CyFi as a command line tool, we recommend installing it with [pipx](https://pypa.github.io/pipx/). `pipx` manages an isolated virtual environment for the program and makes the `cyfi` command globally available on your PATH without needing to activate a virtual environment.
+
+```bash
+pipx install cyfi
+```
+
+If you already have python 3.10+ installed and want to use CyFi as a library, simply run `pip install cyfi` and then head over to the [Quickstart](../#quickstart) page to learn how to generate cyanobacteria predictions.
 
 If you don't have python installed, we strongly recommend using Miniconda. Miniconda is a tool to manage your Python environments and package dependencies. It is a lightweight version of Anaconda that includes only conda, Python, the packages they both depend on, and a small number of other useful packages (like pip).
 
@@ -32,7 +38,7 @@ Once the Miniconda installation has finished,
 
 1. From the Start menu, open Anaconda Prompt
 
-2. Type `pip install cyfi` and hit enter
+2. Type `pipx install cyfi` (or `pip install cyfi`) and hit enter
 
 3. To check that CyFi has been installed, run `pip show cyfi`
 
@@ -97,7 +103,7 @@ Summary: CyFi is a Python package to estimate cyanobacteria density in small, in
 
 ### Install CyFi
 
-1. In your terminal, run `pip install cyfi`
+1. In your terminal, run `pipx install cyfi` (or `pip install cyfi`)
 
 2. To check that CyFi has been installed, run `pip show cyfi`
 
