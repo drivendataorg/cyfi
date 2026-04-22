@@ -1,4 +1,5 @@
 from pathlib import Path
+import platformdirs
 import tempfile
 from typing import List, Optional
 import yaml
@@ -44,7 +45,9 @@ class CyFiPipeline:
         self.models = models
 
         # Determine cache dir based on feature config hash
-        cache_dir = Path(tempfile.gettempdir()) if cache_dir is None else Path(cache_dir)
+        if cache_dir is None:
+            cache_dir = platformdirs.user_cache_dir("cyfi")
+        cache_dir = Path(cache_dir)
         self.cache_dir = cache_dir / self.features_config.get_cached_path()
 
         # make cache dir

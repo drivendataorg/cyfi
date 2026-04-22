@@ -6,6 +6,7 @@ from cyfi.logger import logger
 import pandas as pd
 from pathlib import Path
 from pyproj import Transformer
+import platformdirs
 import shutil
 import typer
 
@@ -92,7 +93,7 @@ def predict(
         default=False, help="Whether to save Sentinel image metadata to `output_directory`"
     ),
     cache_dir: Path = typer.Option(
-        default=None, help="Directory to cache downloaded satellite imagery"
+        default=None, help="Directory to cache downloaded satellite imagery. If not provided, a persistent platform-specific directory will be used."
     ),
     overwrite: bool = typer.Option(False, "--overwrite", "-o", help="Overwrite existing files"),
     verbose: int = verbose_option,
@@ -145,7 +146,7 @@ def predict_point(
         help="Coordinate reference system of the provided latitude and longitude.",
     ),
     cache_dir: Path = typer.Option(
-        default=None, help="Directory to cache downloaded satellite imagery"
+        default=None, help="Directory to cache downloaded satellite imagery. If not provided, a persistent platform-specific directory will be used."
     ),
     verbose: int = verbose_option,
 ):

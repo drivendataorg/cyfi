@@ -42,7 +42,7 @@ class ExperimentConfig(BaseModel):
         features_config (FeaturesConfig, optional): Features configuration. Defaults to
             FeaturesConfig().
         cyfi_model_config (CyFiModelConfig, optional): Model configuration. Defaults to CyFiModelConfig().
-        cache_dir (Path, optional): Cache directory. Defaults to None.
+        cache_dir (Path, optional): Cache directory. If not provided, a persistent platform-specific directory will be used. Defaults to None.
         save_dir (Path, optional): Directory to save experiment results. Defaults to
             Path.cwd().
         last_commit_hash (str, optional): Hash of the most recent commit to track codes
