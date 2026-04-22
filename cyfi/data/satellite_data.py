@@ -5,7 +5,7 @@ import sys
 from typing import Dict, List, Optional, Tuple, Union
 
 import geopy.distance as distance
-from loguru import logger
+from cyfi.logger import logger
 import numpy as np
 import pandas as pd
 from pathlib import Path

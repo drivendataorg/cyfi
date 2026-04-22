@@ -2,7 +2,7 @@ from enum import Enum
 import sys
 import tempfile
 
-from loguru import logger
+from cyfi.logger import logger
 import pandas as pd
 from pathlib import Path
 from pyproj import Transformer
@@ -11,7 +11,6 @@ import typer
 
 from cyfi.pipeline import CyFiPipeline
 from cyfi.evaluate import EvaluatePreds
-from cyfi import visualize
 from cyfi.version import __version__
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
@@ -63,7 +62,7 @@ def main(
         help="Show CyFi version.",
     ),
 ):
-    pass
+    logger.info(f"CyFi version: {__version__}")
 
 
 @app.command()
@@ -212,8 +211,22 @@ def evaluate(
     ).calculate_all_and_save()
 
 
-# add CyFi explorer
-app.command()(visualize.visualize)
+@app.command()
+def visualize(
+    output_directory: Path = typer.Argument(
+        Path.cwd(),
+        exists=True,
+        help="CyFi output directory containing preds.csv and sentinel_metadata.csv from a prior prediction run.",
+    ),
+    port: int = typer.Option(
+        None,
+        help="Specific port to run the CyFi Explorer on.",
+    ),
+):
+    """Launch CyFi Explorer to see Sentinel-2 imagery alongside predictions."""
+    from cyfi.visualize import visualize as run_visualize
+
+    run_visualize(output_directory=output_directory, port=port)
 
 
 if __name__ == "__main__":

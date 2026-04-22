@@ -5,7 +5,7 @@ import yaml
 from repro_zipfile import ReproducibleZipFile as ZipFile
 
 import lightgbm as lgb
-from loguru import logger
+from cyfi.logger import logger
 import pandas as pd
 from scipy.stats.mstats import winsorize
 from sklearn.model_selection import StratifiedGroupKFold
