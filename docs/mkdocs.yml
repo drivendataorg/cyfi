@@ -13,6 +13,7 @@ nav:
   - Quickstart: "./#quickstart"
   - Visualize: "explorer.md"
   - Performance: "performance.md"
+  - Advanced Use: "advanced.md"
   - Background: "about.md"
   - Changelog: "changelog.md"
 
