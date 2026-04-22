@@ -92,6 +92,8 @@ class FeaturesConfig(BaseModel):
     sample_meta_features: Optional[List] = ["land_cover"]
     scl_cloud_values: List[int] = [7, 8, 9, 10]
     scl_water_values: List[int] = [6]
+    waterbody_mask: Optional[Union[str, Path]] = None
+    waterbody_buffer: int = 50
     satellite_image_features: Optional[List] = [
         "B01_mean",
         "B02_mean",
