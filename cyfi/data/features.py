@@ -16,6 +16,9 @@ import xarray as xr
 
 
 from cyfi.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
+import geopandas as gpd
+from cyfi.data.masking import get_waterbody_mask
+from cyfi.data.satellite_data import get_bounding_box
 
 
 def calculate_satellite_features(
@@ -44,11 +47,23 @@ def calculate_satellite_features(
     if "month" in config.satellite_meta_features:
         satellite_meta["month"] = pd.to_datetime(satellite_meta.datetime).dt.month
 
+    # Load waterbody mask if provided
+    mask_gdf = None
+    if config.waterbody_mask:
+        logger.info(f"Loading waterbody mask from {config.waterbody_mask}")
+        mask_gdf = gpd.read_file(config.waterbody_mask)
+        if mask_gdf.crs != "EPSG:4326":
+            mask_gdf = mask_gdf.to_crs("EPSG:4326")
+
     # Iterate over selected sample / item combinations
     logger.info(f"Generating satellite features for {satellite_meta.shape[0]:,} images.")
     satellite_features = process_map(
         functools.partial(
-            _calculate_satellite_features_for_sample_item, config=config, cache_dir=cache_dir
+            _calculate_satellite_features_for_sample_item,
+            config=config,
+            cache_dir=cache_dir,
+            mask_gdf=mask_gdf,
+            satellite_meta=satellite_meta,
         ),
         satellite_meta.sample_id,
         satellite_meta.item_id,
@@ -121,7 +136,12 @@ def calculate_satellite_features(
 
 
 def _calculate_satellite_features_for_sample_item(
-    sample_id: str, item_id: str, config: FeaturesConfig, cache_dir: Path
+    sample_id: str,
+    item_id: str,
+    config: FeaturesConfig,
+    cache_dir: Path,
+    mask_gdf: gpd.GeoDataFrame = None,
+    satellite_meta: pd.DataFrame = None,
 ):
     """Generate the satellite features for specific combination of
     sample and pystac item ID
@@ -161,6 +181,30 @@ def _calculate_satellite_features_for_sample_item(
         # Set no data value to be nan
         arr = np.where(arr == 0, np.nan, arr)
         sample_item_features["num_no_data"] = np.isnan(arr).sum()
+
+        # Apply cloud mask if enabled
+        if config.mask_clouds:
+            if config.cloud_mask_source == "scl":
+                cloud_mask = np.isin(scl_array[0], config.scl_cloud_values)
+                arr = np.where(cloud_mask, np.nan, arr)
+
+        # Apply spatial mask if provided
+        if mask_gdf is not None and satellite_meta is not None:
+            # Reconstruct bbox from metadata
+            sample_row = satellite_meta[satellite_meta.sample_id == sample_id].iloc[0]
+            bbox = get_bounding_box(
+                sample_row.latitude, sample_row.longitude, config.image_feature_meter_window
+            )
+            spatial_mask = get_waterbody_mask(
+                sample_row.latitude,
+                sample_row.longitude,
+                bbox,
+                arr.shape[1:],
+                mask_gdf,
+                buffer_m=config.waterbody_buffer,
+            )
+            # Mask the array (set outside values to nan)
+            arr = np.where(spatial_mask, arr, np.nan)
 
         # Filter array to water area
         if config.filter_to_water_area:
