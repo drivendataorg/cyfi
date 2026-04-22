@@ -13,6 +13,8 @@ import planetary_computer as pc
 from pystac_client import Client, ItemSearch
 from pystac_client.stac_api_io import StacApiIO
 import rioxarray
+from rioxarray.exceptions import NoDataInBounds
+from shapely.geometry import box
 from tqdm.contrib.concurrent import process_map
 from urllib3 import Retry
 
@@ -417,17 +419,30 @@ def download_row(
             # Check if the file already exists
             array_save_path = sample_image_dir / f"{band}.npy"
             if not array_save_path.exists():
-                band_array = (
-                    rioxarray.open_rasterio(pc.sign(row[f"{band}_href"]))
-                    .rio.clip_box(
-                        minx=minx,
-                        miny=miny,
-                        maxx=maxx,
-                        maxy=maxy,
-                        crs="EPSG:4326",
+                url = pc.sign(row[f"{band}_href"])
+                try:
+                    band_array = (
+                        rioxarray.open_rasterio(url)
+                        .rio.clip_box(
+                            minx=minx,
+                            miny=miny,
+                            maxx=maxx,
+                            maxy=maxy,
+                            crs="EPSG:4326",
+                        )
+                        .to_numpy()
                     )
-                    .to_numpy()
-                )
+                except NoDataInBounds:
+                    # Fallback to rio.clip which is more robust to projection precision issues
+                    logger.debug(
+                        f"NoDataInBounds for {row.item_id} with clip_box. Retrying with rio.clip."
+                    )
+                    geom = box(minx, miny, maxx, maxy)
+                    band_array = (
+                        rioxarray.open_rasterio(url)
+                        .rio.clip([geom], crs="EPSG:4326", all_touched=True)
+                        .to_numpy()
+                    )
                 np.save(array_save_path, band_array)
 
         return True
