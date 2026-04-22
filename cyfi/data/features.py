@@ -5,7 +5,7 @@ from typing import Union
 
 from cloudpathlib import S3Client
 import cv2
-from loguru import logger
+from cyfi.logger import logger
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -16,6 +16,9 @@ import xarray as xr
 
 
 from cyfi.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
+import geopandas as gpd
+from cyfi.data.masking import get_waterbody_mask
+from cyfi.data.satellite_data import get_bounding_box
 
 
 def calculate_satellite_features(
@@ -44,11 +47,23 @@ def calculate_satellite_features(
     if "month" in config.satellite_meta_features:
         satellite_meta["month"] = pd.to_datetime(satellite_meta.datetime).dt.month
 
+    # Load waterbody mask if provided
+    mask_gdf = None
+    if config.waterbody_mask:
+        logger.info(f"Loading waterbody mask from {config.waterbody_mask}")
+        mask_gdf = gpd.read_file(config.waterbody_mask)
+        if mask_gdf.crs != "EPSG:4326":
+            mask_gdf = mask_gdf.to_crs("EPSG:4326")
+
     # Iterate over selected sample / item combinations
     logger.info(f"Generating satellite features for {satellite_meta.shape[0]:,} images.")
     satellite_features = process_map(
         functools.partial(
-            _calculate_satellite_features_for_sample_item, config=config, cache_dir=cache_dir
+            _calculate_satellite_features_for_sample_item,
+            config=config,
+            cache_dir=cache_dir,
+            mask_gdf=mask_gdf,
+            satellite_meta=satellite_meta,
         ),
         satellite_meta.sample_id,
         satellite_meta.item_id,
@@ -121,7 +136,12 @@ def calculate_satellite_features(
 
 
 def _calculate_satellite_features_for_sample_item(
-    sample_id: str, item_id: str, config: FeaturesConfig, cache_dir: Path
+    sample_id: str,
+    item_id: str,
+    config: FeaturesConfig,
+    cache_dir: Path,
+    mask_gdf: gpd.GeoDataFrame = None,
+    satellite_meta: pd.DataFrame = None,
 ):
     """Generate the satellite features for specific combination of
     sample and pystac item ID
@@ -142,7 +162,7 @@ def _calculate_satellite_features_for_sample_item(
 
     # Don't calculate features for the item if the cloud ratio is too high
     if config.max_cloud_percent is not None:
-        cloud_ratio = ((scl_array >= 7) & (scl_array <= 10)).sum() / (
+        cloud_ratio = np.isin(scl_array, config.scl_cloud_values).sum() / (
             scl_array.shape[1] * scl_array.shape[2]
         )
         sample_item_features["cloud_pct"] = cloud_ratio
@@ -162,11 +182,35 @@ def _calculate_satellite_features_for_sample_item(
         arr = np.where(arr == 0, np.nan, arr)
         sample_item_features["num_no_data"] = np.isnan(arr).sum()
 
+        # Apply cloud mask if enabled
+        if config.mask_clouds:
+            if config.cloud_mask_source == "scl":
+                cloud_mask = np.isin(scl_array[0], config.scl_cloud_values)
+                arr = np.where(cloud_mask, np.nan, arr)
+
+        # Apply spatial mask if provided
+        if mask_gdf is not None and satellite_meta is not None:
+            # Reconstruct bbox from metadata
+            sample_row = satellite_meta[satellite_meta.sample_id == sample_id].iloc[0]
+            bbox = get_bounding_box(
+                sample_row.latitude, sample_row.longitude, config.image_feature_meter_window
+            )
+            spatial_mask = get_waterbody_mask(
+                sample_row.latitude,
+                sample_row.longitude,
+                bbox,
+                arr.shape[1:],
+                mask_gdf,
+                buffer_m=config.waterbody_buffer,
+            )
+            # Mask the array (set outside values to nan)
+            arr = np.where(spatial_mask, arr, np.nan)
+
         # Filter array to water area
         if config.filter_to_water_area:
             if band != "SCL":
                 scaled_scl = cv2.resize(scl_array[0], (arr.shape[2], arr.shape[1]))
-                arr = arr[0][scaled_scl == 6]
+                arr = arr[0][np.isin(scaled_scl, config.scl_water_values)]
                 sample_item_features["num_water_pixels"] = arr.size
 
         # If the bounding box does not contain any water pixels (if filtering) or has entirely no data pixels, do not calculate features
@@ -178,7 +222,11 @@ def _calculate_satellite_features_for_sample_item(
     # Iterate over features to generate
     for feature in config.satellite_image_features:
         # note: features will be nan if any pixel in bounding box is nan
-        sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
+        calc = SATELLITE_FEATURE_CALCULATORS[feature]
+        try:
+            sample_item_features[feature] = calc(band_arrays, config=config)
+        except TypeError:
+            sample_item_features[feature] = calc(band_arrays)
 
     return sample_item_features
 

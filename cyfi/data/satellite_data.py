@@ -5,7 +5,7 @@ import sys
 from typing import Dict, List, Optional, Tuple, Union
 
 import geopy.distance as distance
-from loguru import logger
+from cyfi.logger import logger
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -13,6 +13,8 @@ import planetary_computer as pc
 from pystac_client import Client, ItemSearch
 from pystac_client.stac_api_io import StacApiIO
 import rioxarray
+from rioxarray.exceptions import NoDataInBounds
+from shapely.geometry import box
 from tqdm.contrib.concurrent import process_map
 from urllib3 import Retry
 
@@ -265,10 +267,16 @@ def generate_candidate_metadata(
     )
 
     # Consolidate parallel results
-    sentinel_meta = [res[0] for res in results]
-    sentinel_meta = (
-        pd.concat(sentinel_meta).groupby("item_id", as_index=False).first().reset_index(drop=True)
-    )
+    sentinel_meta = [res[0] for res in results if not res[0].empty]
+    if sentinel_meta:
+        sentinel_meta = (
+            pd.concat(sentinel_meta)
+            .groupby("item_id", as_index=False)
+            .first()
+            .reset_index(drop=True)
+        )
+    else:
+        sentinel_meta = pd.DataFrame()
 
     sample_item_map = {}
     for res in results:
@@ -345,6 +353,12 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
 
         selected_satellite_meta.append(sample_items_meta)
 
+    if not selected_satellite_meta:
+        raise ValueError(
+            "No satellite imagery was found for any of the provided sample points and date ranges. "
+            "Check that your coordinates and dates are correct and that the locations are in areas covered by Sentinel-2."
+        )
+
     selected_satellite_meta = pd.concat(selected_satellite_meta).reset_index(drop=True)
     samples_with_imagery = selected_satellite_meta.sample_id.nunique()
     logger.info(
@@ -405,17 +419,30 @@ def download_row(
             # Check if the file already exists
             array_save_path = sample_image_dir / f"{band}.npy"
             if not array_save_path.exists():
-                band_array = (
-                    rioxarray.open_rasterio(pc.sign(row[f"{band}_href"]))
-                    .rio.clip_box(
-                        minx=minx,
-                        miny=miny,
-                        maxx=maxx,
-                        maxy=maxy,
-                        crs="EPSG:4326",
+                url = pc.sign(row[f"{band}_href"])
+                try:
+                    band_array = (
+                        rioxarray.open_rasterio(url)
+                        .rio.clip_box(
+                            minx=minx,
+                            miny=miny,
+                            maxx=maxx,
+                            maxy=maxy,
+                            crs="EPSG:4326",
+                        )
+                        .to_numpy()
                     )
-                    .to_numpy()
-                )
+                except NoDataInBounds:
+                    # Fallback to rio.clip which is more robust to projection precision issues
+                    logger.debug(
+                        f"NoDataInBounds for {row.item_id} with clip_box. Retrying with rio.clip."
+                    )
+                    geom = box(minx, miny, maxx, maxy)
+                    band_array = (
+                        rioxarray.open_rasterio(url)
+                        .rio.clip([geom], crs="EPSG:4326", all_touched=True)
+                        .to_numpy()
+                    )
                 np.save(array_save_path, band_array)
 
         return True
