@@ -1,9 +1,7 @@
-import sys
-
-if sys.version_info[:2] >= (3, 8):
-    import importlib.metadata as importlib_metadata
-else:
-    import importlib_metadata
+from importlib import metadata as importlib_metadata
 
 
-__version__ = importlib_metadata.version(__name__.split(".", 1)[0])
+try:
+    __version__ = importlib_metadata.version("cyfi")
+except importlib_metadata.PackageNotFoundError:
+    __version__ = "unknown"

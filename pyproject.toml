@@ -22,11 +22,14 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
 requires-python = ">=3.10"
 dependencies = [
+  "audioop-lts; python_version >= '3.13'",
   "cloudpathlib[s3]>=0.4.1",
   "geopandas",
   "geopy",
@@ -94,3 +97,17 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 source = ["cyfi"]
+
+[tool.pixi.workspace]
+name = "cyfi"
+channels = ["conda-forge"]
+platforms = ["win-64"]
+
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+python = "3.10.*"
+geopandas = "*"
+rasterio = "*"
+scikit-learn = "*"
+click = "*"

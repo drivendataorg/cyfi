@@ -6,8 +6,12 @@ import yaml
 
 from cloudpathlib import AnyPath
 from dotenv import load_dotenv, find_dotenv
-import git
-from loguru import logger
+try:
+    import git
+except ImportError:
+    git = None
+
+from cyfi.logger import logger
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 import typer
 
@@ -85,8 +89,15 @@ class ExperimentConfig(BaseModel):
         )
 
         # Get last commit hash to save in artifact
-        repo = git.Repo(REPO_ROOT)
-        self.last_commit_hash = repo.head.commit.hexsha
+        if git is not None:
+            try:
+                repo = git.Repo(REPO_ROOT)
+                self.last_commit_hash = repo.head.commit.hexsha
+            except Exception as e:
+                logger.warning(f"Failed to get git commit hash: {e}")
+        else:
+            logger.debug("GitPython not installed. Skipping commit hash tracking.")
+
         with (self.save_dir / "config_artifact.yaml").open("w") as fp:
             yaml.dump(self.model_dump(), fp)
         logger.success(f"Wrote out artifact config to {self.save_dir}")
