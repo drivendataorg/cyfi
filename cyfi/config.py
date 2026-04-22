@@ -90,6 +90,8 @@ class FeaturesConfig(BaseModel):
     n_sentinel_items: Optional[int] = 15
     satellite_meta_features: Optional[List] = ["month", "days_before_sample"]
     sample_meta_features: Optional[List] = ["land_cover"]
+    scl_cloud_values: List[int] = [7, 8, 9, 10]
+    scl_water_values: List[int] = [6]
     satellite_image_features: Optional[List] = [
         "B01_mean",
         "B02_mean",
@@ -277,8 +279,10 @@ SATELLITE_FEATURE_CALCULATORS = {
     "green5th": lambda x: np.percentile(x["B03"], 5),
     "green95th_blue_ratio": lambda x: np.percentile(x["B03"], 95) / (x["B02"].mean()),
     "green5th_blue_ratio": lambda x: np.percentile(x["B03"], 5) / (x["B02"].mean()),
-    "percent_water": lambda x: (x["SCL"] == 6).mean(),
-    "AOT_mean": lambda x: x["AOT"].mean(),
+    "percent_water": lambda x, config=None: np.isin(
+        x["SCL"], config.scl_water_values if config else [6]
+    ).mean(),
+    "AOT_mean": lambda x, config=None: x["AOT"].mean(),
     "AOT_min": lambda x: x["AOT"].min(),
     "AOT_max": lambda x: x["AOT"].max(),
     "AOT_range": lambda x: x["AOT"].max() - x["AOT"].min(),

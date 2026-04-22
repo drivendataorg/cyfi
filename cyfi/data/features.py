@@ -142,7 +142,7 @@ def _calculate_satellite_features_for_sample_item(
 
     # Don't calculate features for the item if the cloud ratio is too high
     if config.max_cloud_percent is not None:
-        cloud_ratio = ((scl_array >= 7) & (scl_array <= 10)).sum() / (
+        cloud_ratio = np.isin(scl_array, config.scl_cloud_values).sum() / (
             scl_array.shape[1] * scl_array.shape[2]
         )
         sample_item_features["cloud_pct"] = cloud_ratio
@@ -166,7 +166,7 @@ def _calculate_satellite_features_for_sample_item(
         if config.filter_to_water_area:
             if band != "SCL":
                 scaled_scl = cv2.resize(scl_array[0], (arr.shape[2], arr.shape[1]))
-                arr = arr[0][scaled_scl == 6]
+                arr = arr[0][np.isin(scaled_scl, config.scl_water_values)]
                 sample_item_features["num_water_pixels"] = arr.size
 
         # If the bounding box does not contain any water pixels (if filtering) or has entirely no data pixels, do not calculate features
@@ -178,7 +178,11 @@ def _calculate_satellite_features_for_sample_item(
     # Iterate over features to generate
     for feature in config.satellite_image_features:
         # note: features will be nan if any pixel in bounding box is nan
-        sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
+        calc = SATELLITE_FEATURE_CALCULATORS[feature]
+        try:
+            sample_item_features[feature] = calc(band_arrays, config=config)
+        except TypeError:
+            sample_item_features[feature] = calc(band_arrays)
 
     return sample_item_features
 
