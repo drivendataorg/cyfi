@@ -8,7 +8,7 @@ SEVERITY_LEFT_EDGES = {"low": 0, "moderate": 20000, "high": 100000}
 
 
 def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
-    """Given a dataframe with the columns []"latitude", "longitude", "date"],
+    """Given a dataframe with the columns ["latitude", "longitude", "date"],
     create a unique identifier for each row and set as the index
 
     Args:
@@ -18,8 +18,19 @@ def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: Dataframe with unique identifiers as the index
     """
     df = df.copy()
-    uids = []
 
+    # Standardize column names by stripping whitespace
+    df.columns = [c.strip() for c in df.columns]
+
+    # Check that we have required columns
+    for col in ["latitude", "longitude", "date"]:
+        if col not in df.columns:
+            raise ValueError(
+                f"Dataframe is missing required column '{col}'. "
+                f"Columns found: {list(df.columns)}"
+            )
+
+    uids = []
     # create UID based on lat/lon and date
     for row in df.itertuples():
         m = hashlib.md5()

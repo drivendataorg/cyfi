@@ -268,6 +268,12 @@ class CyFiPipeline:
 
     def _prep_predict_data(self, data, debug: bool = False):
         df = pd.read_csv(data)
+
+        # Check that we have required columns
+        for col in ["latitude", "longitude", "date"]:
+            if col not in [c.strip() for c in df.columns]:
+                raise ValueError(f"Predict dataframe is missing required column {col}")
+
         df = add_unique_identifier(df)
 
         samples = df[["date", "latitude", "longitude"]]
