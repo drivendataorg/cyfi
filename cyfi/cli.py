@@ -69,7 +69,6 @@ def main(
 @app.command()
 def predict(
     samples_path: Path = typer.Argument(
-        exists=True,
         help="Path to a csv of sample points with columns for date, longitude, and latitude. Latitude and longitude must be in coordinate reference system WGS-84 (EPSG:4326)",
     ),
     model_path: Path = typer.Option(
@@ -95,12 +94,47 @@ def predict(
     cache_dir: Path = typer.Option(
         default=None, help="Directory to cache downloaded satellite imagery. If not provided, a persistent platform-specific directory will be used."
     ),
+    show_cache_info: bool = typer.Option(False, "--show-cache-info", help="Show cache location and size, then exit"),
+    clear_cache: bool = typer.Option(False, "--clear-cache", help="Clear all cached satellite imagery"),
     overwrite: bool = typer.Option(False, "--overwrite", "-o", help="Overwrite existing files"),
     verbose: int = verbose_option,
 ):
     """Estimate cyanobacteria density for a set of sample points saved at `samples_path`. By
     default, cyanobacteria estimates will be saved to `preds.csv` in the current directory.
     """
+    import os
+    from pathlib import Path
+    
+    # Handle cache transparency options (Issue #121)
+    if show_cache_info or clear_cache:
+        cache_dir_str = str(cache_dir) if cache_dir else os.path.expanduser("~/.cyfi/cache")
+        imagery_dir = Path(cache_dir_str) / "sentinel_2000"
+        
+        if show_cache_info:
+            total_bytes = 0
+            if imagery_dir.exists():
+                for file_path in imagery_dir.rglob('*'):
+                    if file_path.is_file():
+                        total_bytes += file_path.stat().st_size
+            size_mb = total_bytes / (1024 * 1024)
+            
+            print(f"\n[Cache] Location: {imagery_dir}")
+            print(f"[Cache] Size: {size_mb:.1f} MB")
+            
+            if size_mb > 500:
+                print(f"[Cache] Warning: Cache exceeds 500 MB!")
+                print(f"[Cache] Run with --clear-cache to clean up")
+            return
+        
+        if clear_cache:
+            if imagery_dir.exists():
+                import shutil
+                shutil.rmtree(imagery_dir)
+                print(f"[OK] Cleared cache: {imagery_dir}")
+            else:
+                print(f"[Cache] Directory not found: {imagery_dir}")
+            return
+    
     output_path = output_directory / output_filename
     features_path = output_directory / "sample_features.csv"
     metadata_path = output_directory / "sentinel_metadata.csv"

@@ -368,6 +368,63 @@ def identify_satellite_data(samples: pd.DataFrame, config: FeaturesConfig) -> pd
     return selected_satellite_meta
 
 
+def _download_item_assets(
+    item_id: str,
+    row: Union[pd.Series, Dict],
+    bbox: List[float],
+    sample_item_dir: Path,
+    config: FeaturesConfig,
+) -> bool:
+    """Download image arrays for one pystac item.
+
+    Args:
+        item_id (str): Pystac item ID
+        row (Union[pd.Series, Dict]): Metadata for the pystac item, including
+            hrefs for all bands to download
+        bbox (List[float]): Bounding box to clip imagery to
+        sample_item_dir (Path): Directory to save imagery to
+        config (FeaturesConfig): Features config
+
+    Returns:
+        bool: True if the download was successful, False otherwise
+    """
+    sample_item_dir.mkdir(exist_ok=True, parents=True)
+    (minx, miny, maxx, maxy) = bbox
+
+    # Iterate over bands and save
+    for band in config.use_sentinel_bands:
+        # Check if the file already exists
+        array_save_path = sample_item_dir / f"{band}.npy"
+        if not array_save_path.exists():
+            url = pc.sign(row[f"{band}_href"])
+            try:
+                band_array = (
+                    rioxarray.open_rasterio(url)
+                    .rio.clip_box(
+                        minx=minx,
+                        miny=miny,
+                        maxx=maxx,
+                        maxy=maxy,
+                        crs="EPSG:4326",
+                    )
+                    .to_numpy()
+                )
+            except NoDataInBounds:
+                # Fallback to rio.clip which is more robust to projection precision issues
+                logger.debug(
+                    f"NoDataInBounds for {item_id} with clip_box. Retrying with rio.clip."
+                )
+                geom = box(minx, miny, maxx, maxy)
+                band_array = (
+                    rioxarray.open_rasterio(url)
+                    .rio.clip([geom], crs="EPSG:4326", all_touched=True)
+                    .to_numpy()
+                )
+            np.save(array_save_path, band_array)
+
+    return True
+
+
 def download_row(
     iterrow: Tuple[int, pd.Series],
     samples: pd.DataFrame,
@@ -403,54 +460,22 @@ def download_row(
     _, row = iterrow
 
     sample_row = samples.loc[row.sample_id]
-    sample_image_dir = imagery_dir / f"{row.sample_id}/{row.item_id}"
-    sample_image_dir.mkdir(exist_ok=True, parents=True)
+    sample_item_dir = imagery_dir / f"{row.sample_id}/{row.item_id}"
 
     # Get bounding box for array to save out
-    (minx, miny, maxx, maxy) = get_bounding_box(
+    bbox = get_bounding_box(
         sample_row.latitude,
         sample_row.longitude,
         config.image_feature_meter_window,
     )
 
     try:
-        # Iterate over bands and save
-        for band in config.use_sentinel_bands:
-            # Check if the file already exists
-            array_save_path = sample_image_dir / f"{band}.npy"
-            if not array_save_path.exists():
-                url = pc.sign(row[f"{band}_href"])
-                try:
-                    band_array = (
-                        rioxarray.open_rasterio(url)
-                        .rio.clip_box(
-                            minx=minx,
-                            miny=miny,
-                            maxx=maxx,
-                            maxy=maxy,
-                            crs="EPSG:4326",
-                        )
-                        .to_numpy()
-                    )
-                except NoDataInBounds:
-                    # Fallback to rio.clip which is more robust to projection precision issues
-                    logger.debug(
-                        f"NoDataInBounds for {row.item_id} with clip_box. Retrying with rio.clip."
-                    )
-                    geom = box(minx, miny, maxx, maxy)
-                    band_array = (
-                        rioxarray.open_rasterio(url)
-                        .rio.clip([geom], crs="EPSG:4326", all_touched=True)
-                        .to_numpy()
-                    )
-                np.save(array_save_path, band_array)
-
-        return True
+        return _download_item_assets(row.item_id, row, bbox, sample_item_dir, config)
 
     except Exception as e:
         # Delete item directory if it has already been created
-        if sample_image_dir.exists():
-            shutil.rmtree(sample_image_dir)
+        if sample_item_dir.exists():
+            shutil.rmtree(sample_item_dir)
 
         # Return error type
         logger.debug(
@@ -481,6 +506,7 @@ def download_satellite_data(
     """
     # Iterate over all rows (item / sample combos)
     imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"
+    log_cache_info(cache_dir, config.image_feature_meter_window)
     logger.log(
         progress_log_level.name,
         f"Downloading satellite imagery for {satellite_meta.shape[0]:,} Sentinel-2 items.",
@@ -516,3 +542,31 @@ def download_satellite_data(
         )
 
     return n_successes
+
+
+# ========== Cache Transparency for Issue #121 ==========
+def get_cache_size_mb(cache_path):
+    """Calculate directory size in megabytes."""
+    from pathlib import Path
+    total_bytes = 0
+    if cache_path.exists():
+        for file_path in cache_path.rglob('*'):
+            if file_path.is_file():
+                total_bytes += file_path.stat().st_size
+    return total_bytes / (1024 * 1024)
+
+def log_cache_info(cache_dir, feature_meter_window):
+    """Log cache location and size information."""
+    from pathlib import Path
+    imagery_dir = Path(cache_dir) / f"sentinel_{feature_meter_window}"
+    size_mb = get_cache_size_mb(imagery_dir)
+    
+    from cyfi.logger import logger
+    logger.info(f"Satellite imagery cache: {imagery_dir}")
+    logger.info(f"Cache size: {size_mb:.1f} MB")
+    
+    if size_mb > 500:
+        logger.warning(f"Cache exceeds 500 MB!")
+        logger.warning(f"Consider deleting: {imagery_dir}")
+    
+    return size_mb
