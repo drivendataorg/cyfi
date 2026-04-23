@@ -1,0 +1,18 @@
+{
+  "items": [
+    {
+      "id": "S2B_MSIL2A_20230701T154819_R054_T18TVL_20230703T200628",
+      "properties": {
+        "datetime": "2023-07-01T15:48:19Z",
+        "eo:cloud_cover": 2.5,
+        "proj:epsg": 32618
+      },
+      "assets": {
+        "B02": {"href": "https://example.com/B02.tiff", "type": "image/tiff"},
+        "B03": {"href": "https://example.com/B03.tiff", "type": "image/tiff"},
+        "B04": {"href": "https://example.com/B04.tiff", "type": "image/tiff"}
+      },
+      "bbox": [-73.206937, 41.424144, -73.106937, 41.524144]
+    }
+  ]
+}
