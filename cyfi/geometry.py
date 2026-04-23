@@ -2,36 +2,26 @@
 import geopandas as gpd
 import numpy as np
 from shapely.geometry import Polygon, Point
-from typing import Union, List, Tuple
+from typing import Union
 import pandas as pd
+from pathlib import Path
 
 def polygon_to_grid(
-    polygon: Union[Polygon, str, gpd.GeoSeries],
-    resolution_meters: int = 20,
-    crs: str = "EPSG:4326"
+    polygon: Union[Polygon, str],
+    resolution_meters: int = 20
 ) -> pd.DataFrame:
-    """
-    Convert a polygon to a grid of points at specified resolution.
-    
-    Args:
-        polygon: Shapely Polygon, GeoJSON string, or path to GeoJSON file
-        resolution_meters: Grid resolution in meters (Sentinel-2 is 10-20m)
-        crs: Coordinate reference system
-    
-    Returns:
-        DataFrame with columns: latitude, longitude, geometry
-    """
+    """Convert a polygon to a grid of points."""
     # Load polygon if path provided
     if isinstance(polygon, str):
-        gdf = gpd.read_file(polygon)
-        polygon = gdf.geometry.iloc[0]
+        if Path(polygon).exists():
+            gdf = gpd.read_file(polygon)
+            polygon = gdf.geometry.iloc[0]
     
     # Get bounds
     minx, miny, maxx, maxy = polygon.bounds
     
-    # Calculate number of points based on resolution
     # Convert meters to degrees (approximate)
-    meter_to_deg = 0.00001  # ~1m = 0.00001 degrees
+    meter_to_deg = 0.000008983
     step = resolution_meters * meter_to_deg
     
     # Create grid
@@ -46,7 +36,6 @@ def polygon_to_grid(
                 points.append({
                     'latitude': y,
                     'longitude': x,
-                    'geometry': point
                 })
     
     return pd.DataFrame(points)
@@ -56,22 +45,22 @@ def generate_sample_csv(
     date: str,
     output_path: str,
     resolution_meters: int = 20
-) -> None:
-    """
-    Generate a CSV of sample points from a polygon.
-    
-    Args:
-        polygon_input: Path to GeoJSON or shapefile
-        date: Date for prediction (YYYY-MM-DD)
-        output_path: Output CSV path
-        resolution_meters: Grid resolution
-    """
-    # Generate grid points
+) -> int:
+    """Generate CSV of sample points from polygon."""
     grid_df = polygon_to_grid(polygon_input, resolution_meters)
+    
+    if len(grid_df) == 0:
+        raise ValueError("No points generated within polygon. Check polygon and resolution.")
     
     # Add date column
     grid_df['date'] = date
     
+    # Select and reorder columns
+    output_df = grid_df[['latitude', 'longitude', 'date']].copy()
+    
     # Save to CSV
-    grid_df[['latitude', 'longitude', 'date']].to_csv(output_path, index=False)
-    print(f"Generated {len(grid_df)} sample points at {output_path}")
+    output_df.to_csv(output_path, index=False)
+    
+    n_points = len(grid_df)
+    print(f"Generated {n_points} sample points at {output_path}")
+    return n_points
