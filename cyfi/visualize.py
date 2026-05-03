@@ -85,7 +85,7 @@ def visualize(
         )
 
         # plot imagery with point on it
-        fig, ax = plt.subplots(frameon=False)
+        fig, ax = plt.subplots(figsize=(8, 6), frameon=False)
         cropped_img_array.plot.imshow(ax=ax)
         ax.plot(sample.longitude, sample.latitude, "ro", markersize=4, markerfacecolor="None")
         ax.axis("equal")
