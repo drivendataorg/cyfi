@@ -15,7 +15,6 @@ from typer.testing import CliRunner
 from cyfi.cli import app
 from cyfi.data.utils import add_unique_identifier
 
-
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 runner = CliRunner()
