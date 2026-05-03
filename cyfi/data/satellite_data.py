@@ -18,7 +18,6 @@ from urllib3 import Retry
 
 from cyfi.config import FeaturesConfig
 
-
 retry = Retry(total=20, backoff_factor=1, status_forcelist=[502, 503, 504], allowed_methods=None)
 
 # Establish a connection to the STAC API
@@ -393,7 +392,7 @@ def download_row(
     sample_image_dir.mkdir(exist_ok=True, parents=True)
 
     # Get bounding box for array to save out
-    (minx, miny, maxx, maxy) = get_bounding_box(
+    minx, miny, maxx, maxy = get_bounding_box(
         sample_row.latitude,
         sample_row.longitude,
         config.image_feature_meter_window,
