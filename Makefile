@@ -19,7 +19,7 @@ clean: clean-build clean-pyc clean-test
 create_environment:
 	uv venv --python $(PYTHON_VERSION)
 	@echo ">>> uv environment created at .venv. Activate with:\nsource .venv/bin/activate"
-	
+
 ## Install Python Dependencies
 requirements:
 	uv sync --extra dev

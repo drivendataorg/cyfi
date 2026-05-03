@@ -51,7 +51,7 @@ dependencies = [
   "rioxarray",
   "tqdm",
   "typer>=0.16.0",
-  "xarray[accel,io,parallel]"
+  "xarray[accel,io,parallel]",
 ]
 
 [project.optional-dependencies]
