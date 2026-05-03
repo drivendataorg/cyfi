@@ -36,20 +36,20 @@ lint:
 
 ## Run tests
 test: clean lint
-	uv run pytest tests -vv
+	pytest tests -vv
 
 ## Make assets
 assets:
 	rm -fr tests/assets/experiment
-	uv run python cyfi/experiment.py tests/assets/experiment_config.yaml
+	python cyfi/experiment.py tests/assets/experiment_config.yaml
 
 docs:  ## build the static version of the docs
 	sed 's|https://cyfi.drivendata.org/stable/|../|g' CHANGELOG.md \
 		> docs/docs/changelog.md
-	cd docs && uv run mkdocs build
+	cd docs && mkdocs build
 
 docs-serve: ## serve documentation to livereload while you work
-	cd docs && uv run mkdocs serve
+	cd docs && mkdocs serve
 
 clean-build: ## remove build artifacts
 	rm -fr build/
