@@ -262,14 +262,18 @@ AVAILABLE_SATELLITE_META_FEATURES = [
 AVAILABLE_SAMPLE_META_FEATURES = ["land_cover", "rounded_latitude", "rounded_longitude"]
 
 SATELLITE_FEATURE_CALCULATORS = {
-    "NDVI_B04": lambda x: (x["B08"].mean() - x["B04"].mean())
-    / (x["B08"].mean() + x["B04"].mean()),
-    "NDVI_B05": lambda x: (x["B08"].mean() - x["B05"].mean())
-    / (x["B08"].mean() + x["B05"].mean()),
-    "NDVI_B06": lambda x: (x["B08"].mean() - x["B06"].mean())
-    / (x["B08"].mean() + x["B06"].mean()),
-    "NDVI_B07": lambda x: (x["B08"].mean() - x["B07"].mean())
-    / (x["B08"].mean() + x["B07"].mean()),
+    "NDVI_B04": lambda x: (
+        (x["B08"].mean() - x["B04"].mean()) / (x["B08"].mean() + x["B04"].mean())
+    ),
+    "NDVI_B05": lambda x: (
+        (x["B08"].mean() - x["B05"].mean()) / (x["B08"].mean() + x["B05"].mean())
+    ),
+    "NDVI_B06": lambda x: (
+        (x["B08"].mean() - x["B06"].mean()) / (x["B08"].mean() + x["B06"].mean())
+    ),
+    "NDVI_B07": lambda x: (
+        (x["B08"].mean() - x["B07"].mean()) / (x["B08"].mean() + x["B07"].mean())
+    ),
     "green_red_ratio": lambda x: x["B03"].mean() / (x["B04"].mean()),
     "green_blue_ratio": lambda x: x["B03"].mean() / (x["B02"].mean()),
     "red_blue_ratio": lambda x: x["B04"].mean() / (x["B02"].mean()),

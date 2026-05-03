@@ -57,14 +57,13 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "build",
-  "black",
-  "flake8",
   "jupyter",
   "mkdocs",
   "mkdocs-bootswatch",
   "pytest",
   "pytest-cov",
-  "pytest_mock"
+  "pytest_mock",
+  "ruff>=0.15.12",
 ]
 
 [project.urls]
@@ -73,16 +72,10 @@ dev = [
 "Bug Tracker" = "https://github.com/drivendataorg/cyfi/issues"
 "Changelog" = "https://cyfi.drivendata.org/changelog/"
 
-[tool.black]
+[tool.ruff]
 line-length = 99
-target-version = ['py310', 'py311']
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.venv
-)/
-'''
+src = ["cyfi", "tests", "docs"]
+target-version = "py310"
 
 [project.scripts]
 cyfi = "cyfi.cli:app"

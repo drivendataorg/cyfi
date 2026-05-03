@@ -24,14 +24,15 @@ create_environment:
 requirements:
 	uv sync --extra dev
 
-## Format using black
+## Format with ruff
 format:
-	uv run black cyfi tests
+	ruff format .
+	ruff check --fix .
 
-## Lint using flake8 + black
+## Lint using ruff
 lint:
-	uv run flake8 cyfi tests
-	uv run black --check cyfi tests
+	ruff format --check .
+	ruff check .
 
 ## Run tests
 test: clean lint
@@ -70,7 +71,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 dist: clean ## builds source and wheel package
-	uv run python -m build
+	uv build
 	ls -l dist
 
 #################################################################################
