@@ -1,7 +1,3 @@
-[build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
-
 [project]
 name = "cyfi"
 version = "1.1.5"
@@ -66,19 +62,26 @@ dev = [
   "ruff>=0.15.12",
 ]
 
+[project.scripts]
+cyfi = "cyfi.cli:app"
+
 [project.urls]
 "Repository" = "https://github.com/drivendataorg/cyfi"
 "Documentation" = "https://cyfi.drivendata.org/"
 "Bug Tracker" = "https://github.com/drivendataorg/cyfi/issues"
 "Changelog" = "https://cyfi.drivendata.org/changelog/"
 
+[build-system]
+requires = ["uv_build >= 0.11.7, <0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+
 [tool.ruff]
 line-length = 99
 src = ["cyfi", "tests", "docs"]
 target-version = "py310"
-
-[project.scripts]
-cyfi = "cyfi.cli:app"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
