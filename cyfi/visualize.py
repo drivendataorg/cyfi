@@ -65,7 +65,7 @@ def visualize(
 
         # calculate the lat/long bounds based on ground distance
         # bearings are cardinal directions to move (south, west, north, and east)
-        (minx, miny, maxx, maxy) = get_bounding_box(
+        minx, miny, maxx, maxy = get_bounding_box(
             sample.latitude,
             sample.longitude,
             2000,
@@ -85,7 +85,7 @@ def visualize(
         )
 
         # plot imagery with point on it
-        fig, ax = plt.subplots(frameon=False)
+        fig, ax = plt.subplots(figsize=(8, 6), frameon=False)
         cropped_img_array.plot.imshow(ax=ax)
         # Use a more colorblind-friendly marker color (Magenta/Reddish Purple)
         ax.plot(
@@ -151,19 +151,15 @@ def visualize(
 
     with gr.Blocks(title="CyFi Explorer") as demo:
         with gr.Row():
-            gr.Markdown(
-                """
+            gr.Markdown("""
                 # CyFi Explorer
 
                 Click on the `sample_id` for a row in the table to see the Sentinel-2 imagery used to generate the cyanobacteria estimate.
-                """
-            )
+                """)
         with gr.Row():
-            gr.Markdown(
-                """
+            gr.Markdown("""
                 ### CyFi estimates
-                """
-            )
+                """)
         with gr.Row():
             data = gr.DataFrame(
                 df[
@@ -181,20 +177,16 @@ def visualize(
 
         with gr.Row():
             with gr.Column(scale=3):
-                gr.Markdown(
-                    """
+                gr.Markdown("""
                     ### Sentinel-2 Imagery
-                    """
-                )
+                    """)
 
                 image = gr.Image(type="pil", label="Sentinel-2 imagery", container=False)
 
             with gr.Column(scale=2):
-                gr.Markdown(
-                    """
+                gr.Markdown("""
                     ### Details on the selected sample
-                    """
-                )
+                    """)
                 density = gr.Textbox(label="Estimated cyanobacteria density (cells/ml)")
                 severity = gr.Textbox(label="Estimated severity level")
                 loc = gr.Textbox(label="Location")
@@ -209,11 +201,9 @@ def visualize(
                 )
 
         with gr.Row():
-            gr.Markdown(
-                """
+            gr.Markdown("""
                 ### Map of all estimates
-                """
-            )
+                """)
 
         with gr.Row():
             map = gr.Plot()

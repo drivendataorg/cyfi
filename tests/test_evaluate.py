@@ -5,7 +5,6 @@ import pytest
 from cyfi.data.utils import add_unique_identifier
 from cyfi.evaluate import EvaluatePreds
 
-
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 
