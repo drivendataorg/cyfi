@@ -20,36 +20,32 @@ create_environment:
 	uv venv --python $(PYTHON_VERSION)
 	@echo ">>> uv environment created at .venv. Activate with:\nsource .venv/bin/activate"
 
-## Install Python Dependencies
-requirements:
-	uv sync --extra dev
-
 ## Format with ruff
 format:
-	ruff format .
-	ruff check --fix .
+	uv run ruff format .
+	uv run ruff check --fix .
 
 ## Lint using ruff
 lint:
-	ruff format --check .
-	ruff check .
+	uv run ruff format --check .
+	uv run ruff check .
 
 ## Run tests
 test: clean lint
-	pytest tests -vv
+	uv run pytest tests -vv
 
 ## Make assets
 assets:
 	rm -fr tests/assets/experiment
-	python cyfi/experiment.py tests/assets/experiment_config.yaml
+	uv run python cyfi/experiment.py tests/assets/experiment_config.yaml
 
 docs:  ## build the static version of the docs
 	sed 's|https://cyfi.drivendata.org/stable/|../|g' CHANGELOG.md \
 		> docs/docs/changelog.md
-	cd docs && mkdocs build
+	cd docs && uv run mkdocs build
 
 docs-serve: ## serve documentation to livereload while you work
-	cd docs && mkdocs serve
+	cd docs && uv run mkdocs serve
 
 clean-build: ## remove build artifacts
 	rm -fr build/

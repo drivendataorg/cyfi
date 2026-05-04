@@ -13,26 +13,17 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Python and uv
-        uses: astral-sh/setup-uv@v8.1.0
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
-        run: |
-          uv sync --extra dev
-
-      - name: Check that versions match
-        id: version
-        run: |
-          echo "Release tag: [${{ github.event.release.tag_name }}]"
-          PACKAGE_VERSION=$(python -c "import cyfi; print(cyfi.__version__)")
-          echo "Package version: [$PACKAGE_VERSION]"
-          [ ${{ github.event.release.tag_name }} == "v$PACKAGE_VERSION" ] || { exit 1; }
-          echo "::set-output name=major_minor_version::v${PACKAGE_VERSION%.*}"
-
       - name: Build package
+        id: build_package
         run: |
+          VERSION="$(uv run -m vspect read .)"
+          echo "Building version ${VERSION}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
           make dist
 
       - name: Build docs
@@ -40,7 +31,7 @@ jobs:
           make docs
 
       - name: Publish to Test PyPI
-        uses: pypa/gh-action-pypi-publish@v1.3.0
+        uses: pypa/gh-action-pypi-publish@v1.14.0
         with:
           user: ${{ secrets.PYPI_TEST_USERNAME }}
           password: ${{ secrets.PYPI_TEST_PASSWORD }}
@@ -48,7 +39,7 @@ jobs:
           skip_existing: true
 
       - name: Publish to Production PyPI
-        uses: pypa/gh-action-pypi-publish@v1.3.0
+        uses: pypa/gh-action-pypi-publish@v1.14.0
         with:
           user: ${{ secrets.PYPI_PROD_USERNAME }}
           password: ${{ secrets.PYPI_PROD_PASSWORD }}

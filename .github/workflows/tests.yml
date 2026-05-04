@@ -19,15 +19,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Python and uv
-        uses: astral-sh/setup-uv@v8.1.0
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8
         with:
           python-version: "3.10"
           enable-cache: true
-
-      - name: Install dependencies
-        run: |
-          uv sync --extra dev
 
       - name: Lint package
         run: |
@@ -48,9 +44,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up uv with Python ${{ matrix.python-version }}
 
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@v8
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
@@ -60,17 +56,13 @@ jobs:
         run: |
           brew install libomp
 
-      - name: Install dependencies
-        run: |
-          uv sync --extra dev
-
       - name: Run tests
         run: |
-          make test
+          uv run --isolated --no-editable --upgrade make test
 
       - name: Upload coverage to codecov
         if: matrix.os == 'ubuntu-latest'
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
@@ -84,6 +76,23 @@ jobs:
           cyfi --version
           python -m pip install dist/cyfi-*.tar.gz --no-deps --force-reinstall
           cyfi --version
+
+  docs:
+    name: Docs
+    needs: code-quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          cache-suffix: dev
+
+      - name: Test Building Docs
+        run: |
+          make docs
 
   notify:
     name: Notify failed build
