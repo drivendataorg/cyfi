@@ -12,7 +12,7 @@ import pytest
 from pytest_mock import mocker  # noqa: F401
 from typer.testing import CliRunner
 
-from cyfi.cli import app
+from cyfi.cli import DEFAULT_MODEL_PATH, app
 from cyfi.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
@@ -49,6 +49,26 @@ def test_cli_predict(tmp_path, predict_data_path, predict_data, local_model_path
     # Check that log level is expected
     assert "SUCCESS" in result.stderr
     assert "INFO" not in result.stderr
+
+
+def test_cli_predict_cache_dir(tmp_path, predict_data_path, local_model_path):
+    ## Run CLI command with cache dir
+    cache_dir = tmp_path / "my_cache"
+    result = runner.invoke(
+        app,
+        [
+            "predict",
+            str(predict_data_path),
+            "--model-path",
+            str(local_model_path),
+            "--output-directory",
+            str(tmp_path),
+            "--cache-dir",
+            str(cache_dir),
+        ],
+    )
+    assert result.exit_code == 0
+    assert cache_dir.exists()
 
 
 def test_cli_predict_samples_path(tmp_path, local_model_path):
@@ -203,6 +223,38 @@ def test_cli_predict_point_crs(mocker, local_model_path):  # noqa: F811
     )
     assert result.exit_code == 2
     assert "Invalid value for '--crs" in result.stderr
+
+
+def test_cli_predict_point_cache_dir(mocker, tmp_path):  # noqa: F811
+    mock_pipeline = mocker.Mock()
+    mock_pipeline.output_df = pd.DataFrame(
+        {
+            "date": ["2021-05-17"],
+            "latitude": [36.05],
+            "longitude": [-76.7],
+            "severity": ["moderate"],
+            "density_cells_per_ml": [32078.0],
+        }
+    )
+    from_disk = mocker.patch("cyfi.cli.CyFiPipeline.from_disk", return_value=mock_pipeline)
+
+    cache_dir = tmp_path / "cache"
+    result = runner.invoke(
+        app,
+        [
+            "predict-point",
+            "-dt",
+            "2021-05-17",
+            "--lat",
+            "36.05",
+            "--lon",
+            "-76.7",
+            "--cache-dir",
+            str(cache_dir),
+        ],
+    )
+    assert result.exit_code == 0
+    from_disk.assert_called_once_with(DEFAULT_MODEL_PATH, cache_dir=cache_dir)
 
 
 def test_graceful_exit_when_no_satellite_data():

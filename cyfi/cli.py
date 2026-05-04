@@ -92,6 +92,9 @@ def predict(
     keep_metadata: bool = typer.Option(
         default=False, help="Whether to save Sentinel image metadata to `output_directory`"
     ),
+    cache_dir: Path = typer.Option(
+        default=None, help="Directory to cache downloaded satellite imagery"
+    ),
     overwrite: bool = typer.Option(False, "--overwrite", "-o", help="Overwrite existing files"),
     verbose: int = verbose_option,
 ):
@@ -116,7 +119,7 @@ def predict(
             )
     if model_path is None:
         model_path = DEFAULT_MODEL_PATH
-    pipeline = CyFiPipeline.from_disk(model_path)
+    pipeline = CyFiPipeline.from_disk(model_path, cache_dir=cache_dir)
 
     pipeline.run_prediction(samples_path, output_path)
 
@@ -142,6 +145,9 @@ def predict_point(
         "EPSG:4326",
         help="Coordinate reference system of the provided latitude and longitude.",
     ),
+    cache_dir: Path = typer.Option(
+        default=None, help="Directory to cache downloaded satellite imagery"
+    ),
     verbose: int = verbose_option,
 ):
     """Estimate cyanobacteria density for a single location on a given date"""
@@ -162,7 +168,7 @@ def predict_point(
     samples_path = Path(tempfile.gettempdir()) / "samples.csv"
     samples.to_csv(samples_path, index=False)
 
-    pipeline = CyFiPipeline.from_disk(DEFAULT_MODEL_PATH)
+    pipeline = CyFiPipeline.from_disk(DEFAULT_MODEL_PATH, cache_dir=cache_dir)
     pipeline.run_prediction(samples_path, preds_path=None)
 
     # print out user-specified lat / lon
