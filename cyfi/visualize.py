@@ -87,7 +87,10 @@ def visualize(
         # plot imagery with point on it
         fig, ax = plt.subplots(figsize=(8, 6), frameon=False)
         cropped_img_array.plot.imshow(ax=ax)
-        ax.plot(sample.longitude, sample.latitude, "ro", markersize=4, markerfacecolor="None")
+        # Use a more colorblind-friendly marker color (Magenta/Reddish Purple)
+        ax.plot(
+            sample.longitude, sample.latitude, "x", markersize=8, markerfacecolor="#A0A0A0", markeredgecolor="#A0A0A0", markeredgewidth=2
+        )
         ax.axis("equal")
         ax.set_axis_off()
         ax.set_xlabel("")
@@ -115,7 +118,8 @@ def visualize(
             ["sample_id", "date", "latitude", "longitude", "density_cells_per_ml", "severity"]
         ].copy()
 
-        color_map = {"low": "teal", "moderate": "gold", "high": "red"}
+        # Colorblind-friendly palette (Okabe-Ito inspired)
+        color_map = {"low": "#0072B2", "moderate": "#E69F00", "high": "#D55E00"}
         map_df["color"] = map_df.severity.map(color_map)
         fig = go.Figure(
             go.Scattermapbox(
