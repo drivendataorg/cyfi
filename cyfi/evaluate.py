@@ -4,7 +4,7 @@ from typing import Optional
 
 import pandas as pd
 import lightgbm as lgb
-from loguru import logger
+from cyfi.logger import logger
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns

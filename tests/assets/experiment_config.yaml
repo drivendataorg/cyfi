@@ -1,6 +1,6 @@
-train_csv: tests/assets/train_data.csv
-predict_csv: tests/assets/evaluate_data.csv
-save_dir: tests/assets/experiment/
+train_csv: tests/assets/samples.csv
+predict_csv: tests/assets/samples.csv
+save_dir: .
 cyfi_model_config:
   n_folds: 2
   num_boost_round: 100

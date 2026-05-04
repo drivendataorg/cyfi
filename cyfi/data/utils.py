@@ -8,7 +8,7 @@ SEVERITY_LEFT_EDGES = {"low": 0, "moderate": 20000, "high": 100000}
 
 
 def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
-    """Given a dataframe with the columns []"latitude", "longitude", "date"],
+    """Given a dataframe with the columns ["latitude", "longitude", "date"],
     create a unique identifier for each row and set as the index
 
     Args:
@@ -18,8 +18,19 @@ def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: Dataframe with unique identifiers as the index
     """
     df = df.copy()
-    uids = []
 
+    # Standardize column names by stripping whitespace
+    df.columns = [c.strip() for c in df.columns]
+
+    # Check that we have required columns
+    for col in ["latitude", "longitude", "date"]:
+        if col not in df.columns:
+            raise ValueError(
+                f"Dataframe is missing required column '{col}'. "
+                f"Columns found: {list(df.columns)}"
+            )
+
+    uids = []
     # create UID based on lat/lon and date
     for row in df.itertuples():
         m = hashlib.md5()
@@ -29,6 +40,27 @@ def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
 
     df["sample_id"] = uids
     return df.set_index("sample_id")
+
+
+def validate_coordinates(df: pd.DataFrame):
+    """Check that latitude and longitude are within valid ranges.
+
+    Args:
+        df (pd.DataFrame): Dataframe with latitude and longitude columns
+    """
+    if "latitude" in df.columns:
+        if not df.latitude.between(-90, 90).all():
+            invalid = df[~df.latitude.between(-90, 90)].latitude
+            raise ValueError(
+                f"Latitude values must be between -90 and 90. Found invalid values: {invalid.tolist()}"
+            )
+
+    if "longitude" in df.columns:
+        if not df.longitude.between(-180, 180).all():
+            invalid = df[~df.longitude.between(-180, 180)].longitude
+            raise ValueError(
+                f"Longitude values must be between -180 and 180. Found invalid values: {invalid.tolist()}"
+            )
 
 
 def convert_density_to_severity(density_series: pd.Series) -> pd.Series:

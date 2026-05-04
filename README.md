@@ -17,7 +17,13 @@ Read more at [cyfi.drivendata.org](https://cyfi.drivendata.org)
 > [!NOTE]
 > There is a known [issue](https://github.com/drivendataorg/cyfi/issues/114) with the pip installation on M1 Macs due to LightGBM. If you're on a Mac, we recommend installing CyFi with conda, shown in the second option below.
 
-Install CyFi with pip:
+If you primarily want to use CyFi as a command line tool, we recommend installing it with [pipx](https://pypa.github.io/pipx/). This will install CyFi in an isolated environment and make the command globally available:
+
+```
+pipx install cyfi
+```
+
+Alternatively, CyFi can be installed with pip:
 
 ```
 pip install cyfi
