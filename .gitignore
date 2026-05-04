@@ -88,5 +88,8 @@ target/
 # Mypy cache
 .mypy_cache/
 
+# Virtual environment
+.venv/
+
 # Experimentation s3 dir
 experiments/.venv/
