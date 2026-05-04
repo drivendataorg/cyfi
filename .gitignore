@@ -89,4 +89,4 @@ target/
 .mypy_cache/
 
 # Experimentation s3 dir
-experiments/
+experiments/.venv/
