@@ -18,7 +18,6 @@ clean: clean-build clean-pyc clean-test
 ## Set up python interpreter environment
 create_environment:
 	uv venv --python $(PYTHON_VERSION)
-	@echo ">>> uv environment created at .venv. Activate with:\nsource .venv/bin/activate"
 
 ## Format with ruff
 format:
