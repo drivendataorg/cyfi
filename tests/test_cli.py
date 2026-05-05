@@ -1,15 +1,16 @@
 from pathlib import Path
 import platform
-import requests
 import shutil
 import signal
 import subprocess
+import sys
 import time
 
 import pandas as pd
 from pyproj import Transformer
 import pytest
 from pytest_mock import mocker  # noqa: F401
+import requests
 from typer.testing import CliRunner
 
 from cyfi.cli import app
@@ -254,7 +255,7 @@ def test_cli_evaluate(tmp_path, evaluate_data_path):
 
 def test_python_m_execution():
     result = subprocess.run(
-        ["python", "-m", "cyfi", "--help"],
+        [sys.executable, "-m", "cyfi", "--help"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         universal_newlines=True,
