@@ -72,9 +72,10 @@ jobs:
         shell: bash
         run: |
           make dist
-          python -m pip install dist/cyfi-*.whl --no-deps --force-reinstall
+          uv sync
+          uv pip install dist/cyfi-*.whl --no-deps --force-reinstall
           cyfi --version
-          python -m pip install dist/cyfi-*.tar.gz --no-deps --force-reinstall
+          uv pip install dist/cyfi-*.tar.gz --no-deps --force-reinstall
           cyfi --version
 
   docs:
