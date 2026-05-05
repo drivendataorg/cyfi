@@ -1143,7 +1143,7 @@ dependencies = [
     { name = "xarray", version = "2026.2.0", source = { registry = "https://pypi.org/simple" }, extra = ["accel", "io", "parallel"], marker = "python_full_version >= '3.11'" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "build" },
     { name = "jupyter" },
@@ -1157,18 +1157,14 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "build", marker = "extra == 'dev'" },
     { name = "cloudpathlib", extras = ["s3"], specifier = ">=0.4.1" },
     { name = "geopandas" },
     { name = "geopy" },
     { name = "gitpython" },
     { name = "gradio", specifier = ">=5.0" },
-    { name = "jupyter", marker = "extra == 'dev'" },
     { name = "lightgbm" },
     { name = "loguru" },
     { name = "matplotlib" },
-    { name = "mkdocs", marker = "extra == 'dev'" },
-    { name = "mkdocs-bootswatch", marker = "extra == 'dev'" },
     { name = "numpy" },
     { name = "odc-stac" },
     { name = "opencv-python" },
@@ -1179,19 +1175,26 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pystac" },
     { name = "pystac-client" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest-cov", marker = "extra == 'dev'" },
-    { name = "pytest-mock", marker = "extra == 'dev'" },
     { name = "repro-zipfile" },
     { name = "rioxarray" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15.12" },
     { name = "scikit-learn", specifier = ">=1.4" },
     { name = "seaborn" },
     { name = "tqdm" },
     { name = "typer", specifier = ">=0.16.0" },
     { name = "xarray", extras = ["accel", "io", "parallel"] },
 ]
-provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "build" },
+    { name = "jupyter" },
+    { name = "mkdocs" },
+    { name = "mkdocs-bootswatch" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "ruff", specifier = ">=0.15.12" },
+]
 
 [[package]]
 name = "dask"
