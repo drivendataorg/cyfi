@@ -17,7 +17,7 @@ clean: clean-build clean-pyc clean-test
 ## Set up python interpreter environment and install reqs
 create_environment:
 	uv venv --python $(PYTHON_VERSION)
-	uv sync --extra dev
+	uv sync
 
 ## Format with ruff
 format:
