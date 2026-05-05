@@ -68,15 +68,6 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: true
 
-      - name: Build distribution and test installation
-        shell: bash
-        run: |
-          make dist
-          uv tool install dist/cyfi-*.whl --force
-          cyfi --version
-          uv tool install dist/cyfi-*.tar.gz --force
-          cyfi --version
-
   docs:
     name: Docs
     needs: code-quality

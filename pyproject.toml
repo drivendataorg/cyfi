@@ -81,7 +81,6 @@ module-root = ""
 [tool.ruff]
 line-length = 99
 src = ["cyfi", "tests", "docs"]
-target-version = "py310"
 
 [tool.ruff.lint.isort]
 known-first-party = ["cyfi"]
