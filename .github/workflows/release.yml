@@ -22,7 +22,7 @@ jobs:
       - name: Build package
         id: build_package
         run: |
-          VERSION="$(uv run -m vspect read .)"
+          VERSION="${{ github.event.release.tag_name }}"
           echo "Building version ${VERSION}"
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
           make dist
