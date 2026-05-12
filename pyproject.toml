@@ -1,7 +1,3 @@
-[build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
-
 [project]
 name = "cyfi"
 version = "1.1.5"
@@ -51,21 +47,23 @@ dependencies = [
   "rioxarray",
   "tqdm",
   "typer>=0.16.0",
-  "xarray[accel,io,parallel]"
+  "xarray[accel,io,parallel]",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
   "build",
-  "black",
-  "flake8",
   "jupyter",
   "mkdocs",
   "mkdocs-bootswatch",
   "pytest",
   "pytest-cov",
-  "pytest_mock"
+  "pytest_mock",
+  "ruff>=0.15.12",
 ]
+
+[project.scripts]
+cyfi = "cyfi.cli:app"
 
 [project.urls]
 "Repository" = "https://github.com/drivendataorg/cyfi"
@@ -73,19 +71,23 @@ dev = [
 "Bug Tracker" = "https://github.com/drivendataorg/cyfi/issues"
 "Changelog" = "https://cyfi.drivendata.org/changelog/"
 
-[tool.black]
-line-length = 99
-target-version = ['py310', 'py311']
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.venv
-)/
-'''
+[build-system]
+requires = ["uv_build >= 0.11.7, <0.12.0"]
+build-backend = "uv_build"
 
-[project.scripts]
-cyfi = "cyfi.cli:app"
+[tool.uv]
+exclude-newer = "7 days"
+
+[tool.uv.build-backend]
+module-root = ""
+
+[tool.ruff]
+line-length = 99
+src = ["cyfi", "tests", "docs"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["cyfi"]
+force-sort-within-sections = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"

@@ -121,7 +121,7 @@ class ExperimentConfig(BaseModel):
 
 @app.command()
 def run_experiment(
-    config_path: Path = typer.Argument(exists=True, help="Path to an experiment configuration")
+    config_path: Path = typer.Argument(exists=True, help="Path to an experiment configuration"),
 ):
     """Run an experiment"""
     config = ExperimentConfig.from_file(config_path)

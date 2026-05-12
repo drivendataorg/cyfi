@@ -1,4 +1,4 @@
-.PHONY: clean clean-docs clean-pyc clean-test clean-build docs format lint test help
+.PHONY: clean clean-docs clean-pyc clean-test clean-build docs docs-serve format lint test assets dist create_environment help
 #################################################################################
 # GLOBALS                                                                       #
 #################################################################################
@@ -6,7 +6,6 @@
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 PROJECT_NAME = cyfi
 PYTHON_VERSION = 3.10
-PYTHON_INTERPRETER = python
 
 #################################################################################
 # COMMANDS                                                                      #
@@ -15,62 +14,61 @@ PYTHON_INTERPRETER = python
 ## Remove all build, test, coverage and Python artifacts
 clean: clean-build clean-pyc clean-test
 
-## Set up python interpreter environment
+## Set up python interpreter environment and install reqs
 create_environment:
-	conda create --name $(PROJECT_NAME) python=$(PYTHON_VERSION) -y
-	@echo ">>> conda env created. Activate with:\nconda activate $(PROJECT_NAME)"
-	
-## Install Python Dependencies
-requirements:
-	pip install -e .[dev]
+	uv venv --python $(PYTHON_VERSION)
+	uv sync
 
-## Format using black
+## Format with ruff
 format:
-	black cyfi tests
+	uv run ruff format .
+	uv run ruff check --fix .
 
-## Lint using flake8 + black
+## Lint using ruff
 lint:
-	flake8 cyfi tests
-	black --check cyfi tests
+	uv run ruff format --check .
+	uv run ruff check .
 
 ## Run tests
 test: clean lint
-	pytest tests -vv
+	uv run pytest tests -vv
 
 ## Make assets
 assets:
 	rm -fr tests/assets/experiment
-	python cyfi/experiment.py tests/assets/experiment_config.yaml
+	uv run cyfi/experiment.py tests/assets/experiment_config.yaml
 
-docs:  ## build the static version of the docs
+## Build the static version of the docs
+docs:
 	sed 's|https://cyfi.drivendata.org/stable/|../|g' CHANGELOG.md \
 		> docs/docs/changelog.md
-	cd docs && mkdocs build
+	cd docs && uv run mkdocs build
 
-docs-serve: ## serve documentation to livereload while you work
-	cd docs && mkdocs serve
+## Serve documentation to livereload while you work
+docs-serve:
+	cd docs && uv run mkdocs serve
 
-clean-build: ## remove build artifacts
+clean-build: ## Remove build artifacts
 	rm -fr build/
 	rm -fr dist/
 	rm -fr .eggs/
 	find . -name '*.egg-info' -exec rm -fr {} +
 	find . -name '*.egg' -exec rm -f {} +
 
-clean-pyc: ## remove Python file artifacts
+clean-pyc: ## Remove Python file artifacts
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -fr {} +
 
-clean-test: ## remove test and coverage artifacts
+clean-test: ## Remove test and coverage artifacts
 	rm -fr .tox/
 	rm -f .coverage
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
-dist: clean ## builds source and wheel package
-	python -m build
+dist: clean ## Build source and wheel package
+	uv build
 	ls -l dist
 
 #################################################################################
