@@ -6,6 +6,7 @@ import subprocess
 import sys
 import time
 
+from loguru import logger
 import pandas as pd
 from pyproj import Transformer
 import pytest
@@ -105,8 +106,15 @@ def test_cli_no_overwrite(tmp_path, train_data, train_data_path, local_model_pat
     assert "overwrite" in result.exception.args[0]
 
 
-def test_cli_predict_verbosity(tmp_path, predict_data_path, local_model_path):
-    ## Check that log level increases when specified
+def test_cli_predict_verbosity(tmp_path, predict_data_path, local_model_path, mocker):  # noqa: F811
+    ## Check that log level increases when specified. Mock the pipeline so no
+    ## imagery is downloaded; the mock logs at INFO and DEBUG so the check is real.
+    def logging_predict_mock(self, predict_csv, preds_path=None):
+        logger.info("info message")
+        logger.debug("debug message")
+        self.output_df = pd.DataFrame()
+
+    mocker.patch("cyfi.cli.CyFiPipeline.run_prediction", logging_predict_mock)
     result = runner.invoke(
         app,
         [
@@ -172,8 +180,8 @@ def test_cli_predict_point(mocker):  # noqa: F811
     assert "Cannot predict on a date that is in the future" in result.exception.__str__()
 
 
-def test_cli_predict_point_crs(mocker, local_model_path):  # noqa: F811
-    mocker.patch("cyfi.cli.DEFAULT_MODEL_PATH", local_model_path)
+def test_cli_predict_point_crs(mocker):  # noqa: F811
+    mocker.patch("cyfi.cli.CyFiPipeline.run_prediction", pipeline_predict_mock)
 
     transformer = Transformer.from_crs(crs_from="EPSG:4326", crs_to="EPSG:3857")
     lat, lon = transformer.transform(36.05, -76.7)
@@ -206,8 +214,15 @@ def test_cli_predict_point_crs(mocker, local_model_path):  # noqa: F811
     assert "Invalid value for '--crs" in result.stderr
 
 
-def test_graceful_exit_when_no_satellite_data():
-    # use location and date in SF where it was cloudy all month and there is no valid imagery
+def test_graceful_exit_when_no_satellite_data(mocker, satellite_meta):  # noqa: F811
+    # Simulate the case where imagery is found but every image is dropped by the
+    # cloud / water filters, without searching or downloading anything
+    mocker.patch("cyfi.pipeline.identify_satellite_data", return_value=satellite_meta)
+    mocker.patch("cyfi.pipeline.download_satellite_data", return_value=len(satellite_meta))
+    mocker.patch(
+        "cyfi.data.features.calculate_satellite_features",
+        return_value=pd.DataFrame(columns=["item_id"], index=pd.Index([], name="sample_id")),
+    )
     result = runner.invoke(
         app,
         [
