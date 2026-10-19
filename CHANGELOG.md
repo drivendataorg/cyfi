@@ -1,7 +1,8 @@
 # CyFi changelog
 
-### v1.2.0 - (unreleased)
+### v1.2.0 - 2026-10-19
 
+- Update Mac installation instructions ([PR #199](https://github.com/drivendataorg/cyfi/pull/199))
 - Drop support for Python 3.10 (end of life) and add support for Python 3.12, 3.13, and 3.14 ([PR #197](https://github.com/drivendataorg/cyfi/pull/197))
 - Switch to uv for environment management and ruff for linting ([PR #195](https://github.com/drivendataorg/cyfi/pull/195))
 
