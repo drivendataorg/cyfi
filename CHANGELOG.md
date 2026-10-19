@@ -1,5 +1,9 @@
 # CyFi changelog
 
+### v1.2.0 - (unreleased)
+
+- Stop downloading satellite imagery in CLI tests that aren't testing the download path ([PR #198](https://github.com/drivendataorg/cyfi/pull/198))
+
 ### v1.1.5 - 2025-08-20
 
 - Error gracefully if no imagery is downloaded ([PR #165](https://github.com/drivendataorg/cyfi/pull/165)); fix failing CyFi explorer test ([PR #164](https://github.com/drivendataorg/cyfi/pull/164)); fix failing tests due to click update ([PR #160](https://github.com/drivendataorg/cyfi/pull/160))
