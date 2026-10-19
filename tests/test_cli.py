@@ -6,7 +6,6 @@ import subprocess
 import sys
 import time
 
-from loguru import logger
 import pandas as pd
 from pyproj import Transformer
 import pytest
@@ -24,8 +23,6 @@ runner = CliRunner()
 
 # mock prediction to test CLI args without downloading imagery
 def pipeline_predict_mock(self, predict_csv, preds_path=None):
-    logger.info("Mock prediction")
-    logger.debug("Mock prediction")
     self.output_df = pd.DataFrame(
         {
             "date": ["2021-05-17"],
@@ -121,9 +118,8 @@ def test_cli_no_overwrite(tmp_path, train_data, train_data_path, local_model_pat
     assert "overwrite" in result.exception.args[0]
 
 
-def test_cli_predict_verbosity(tmp_path, predict_data_path, local_model_path, mocker):  # noqa: F811
-    # check that log level increases when specified
-    mocker.patch("cyfi.cli.CyFiPipeline.run_prediction", pipeline_predict_mock)
+def test_cli_predict_verbosity(tmp_path, predict_data_path, local_model_path):
+    # check that log level increases when specified; reuses imagery cached by test_cli_predict
     result = runner.invoke(
         app,
         [
