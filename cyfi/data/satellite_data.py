@@ -4,7 +4,7 @@ import json
 import shutil
 import sys
 import time
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import geopy.distance as distance
 from loguru import logger
@@ -25,7 +25,7 @@ STAC_API_URL = "https://planetarycomputer.microsoft.com/api/stac/v1/"
 STAC_ERRORS = (STACError, STACTypeError, APIError, json.JSONDecodeError)
 
 
-def retry_stac(func: Callable, *args, attempts: int = 5, **kwargs):
+def retry_stac(func: Callable, *args, attempts: int = 5, **kwargs) -> Any:
     """Call a function that talks to the STAC API, retrying on API errors
     with exponential backoff
 
@@ -45,7 +45,9 @@ def retry_stac(func: Callable, *args, attempts: int = 5, **kwargs):
             if attempt == attempts:
                 raise
             wait = 2**attempt
-            logger.debug(f"STAC request failed ({e.__cause__ or e}). Retrying in {wait}s")
+            logger.debug(
+                f"STAC request failed ({type(e).__name__}: {e.__cause__ or e}). Retrying in {wait}s"
+            )
             time.sleep(wait)
 
 
