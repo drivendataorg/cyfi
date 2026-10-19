@@ -1,4 +1,3 @@
-from distutils.util import strtobool
 import os
 from pathlib import Path
 import sys
@@ -14,7 +13,7 @@ from cyfi.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
-IN_GITHUB_ACTIONS = strtobool(os.getenv("GITHUB_ACTIONS", "false"))
+IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 
 def test_known_features(train_data, features_config, satellite_meta):

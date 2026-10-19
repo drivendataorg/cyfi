@@ -5,7 +5,7 @@
 
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 PROJECT_NAME = cyfi
-PYTHON_VERSION = 3.10
+PYTHON_VERSION = 3.12
 
 #################################################################################
 # COMMANDS                                                                      #
