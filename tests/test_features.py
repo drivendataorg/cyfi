@@ -13,7 +13,7 @@ from cyfi.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
-IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false").lower() in ("1", "true", "yes")
+IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 
 def test_known_features(train_data, features_config, satellite_meta):
