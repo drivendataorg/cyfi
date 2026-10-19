@@ -22,6 +22,21 @@ ASSETS_DIR = Path(__file__).parent / "assets"
 runner = CliRunner()
 
 
+# mock prediction to test CLI args without downloading imagery
+def pipeline_predict_mock(self, predict_csv, preds_path=None):
+    logger.info("Mock prediction")
+    logger.debug("Mock prediction")
+    self.output_df = pd.DataFrame(
+        {
+            "date": ["2021-05-17"],
+            "latitude": ["36.05"],
+            "longitude": ["-76.7"],
+            "severity": ["moderate"],
+            "density_cells_per_ml": 32078.0,
+        }
+    )
+
+
 def test_cli_predict(tmp_path, predict_data_path, predict_data, local_model_path):
     ## Run CLI command
     result = runner.invoke(
@@ -107,14 +122,8 @@ def test_cli_no_overwrite(tmp_path, train_data, train_data_path, local_model_pat
 
 
 def test_cli_predict_verbosity(tmp_path, predict_data_path, local_model_path, mocker):  # noqa: F811
-    ## Check that log level increases when specified. Mock the pipeline so no
-    ## imagery is downloaded; the mock logs at INFO and DEBUG so the check is real.
-    def logging_predict_mock(self, predict_csv, preds_path=None):
-        logger.info("info message")
-        logger.debug("debug message")
-        self.output_df = pd.DataFrame()
-
-    mocker.patch("cyfi.cli.CyFiPipeline.run_prediction", logging_predict_mock)
+    # check that log level increases when specified
+    mocker.patch("cyfi.cli.CyFiPipeline.run_prediction", pipeline_predict_mock)
     result = runner.invoke(
         app,
         [
@@ -131,19 +140,6 @@ def test_cli_predict_verbosity(tmp_path, predict_data_path, local_model_path, mo
     assert result.exit_code == 0
     assert "INFO" in result.stderr
     assert "DEBUG" not in result.stderr
-
-
-# mock prediction to just test CLI args
-def pipeline_predict_mock(self, predict_csv, preds_path=None):
-    self.output_df = pd.DataFrame(
-        {
-            "date": ["2021-05-17"],
-            "latitude": ["36.05"],
-            "longitude": ["-76.7"],
-            "severity": ["moderate"],
-            "density_cells_per_ml": 32078.0,
-        }
-    )
 
 
 def test_cli_predict_point(mocker):  # noqa: F811
@@ -215,14 +211,11 @@ def test_cli_predict_point_crs(mocker):  # noqa: F811
 
 
 def test_graceful_exit_when_no_satellite_data(mocker, satellite_meta):  # noqa: F811
-    # Simulate the case where imagery is found but every image is dropped by the
-    # cloud / water filters, without searching or downloading anything
+    # mock imagery that all gets filtered out, so nothing is downloaded
+    no_features = pd.DataFrame(columns=["item_id"], index=pd.Index([], name="sample_id"))
     mocker.patch("cyfi.pipeline.identify_satellite_data", return_value=satellite_meta)
     mocker.patch("cyfi.pipeline.download_satellite_data", return_value=len(satellite_meta))
-    mocker.patch(
-        "cyfi.data.features.calculate_satellite_features",
-        return_value=pd.DataFrame(columns=["item_id"], index=pd.Index([], name="sample_id")),
-    )
+    mocker.patch("cyfi.data.features.calculate_satellite_features", return_value=no_features)
     result = runner.invoke(
         app,
         [
