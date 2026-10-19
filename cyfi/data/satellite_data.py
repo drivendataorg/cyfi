@@ -20,7 +20,7 @@ from tqdm.contrib.concurrent import process_map
 
 from cyfi.config import FeaturesConfig
 
-# NOTE: the trailing slash is required; without it pystac re-fetches the root on the first search
+# The trailing slash is required; without it pystac re-fetches the root on the first search
 STAC_API_URL = "https://planetarycomputer.microsoft.com/api/stac/v1/"
 STAC_ERRORS = (STACError, STACTypeError, APIError, json.JSONDecodeError)
 
