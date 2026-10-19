@@ -206,12 +206,8 @@ def test_cli_predict_point_crs(mocker):  # noqa: F811
     assert "Invalid value for '--crs" in result.stderr
 
 
-def test_graceful_exit_when_no_satellite_data(mocker, satellite_meta):  # noqa: F811
-    # mock imagery that all gets filtered out, so nothing is downloaded
-    no_features = pd.DataFrame(columns=["item_id"], index=pd.Index([], name="sample_id"))
-    mocker.patch("cyfi.pipeline.identify_satellite_data", return_value=satellite_meta)
-    mocker.patch("cyfi.pipeline.download_satellite_data", return_value=len(satellite_meta))
-    mocker.patch("cyfi.data.features.calculate_satellite_features", return_value=no_features)
+def test_graceful_exit_when_no_satellite_data():
+    # use location and date in SF where it was cloudy all month and there is no valid imagery
     result = runner.invoke(
         app,
         [
