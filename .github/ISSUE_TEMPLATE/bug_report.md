@@ -1,7 +1,7 @@
 ---
 name: Bug Report
 about: Report a bug to help us improve CyFi
-title: "[BUG] "
+title: ""
 labels: bug
 assignees: ''
 ---
@@ -43,7 +43,7 @@ Paste your full error message or traceback here
 <!-- Please fill in as much as you can. You can get your CyFi version by running `cyfi --version`. -->
 
 - **OS:** (e.g., Windows 11, macOS 14, Ubuntu 22.04)
-- **Python version:** (e.g., 3.10.12 — run `python --version`)
+- **Python version:** (e.g., 3.12.4 — run `python --version`)
 - **CyFi version:** (run `cyfi --version`)
 - **Installation method:** (pip / conda)
 
