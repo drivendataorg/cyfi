@@ -81,16 +81,14 @@ Summary: CyFi is a Python package to estimate cyanobacteria density in small, in
 
 ### Install python
 
-1. Look up your computer's architecture by running `lscpu` in your terminal and looking at "architecture"
-
-2. [Download the Miniconda installer](https://www.anaconda.com/download/success) by clicking on "64-Bit (x86) Installer" under Miniconda, or "64-Bit (AWS Graviton2 / ARM64) Installer" if your architecture is aarch64
+1. [Download the Miniconda installer](https://www.anaconda.com/download/success) by clicking on "64-Bit (x86) Installer" under Miniconda
 ![Linux Miniconda installer links](images/linux.png)
 
-3. In your terminal, run `bash filename`, replacing `filename` with the path to your installer.
+2. In your terminal, run `bash filename`, replacing `filename` with the path to your installer.
 
-4. Follow the prompts on the installer screens. If you are unsure about any setting, accept the defaults.
+3. Follow the prompts on the installer screens. If you are unsure about any setting, accept the defaults.
 
-5. To make the changes take effect, close and then re-open your terminal window.
+4. To make the changes take effect, close and then re-open your terminal window.
 
 
 ### Install CyFi
