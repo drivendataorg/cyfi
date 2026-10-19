@@ -2,7 +2,7 @@
 
 ### v1.2.0 - (unreleased)
 
-- Stop downloading satellite imagery in CLI tests that aren't testing the download path ([PR #198](https://github.com/drivendataorg/cyfi/pull/198))
+- Stop downloading satellite imagery in the CRS test, which only checks the coordinate transform ([PR #198](https://github.com/drivendataorg/cyfi/pull/198))
 
 ### v1.1.5 - 2025-08-20
 
