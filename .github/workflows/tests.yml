@@ -11,10 +11,10 @@ on:
     - cron: "0 0 * * 0"
   workflow_dispatch:
 
-# cancel superseded runs on the same branch
+# cancel superseded runs on pull requests only; runs on main always complete
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   code-quality:
