@@ -20,11 +20,8 @@ from tqdm.contrib.concurrent import process_map
 
 from cyfi.config import FeaturesConfig
 
-# Trailing slash matches the root link the API advertises, so the catalog resolves
-# fully on open instead of re-fetching the root on the first search
+# NOTE: the trailing slash is required; without it pystac re-fetches the root on the first search
 STAC_API_URL = "https://planetarycomputer.microsoft.com/api/stac/v1/"
-
-# Errors raised for a failed request or an unusable response, whichever layer raises it
 STAC_ERRORS = (STACError, STACTypeError, APIError, json.JSONDecodeError)
 
 
