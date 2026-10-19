@@ -4,6 +4,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 
 import pandas as pd
@@ -26,8 +27,8 @@ def pipeline_predict_mock(self, predict_csv, preds_path=None):
     self.output_df = pd.DataFrame(
         {
             "date": ["2021-05-17"],
-            "latitude": ["36.05"],
-            "longitude": ["-76.7"],
+            "latitude": [36.05],
+            "longitude": [-76.7],
             "severity": ["moderate"],
             "density_cells_per_ml": 32078.0,
         }
@@ -193,6 +194,11 @@ def test_cli_predict_point_crs(mocker):  # noqa: F811
         inputs + ["--crs", "EPSG:3857"],
     )
     assert result.exit_code == 0
+
+    # check coordinates were converted to WGS-84 before prediction
+    samples = pd.read_csv(Path(tempfile.gettempdir()) / "samples.csv")
+    assert samples.latitude[0] == pytest.approx(36.05)
+    assert samples.longitude[0] == pytest.approx(-76.7)
 
     # check original location printed out
     assert str(round(lat, 2)) in result.stderr
