@@ -23,7 +23,7 @@
 
 !!! note ""
 
-    Note: There is a known [issue](https://github.com/drivendataorg/cyfi/issues/114) with the pip installation on M1 Macs due to LightGBM. If you're on a Mac, we recommend installing CyFi with conda, shown in the second option below.
+    Note: On a Mac, LightGBM needs OpenMP. Run `brew install libomp` before `pip install cyfi`, or install with conda, which includes it.
 
 Install CyFi with pip:
 
