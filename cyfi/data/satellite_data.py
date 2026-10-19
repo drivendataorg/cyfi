@@ -1,8 +1,10 @@
 from datetime import timedelta
 import functools
+import json
 import shutil
 import sys
-from typing import Dict, List, Optional, Tuple, Union
+import time
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import geopy.distance as distance
 from loguru import logger
@@ -10,22 +12,56 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import planetary_computer as pc
+from pystac import STACError, STACTypeError
 from pystac_client import Client, ItemSearch
-from pystac_client.stac_api_io import StacApiIO
+from pystac_client.exceptions import APIError
 import rioxarray
 from tqdm.contrib.concurrent import process_map
-from urllib3 import Retry
 
 from cyfi.config import FeaturesConfig
 
-retry = Retry(total=20, backoff_factor=1, status_forcelist=[502, 503, 504], allowed_methods=None)
+# Trailing slash matches the root link the API advertises, so the catalog resolves
+# fully on open instead of re-fetching the root on the first search
+STAC_API_URL = "https://planetarycomputer.microsoft.com/api/stac/v1/"
 
-# Establish a connection to the STAC API
-catalog = Client.open(
-    "https://planetarycomputer.microsoft.com/api/stac/v1",
-    modifier=pc.sign_inplace,
-    stac_io=StacApiIO(max_retries=retry),
-)
+# Errors raised for a failed request or an unusable response, whichever layer raises it
+STAC_ERRORS = (STACError, STACTypeError, APIError, json.JSONDecodeError)
+
+
+def retry_stac(func: Callable, *args, attempts: int = 5, **kwargs):
+    """Call a function that talks to the STAC API, retrying on API errors
+    with exponential backoff
+
+    Args:
+        func (Callable): Function to call
+        *args: Positional arguments passed to func
+        attempts (int, optional): Maximum number of attempts. Defaults to 5.
+        **kwargs: Keyword arguments passed to func
+
+    Returns:
+        Whatever func returns
+    """
+    for attempt in range(1, attempts + 1):
+        try:
+            return func(*args, **kwargs)
+        except STAC_ERRORS as e:
+            if attempt == attempts:
+                raise
+            wait = 2**attempt
+            logger.debug(f"STAC request failed ({e.__cause__ or e}). Retrying in {wait}s")
+            time.sleep(wait)
+
+
+@functools.cache
+def get_catalog() -> Client:
+    """Connect to the planetary computer STAC API. The connection is made on
+    first use and cached for the rest of the process
+
+    Returns:
+        Client: STAC API client
+    """
+    return retry_stac(Client.open, STAC_API_URL, modifier=pc.sign_inplace)
+
 
 # Define new logger level to track progress
 progress_log_level = logger.level(name="PROGRESS", no=30, color="<magenta><bold>")
@@ -92,7 +128,9 @@ def search_planetary_computer(
     date_range = get_date_range(date, days_search_window)
 
     # Search planetary computer
-    search_results = catalog.search(collections=collections, bbox=bbox, datetime=date_range)
+    search_results = retry_stac(
+        get_catalog().search, collections=collections, bbox=bbox, datetime=date_range
+    )
 
     return search_results
 
@@ -141,7 +179,7 @@ def get_items_metadata(
     """
     # Get metadata from pystac items
     items_meta = []
-    for item in search_results.item_collection():
+    for item in retry_stac(search_results.item_collection):
         item_meta = {
             "item_id": item.id,
             "datetime": item.datetime.strftime("%Y-%m-%d"),
