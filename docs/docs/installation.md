@@ -1,8 +1,8 @@
 # Installation
 
-CyFi requires python 3.10 or later.
+CyFi requires python 3.11 or later.
 
-If you already have python 3.10+ installed, simply run `pip install cyfi` and then head over to the [Quickstart](../#quickstart) page to learn how to generate cyanobacteria predictions.
+If you already have python 3.11+ installed, simply run `pip install cyfi` and then head over to the [Quickstart](../#quickstart) page to learn how to generate cyanobacteria predictions.
 
 If you don't have python installed, we strongly recommend using Miniconda. Miniconda is a tool to manage your Python environments and package dependencies. It is a lightweight version of Anaconda that includes only conda, Python, the packages they both depend on, and a small number of other useful packages (like pip).
 
@@ -18,7 +18,7 @@ Follow the instructions for your operating system below to install python (with 
 
 ### Install python
 
-1. [Download the Miniconda installer](https://docs.conda.io/projects/miniconda/en/latest/miniconda-other-installer-links.html#windows-installers) by clicking on the link for "Miniconda3 Windows 64-bit" for Python 3.10
+1. [Download the Miniconda installer](https://docs.conda.io/projects/miniconda/en/latest/miniconda-other-installer-links.html#windows-installers) by clicking on the link for "Miniconda3 Windows 64-bit" for Python 3.12
 ![Windows Miniconda installer links](images/windows.png)
 
 2. Double-click the downloaded .exe file
@@ -51,7 +51,7 @@ Summary: CyFi is a Python package to estimate cyanobacteria density in small, in
 
 1. Look up your computer's chip by clicking on the apple in the top left corner of the screen, selecting "About this mac" and looking at "chip"
 
-2. [Download the Miniconda installer](https://docs.conda.io/projects/miniconda/en/latest/miniconda-other-installer-links.html#macos-installers) by clicking on the link for "Miniconda3 macOS" for Python 3.10.</br>If you have an M1 chip, make sure to click on the "Apple M1" link. </br>If you have an Intel chip, make sure to click on the "Intel x86" link.
+2. [Download the Miniconda installer](https://docs.conda.io/projects/miniconda/en/latest/miniconda-other-installer-links.html#macos-installers) by clicking on the link for "Miniconda3 macOS" for Python 3.12.</br>If you have an M1 chip, make sure to click on the "Apple M1" link. </br>If you have an Intel chip, make sure to click on the "Intel x86" link.
   ![macOS Miniconda installer links](images/mac.png)
 
 3. Double-click the .pkg file.
@@ -85,7 +85,7 @@ Summary: CyFi is a Python package to estimate cyanobacteria density in small, in
 
 1. Look up your computer's architecture by running `lscpu` in your terminal and looking at "architecture"
 
-2. [Download the Miniconda installer](https://docs.conda.io/projects/miniconda/en/latest/miniconda-other-installer-links.html#linux-installers) by clicking on the "Miniconda3 Linux" link for your architecture for Python 3.10
+2. [Download the Miniconda installer](https://docs.conda.io/projects/miniconda/en/latest/miniconda-other-installer-links.html#linux-installers) by clicking on the "Miniconda3 Linux" link for your architecture for Python 3.12
 ![Linux Miniconda installer links](images/linux.png)
 
 3. In your terminal, run `bash filename`, replacing `filename` with the path to your installer.
