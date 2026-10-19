@@ -4,6 +4,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 
 import pandas as pd
@@ -19,6 +20,19 @@ from cyfi.data.utils import add_unique_identifier
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 runner = CliRunner()
+
+
+# mock prediction to test CLI args without downloading imagery
+def pipeline_predict_mock(self, predict_csv, preds_path=None):
+    self.output_df = pd.DataFrame(
+        {
+            "date": ["2021-05-17"],
+            "latitude": [36.05],
+            "longitude": [-76.7],
+            "severity": ["moderate"],
+            "density_cells_per_ml": 32078.0,
+        }
+    )
 
 
 def test_cli_predict(tmp_path, predict_data_path, predict_data, local_model_path):
@@ -106,7 +120,7 @@ def test_cli_no_overwrite(tmp_path, train_data, train_data_path, local_model_pat
 
 
 def test_cli_predict_verbosity(tmp_path, predict_data_path, local_model_path):
-    ## Check that log level increases when specified
+    # check that log level increases when specified; reuses imagery cached by test_cli_predict
     result = runner.invoke(
         app,
         [
@@ -123,19 +137,6 @@ def test_cli_predict_verbosity(tmp_path, predict_data_path, local_model_path):
     assert result.exit_code == 0
     assert "INFO" in result.stderr
     assert "DEBUG" not in result.stderr
-
-
-# mock prediction to just test CLI args
-def pipeline_predict_mock(self, predict_csv, preds_path=None):
-    self.output_df = pd.DataFrame(
-        {
-            "date": ["2021-05-17"],
-            "latitude": ["36.05"],
-            "longitude": ["-76.7"],
-            "severity": ["moderate"],
-            "density_cells_per_ml": 32078.0,
-        }
-    )
 
 
 def test_cli_predict_point(mocker):  # noqa: F811
@@ -172,8 +173,8 @@ def test_cli_predict_point(mocker):  # noqa: F811
     assert "Cannot predict on a date that is in the future" in result.exception.__str__()
 
 
-def test_cli_predict_point_crs(mocker, local_model_path):  # noqa: F811
-    mocker.patch("cyfi.cli.DEFAULT_MODEL_PATH", local_model_path)
+def test_cli_predict_point_crs(mocker):  # noqa: F811
+    mocker.patch("cyfi.cli.CyFiPipeline.run_prediction", pipeline_predict_mock)
 
     transformer = Transformer.from_crs(crs_from="EPSG:4326", crs_to="EPSG:3857")
     lat, lon = transformer.transform(36.05, -76.7)
@@ -193,6 +194,11 @@ def test_cli_predict_point_crs(mocker, local_model_path):  # noqa: F811
         inputs + ["--crs", "EPSG:3857"],
     )
     assert result.exit_code == 0
+
+    # check coordinates were converted to WGS-84 before prediction
+    samples = pd.read_csv(Path(tempfile.gettempdir()) / "samples.csv")
+    assert samples.latitude[0] == pytest.approx(36.05)
+    assert samples.longitude[0] == pytest.approx(-76.7)
 
     # check original location printed out
     assert str(round(lat, 2)) in result.stderr
