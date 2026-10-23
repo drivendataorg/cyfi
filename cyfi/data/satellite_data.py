@@ -19,6 +19,7 @@ import rioxarray
 from tqdm.contrib.concurrent import process_map
 
 from cyfi.config import FeaturesConfig
+from cyfi.data.utils import calculate_cloud_percent
 
 # The trailing slash is required otherwise pystac re-fetches the root on the first search
 STAC_API_URL = "https://planetarycomputer.microsoft.com/api/stac/v1/"
@@ -396,6 +397,7 @@ def download_row(
     imagery_dir: Path,
     config: FeaturesConfig,
     log_level: Optional[int] = None,
+    bands: Optional[List[str]] = None,
 ) -> bool:
     """Download image arrays for one row of satellite metadata containing a
     unique combination of sample ID and item ID
@@ -412,6 +414,8 @@ def download_row(
         config (FeaturesConfig): Features config
         log_level (Optional[int]): Log level to use for this download.
             If None, makes no changes to the logger. Defaults to None.
+        bands (Optional[List[str]]): Bands to download. If None, downloads
+            all bands in `config.use_sentinel_bands`. Defaults to None.
 
     Returns:
         bool: True if the download was successful, False otherwise
@@ -437,7 +441,7 @@ def download_row(
 
     try:
         # Iterate over bands and save
-        for band in config.use_sentinel_bands:
+        for band in config.use_sentinel_bands if bands is None else bands:
             # Check if the file already exists
             array_save_path = sample_image_dir / f"{band}.npy"
             if not array_save_path.exists():
@@ -468,13 +472,57 @@ def download_row(
         return False
 
 
+def _download_rows(
+    satellite_meta: pd.DataFrame,
+    samples: pd.DataFrame,
+    imagery_dir: Path,
+    config: FeaturesConfig,
+    bands: Optional[List[str]] = None,
+) -> np.ndarray:
+    """Download image arrays for each row of satellite metadata in parallel
+
+    Args:
+        satellite_meta (pd.DataFrame): Dataframe of satellite metadata, with one
+            row per sample ID and item ID
+        samples (pd.DataFrame): Dataframe where the index is sample_id and
+            there are columns for date, longitude, and latitude
+        imagery_dir (Path): Image cache directory for a specific satellite
+            source and bounding box size
+        config (FeaturesConfig): Features config
+        bands (Optional[List[str]]): Bands to download. If None, downloads
+            all bands in `config.use_sentinel_bands`. Defaults to None.
+
+    Returns:
+        np.ndarray: Boolean array of whether each row was downloaded successfully
+    """
+    results = process_map(
+        functools.partial(
+            download_row,
+            samples=samples,
+            imagery_dir=imagery_dir,
+            config=config,
+            log_level=logger._core.min_level,
+            bands=bands,
+        ),
+        satellite_meta.iterrows(),
+        chunksize=1,
+        total=len(satellite_meta),
+        # Only log progress bar if progress message is logged
+        disable=(logger._core.min_level >= progress_log_level.no),
+    )
+    return np.array(results, dtype=bool)
+
+
 def download_satellite_data(
     satellite_meta: pd.DataFrame,
     samples: pd.DataFrame,
     config: FeaturesConfig,
     cache_dir: Union[str, Path],
 ) -> int:
-    """Download satellite images as one stacked numpy arrays per pystac item
+    """Download satellite images as one numpy array per band for each combination
+    of sample and pystac item. If filtering by cloud cover, the scene classification
+    (SCL) band is downloaded first, and the remaining bands are only downloaded for
+    items with few enough clouds to be used for features.
 
     Args:
         satellite_meta (pd.DataFrame): Dataframe of satellite metadata
@@ -486,29 +534,45 @@ def download_satellite_data(
         cache_dir (Union[str, Path]): Cache directory to save raw imagery
 
     Returns:
-        int: Number of items that were successfully downloaded
+        int: Number of items that were successfully downloaded. Items that are too
+            cloudy count as downloaded once their SCL band is downloaded.
     """
-    # Iterate over all rows (item / sample combos)
     imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"
-    logger.log(
-        progress_log_level.name,
-        f"Downloading satellite imagery for {satellite_meta.shape[0]:,} Sentinel-2 items.",
-    )
-    results = process_map(
-        functools.partial(
-            download_row,
-            samples=samples,
-            imagery_dir=imagery_dir,
-            config=config,
-            log_level=logger._core.min_level,
-        ),
-        satellite_meta.iterrows(),
-        chunksize=1,
-        total=len(satellite_meta),
-        # Only log progress bar if progress message is logged
-        disable=(logger._core.min_level >= progress_log_level.no),
-    )
-    n_successes = sum(results)
+
+    if config.max_cloud_percent is None:
+        logger.log(
+            progress_log_level.name,
+            f"Downloading satellite imagery for {satellite_meta.shape[0]:,} Sentinel-2 items.",
+        )
+        succeeded = _download_rows(satellite_meta, samples, imagery_dir, config)
+
+    else:
+        logger.log(
+            progress_log_level.name,
+            f"Downloading cloud cover for {satellite_meta.shape[0]:,} Sentinel-2 items.",
+        )
+        succeeded = _download_rows(satellite_meta, samples, imagery_dir, config, bands=["SCL"])
+
+        cloud_pcts = np.full(len(satellite_meta), np.nan)
+        for i in np.flatnonzero(succeeded):
+            row = satellite_meta.iloc[i]
+            scl_array = np.load(imagery_dir / f"{row.sample_id}/{row.item_id}/SCL.npy")
+            cloud_pcts[i] = calculate_cloud_percent(scl_array)
+
+        # Matches the cloud check in feature generation, which skips the other bands
+        is_clear = succeeded & ~(cloud_pcts > config.max_cloud_percent)
+        if is_clear.any():
+            logger.log(
+                progress_log_level.name,
+                f"Downloading satellite imagery for {is_clear.sum():,} Sentinel-2 items. "
+                f"Skipping {(succeeded & ~is_clear).sum():,} items with more than "
+                f"{config.max_cloud_percent * 100:g}% cloud cover.",
+            )
+            succeeded[is_clear] = _download_rows(
+                satellite_meta[is_clear], samples, imagery_dir, config
+            )
+
+    n_successes = int(succeeded.sum())
 
     if n_successes == 0:
         raise ValueError(

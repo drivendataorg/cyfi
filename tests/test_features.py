@@ -4,6 +4,7 @@ import sys
 
 from loguru import logger
 import numpy as np
+import pandas as pd
 from pystac import STACError
 from pystac_client.exceptions import APIError
 import pytest
@@ -160,3 +161,53 @@ def test_land_cover_features(train_data):
     assert features.loc["9c601f226c2af07d570134127a7fda27", "land_cover"] == 90
     assert features.loc["3a2c48812b551d720f8d56772efa6df1", "land_cover"] == 70
     assert features.shape[0] == train_data.shape[0]
+
+
+def cloud_filter_config():
+    """Features config where the first item in satellite_meta is too cloudy and the second
+    is clear. In the sample bounding boxes, they have 0.41% and 0.12% cloud cover.
+    """
+    return FeaturesConfig(
+        use_sentinel_bands=["B02"],
+        image_feature_meter_window=500,
+        satellite_image_features=["B02_mean", "B02_min", "B02_max"],
+        satellite_meta_features=[],
+        sample_meta_features=[],
+        filter_to_water_area=False,
+        max_cloud_percent=0.002,
+    )
+
+
+def test_download_satellite_data_skips_cloudy_items(tmp_path, satellite_meta, train_data):
+    config = cloud_filter_config()
+    train_data = add_unique_identifier(train_data)
+    cloudy, clear = satellite_meta.iloc[0], satellite_meta.iloc[1]
+
+    # Only the SCL band is downloaded for the cloudy item
+    assert download_satellite_data(satellite_meta, train_data, config, tmp_path / "skip") == 2
+    imagery_dir = tmp_path / "skip" / "sentinel_500"
+    cloudy_files = {
+        pth.name for pth in (imagery_dir / cloudy.sample_id / cloudy.item_id).iterdir()
+    }
+    clear_files = {pth.name for pth in (imagery_dir / clear.sample_id / clear.item_id).iterdir()}
+    assert cloudy_files == {"SCL.npy"}
+    assert clear_files == {"B02.npy", "SCL.npy"}
+
+    # Features are the same as when all bands are downloaded
+    all_bands_config = config.model_copy(update={"max_cloud_percent": None})
+    download_satellite_data(satellite_meta, train_data, all_bands_config, tmp_path / "all")
+    _, features = generate_all_features(train_data, satellite_meta, config, tmp_path / "skip")
+    _, expected = generate_all_features(train_data, satellite_meta, config, tmp_path / "all")
+    pd.testing.assert_frame_equal(features, expected)
+    assert features.index.tolist() == [clear.sample_id]
+
+
+def test_download_satellite_data_clear_item_fails(tmp_path, satellite_meta, train_data):
+    train_data = add_unique_identifier(train_data)
+    clear = satellite_meta.iloc[1]
+    bad_meta = satellite_meta.copy()
+    bad_meta.loc[1, "B02_href"] = "bad-href"
+
+    # The clear item's directory is removed, including its SCL band, and counted as a failure
+    assert download_satellite_data(bad_meta, train_data, cloud_filter_config(), tmp_path) == 1
+    assert not (tmp_path / "sentinel_500" / clear.sample_id / clear.item_id).exists()
