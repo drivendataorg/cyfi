@@ -105,6 +105,10 @@ Launch the [CyFi Explorer](https://cyfi.drivendata.org/explorer/) to view the Se
 
 ![Screenshot of CyFi explorer showing the predictions table along with the Sentinel-2 imagery.](https://s3.amazonaws.com/drivendata-public-assets/cyfi_explorer_screenshot.jpg)
 
+### Using CyFi with AI agents
+
+If you work with an AI coding agent such as Claude Code, Codex, or Cursor, you can give it CyFi's [agent skill](https://github.com/drivendataorg/cyfi/tree/main/skills). The skill walks the agent through gathering your locations and dates, running CyFi, and explaining the results. To install it, copy or symlink the `skills/cyfi` folder into your agent's skills directory, for example `.claude/skills/cyfi` for Claude Code.
+
 ## Reference paper
 
 Dorne, E., Wetstone, K., Cerquera, T. B., & Gupta, S. (2024). Cyanobacteria detection in small, inland water bodies with CyFi. In Proceedings of the 23nd Python in Science Conference (pp. 154–173). <https://doi.org/10.25080/pdhk7238>

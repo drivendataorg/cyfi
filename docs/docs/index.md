@@ -159,6 +159,10 @@ However users should feel free to to use their own thresholds as makes sense for
 
 Launch the [CyFi Explorer](explorer.md) to view the Sentinel-2 imagery used to generate each cyanobacteria estimate!
 
+### Using CyFi with AI agents
+
+If you work with an AI coding agent such as Claude Code, Codex, or Cursor, you can give it CyFi's [agent skill](https://github.com/drivendataorg/cyfi/tree/main/skills). The skill walks the agent through gathering your locations and dates, running CyFi, and explaining the results. To install it, copy or symlink the `skills/cyfi` folder into your agent's skills directory, for example `.claude/skills/cyfi` for Claude Code.
+
 ------
 
 ## About the model
