@@ -4,11 +4,17 @@ import sys
 
 from loguru import logger
 import numpy as np
+from pystac import STACError
+from pystac_client.exceptions import APIError
 import pytest
 
 from cyfi.config import FeaturesConfig
 from cyfi.data.features import generate_all_features, calculate_metadata_features
-from cyfi.data.satellite_data import download_satellite_data, generate_candidate_metadata
+from cyfi.data.satellite_data import (
+    download_satellite_data,
+    generate_candidate_metadata,
+    retry_stac,
+)
 from cyfi.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
@@ -115,6 +121,29 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
             assert set([pth.stem for pth in sample_item_dir.iterdir()]) == set(
                 features_config.use_sentinel_bands
             )
+
+
+def test_retry_stac(mocker):
+    sleep = mocker.patch("cyfi.data.satellite_data.time.sleep")
+
+    # Test case when the API fails twice and then succeeds
+    func = mocker.Mock(side_effect=[STACError("down"), APIError("down"), "ok"])
+    assert retry_stac(func, "arg", key="value") == "ok"
+    assert func.call_count == 3
+    func.assert_called_with("arg", key="value")
+    assert sleep.call_args_list == [mocker.call(2), mocker.call(4)]
+
+    # Test case when the error is not from the API, which should not be retried
+    func = mocker.Mock(side_effect=ValueError("bad input"))
+    with pytest.raises(ValueError):
+        retry_stac(func)
+    assert func.call_count == 1
+
+    # Test case when the API never recovers
+    func = mocker.Mock(side_effect=STACError("down"))
+    with pytest.raises(STACError, match="down"):
+        retry_stac(func, attempts=3)
+    assert func.call_count == 3
 
 
 @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Entails ~2GB download of land cover map")
