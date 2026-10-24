@@ -1,70 +1,30 @@
 ---
 name: cyfi
-description: Estimates cyanobacteria density and harmful algal bloom severity for inland lakes and reservoirs from Sentinel-2 satellite imagery, using the CyFi CLI. Use when someone wants cyanobacteria or algal bloom estimates for locations and dates, wants to compare satellite estimates with their own cell counts, or wants to view the imagery behind an estimate.
+description: Estimates cyanobacteria density and harmful algal bloom severity for inland lakes and reservoirs from Sentinel-2 satellite imagery, using the CyFi CLI, and opens the CyFi Explorer to browse the imagery behind each estimate. Use when someone asks about current or past cyanobacteria or algal bloom conditions at lakes, or wants to look at CyFi's estimates on a map.
 ---
 
 # Estimate cyanobacteria with CyFi
 
-CyFi estimates cyanobacteria density (cells/ml) and a severity level for a location on a date, from Sentinel-2 imagery taken in the 30 days up to that date. Your job: turn the person's locations and dates into CyFi's input, run it, and help them read the results honestly. Assume they know their water bodies well and CyFi not at all.
+CyFi estimates cyanobacteria density (cells/ml) and a severity level for a location on a date, from the most recent clear Sentinel-2 image in the 30 days up to that date. Learn the commands from `cyfi <command> --help`. Install with `pip install cyfi` (on a Mac, `brew install libomp` first) or `conda install -c conda-forge cyfi`.
 
-Not installed? `pip install cyfi`, or `conda install -c conda-forge cyfi`. On a Mac, `pip` needs `brew install libomp` first; conda doesn't. `cyfi --version` checks the install.
+## Generate estimates
 
-## Open the run
+1. Write a csv with `date` (YYYY-MM-DD), `latitude` and `longitude` in decimal degrees (WGS-84), one row per location. For "current conditions", use today's date. When the person names a lake or site, look up its coordinates and show them before running. A point should be on the water. Never invent a location or date.
+2. Run `cyfi predict <csv> -d <dir> --keep-metadata`, even for one location. `--keep-metadata` saves which image each estimate used, which the next section and the Explorer need. `cyfi predict-point` doesn't report the image.
+3. Runs download imagery: a few minutes for a handful of locations, about 15 minutes per 100, plus a 2 GB land cover map the first time. Tell the person before a long run. Run one job at a time, since parallel jobs hit the imagery service's rate limit. If a run succeeds but prints "Error in sys.excepthook" lines, the estimates are fine; don't alarm the person.
 
-Before any command, tell the person in a few sentences, in your own words:
+## Explain the results
 
-- you're using CyFi, which estimates cyanobacteria from satellite imagery, and what you'll do: gather locations and dates, run the estimates, explain them, and optionally compare them with their measurements
-- each estimate comes from the most recent clear satellite image in the 30 days up to the date, and some locations and dates won't have one
-- estimates are a screening tool for deciding where to look or sample, not a replacement for measurements
+Give a short table of the location, estimate, severity, and image date, using `days_before_sample` in `sentinel_metadata.csv`. Then:
 
-## Steps
+- An empty estimate means no clear image in the 30 days before the date. Suggest another date rather than guessing.
+- Say how old the image is. An image from three weeks before may not reflect conditions now.
+- Severity uses WHO thresholds: low is under 20,000 cells/ml, moderate 20,000 to 100,000, and high over 100,000.
+- An estimate describes the water in a 4 km x 4 km box around the point. Nearby points in one lake get nearly the same estimate, so don't present CyFi as mapping variation within a lake. Separate lakes within a few kilometers share part of their box, so say so when their estimates are close.
+- CyFi is a screening tool for deciding where to look or sample. Don't present an estimate as a measurement, a toxin level, or a basis for an advisory on its own.
 
-### 1. Gather locations and dates
+## Open the CyFi Explorer
 
-CyFi reads a csv with columns `date` (YYYY-MM-DD), `latitude` and `longitude`, in decimal degrees (WGS-84, EPSG:4326). Other columns are ignored.
+Offer this after any run. `cyfi visualize <dir>` opens a local web app with a map of every estimate and the Sentinel-2 image behind the selected one, so the person can see the water for themselves. It needs the `preds.csv` and `sentinel_metadata.csv` from a `--keep-metadata` run, and an internet connection to load imagery. It keeps running until stopped, so start it in the background with `--port 7860` and give the person <http://127.0.0.1:7860>. Its own startup message can be held back when output goes to a file. Locations without an estimate don't appear. Stop it when the person is done. Each row of `sentinel_metadata.csv` also has a `visual_href` link to the image, if they'd rather not open the Explorer.
 
-- Use the coordinates and dates the person gives. When they give a name, such as a lake or a sampling site, look it up and show them the coordinates you found before using them.
-- Convert other coordinate systems to WGS-84, and say that you did.
-- A point should be on or beside the water they mean. A dock or shoreline sampling site is fine.
-- Dates can't be in the future.
-- Never invent a location or date to fill a gap. Ask.
-
-### 2. Run CyFi
-
-- One location: `cyfi predict-point --lat <lat> --lon <lon> --date <YYYY-MM-DD>`. It prints the estimate and saves nothing.
-- Several: `cyfi predict <samples.csv> -d <output dir> --keep-metadata`. `--keep-metadata` saves the image details that step 3 and step 5 use. Add `-o` to replace earlier results.
-
-Before a run, tell the person it downloads satellite imagery and can take a few minutes for a handful of points, and much longer for hundreds. The first run also downloads a 2 GB land cover map. Downloaded imagery is cached, so rerunning the same points is fast. Run one CyFi job at a time: parallel jobs can hit the imagery service's rate limit and fail.
-
-### 3. Explain the results
-
-`preds.csv` has one row per location and date, with `density_cells_per_ml` and `severity`. Severity follows WHO recreational thresholds: low is under 20,000 cells/ml, moderate 20,000 to 100,000, and high over 100,000.
-
-Relay the results as a short table. For each row, also say:
-
-- how old the image was, from `days_before_sample` in `sentinel_metadata.csv`. An image from three weeks before the date may not reflect conditions on the date.
-- when density and severity are empty: there was no usable image, because the 30 days before the date had no clear image of the area. Suggest a different date rather than guessing.
-
-### 4. Compare with measurements (optional)
-
-If the person has cyanobacteria cell counts, compare them with `cyfi evaluate <preds.csv> <measurements.csv> --save-dir <dir> -o`. The measurements csv needs `date`, `latitude`, `longitude` and `density_cells_per_ml`, plus `region` for results by region. Predictions are matched to measurements by the exact latitude, longitude and date text, so build the step 1 csv from the measurement file's own columns. Relay the accuracy and the plots it writes.
-
-### 5. Show the imagery (optional)
-
-`cyfi visualize <output dir>` opens the CyFi Explorer, which shows the satellite image behind each estimate next to a map of all estimates. It runs a local web server until stopped, so start it in the background and give the person the URL it prints.
-
-## What an estimate means
-
-- An estimate describes the water in a 4 km x 4 km box around the point, not the point alone. If other lakes, ponds or rivers are in the box, they count too. Points a few hundred meters apart in the same lake usually get nearly the same estimate, so don't present CyFi as mapping variation within a lake.
-- The model was trained on cyanobacteria cell counts from US lakes and reservoirs, sampled from 2013 to 2021. Use it with care outside the US.
-- Only cyanobacteria cell counts can confirm or contradict an estimate. Chlorophyll-a, microcystin and Secchi depth measure different things.
-- Sentinel-2 imagery is sparse before 2017, so earlier dates often have no estimate.
-
-## Rules
-
-- Don't present an estimate as a measurement, a toxin level, or a basis for a health advisory on its own. It tells the person where a bloom is likely, so they can decide where to look or sample.
-- Learn the tool from `cyfi <command> --help` and its output.
-
-## Feedback
-
-When CyFi does something wrong, or its output leaves you guessing, tell the person, and suggest they open an issue at <https://github.com/drivendataorg/cyfi/issues> with the command, its output and what they expected.
+When CyFi does something wrong or confusing, suggest the person open an issue at <https://github.com/drivendataorg/cyfi/issues>.
