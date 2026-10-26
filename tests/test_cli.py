@@ -1,6 +1,5 @@
 from pathlib import Path
 import platform
-import re
 import shutil
 import signal
 import subprocess
@@ -167,8 +166,9 @@ def test_cli_predict_point(mocker):  # noqa: F811
     assert result.exit_code == 0
 
     # check the selected image's date is reported alongside the estimate
-    assert re.search(r"image_date\s+2021-05-09", result.stderr)
-    assert re.search(r"days_before_sample\s+8", result.stderr)
+    output_rows = [line.split() for line in result.stderr.splitlines()]
+    assert ["image_date", "2021-05-09"] in output_rows
+    assert ["days_before_sample", "8"] in output_rows
 
     # try predicting in future
     result = runner.invoke(
