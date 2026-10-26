@@ -24,6 +24,7 @@ runner = CliRunner()
 
 # mock prediction to test CLI args without downloading imagery
 def pipeline_predict_mock(self, predict_csv, preds_path=None):
+    sample_id = pd.Index(["a1b2c3"], name="sample_id")
     self.output_df = pd.DataFrame(
         {
             "date": ["2021-05-17"],
@@ -31,7 +32,15 @@ def pipeline_predict_mock(self, predict_csv, preds_path=None):
             "longitude": [-76.7],
             "severity": ["moderate"],
             "density_cells_per_ml": 32078.0,
-        }
+        },
+        index=sample_id,
+    )
+    self.predict_image_meta = pd.DataFrame(
+        {
+            "item_id": ["S2A_MSIL2A_20210509T155911_R097_T18SUE_20210510T020000"],
+            "days_before_sample": [8],
+        },
+        index=sample_id,
     )
 
 
@@ -171,6 +180,31 @@ def test_cli_predict_point(mocker):  # noqa: F811
     )
     assert result.exit_code == 1
     assert "Cannot predict on a date that is in the future" in result.exception.__str__()
+
+
+def test_cli_predict_point_reports_image_date(mocker, predict_data, local_model_path):  # noqa: F811
+    # predict-point has no model option, so point it at the test model
+    mocker.patch("cyfi.cli.DEFAULT_MODEL_PATH", str(local_model_path))
+    sample = predict_data.iloc[0]
+
+    # reuses imagery cached by test_cli_predict
+    result = runner.invoke(
+        app,
+        [
+            "predict-point",
+            "--lat",
+            str(sample.latitude),
+            "--lon",
+            str(sample.longitude),
+            "--date",
+            sample.date,
+        ],
+    )
+    assert result.exit_code == 0
+
+    output = result.stderr.split()
+    assert output[output.index("image_date") + 1] == "2021-05-15"
+    assert output[output.index("days_before_sample") + 1] == "3"
 
 
 def test_cli_predict_point_crs(mocker):  # noqa: F811
