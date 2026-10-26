@@ -2,6 +2,7 @@
 
 ### v1.2.1 - (unreleased)
 
+- Stop printing empty "Error in sys.excepthook" messages after downloading imagery ([PR #208](https://github.com/drivendataorg/cyfi/pull/208))
 - Retry Planetary Computer requests that fail transiently, and only connect when imagery is needed ([PR #203](https://github.com/drivendataorg/cyfi/pull/203))
 
 ### v1.2.0 - 2026-10-19
