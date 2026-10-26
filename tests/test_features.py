@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+import pickle
+import subprocess
 import sys
 
 from loguru import logger
@@ -7,12 +9,10 @@ import numpy as np
 from pystac import STACError
 from pystac_client.exceptions import APIError
 import pytest
-import rasterio
 
 from cyfi.config import FeaturesConfig
 from cyfi.data.features import generate_all_features, calculate_metadata_features
 from cyfi.data.satellite_data import (
-    download_row,
     download_satellite_data,
     generate_candidate_metadata,
     retry_stac,
@@ -22,6 +22,12 @@ from cyfi.data.utils import add_unique_identifier
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
+
+# Runs download_row in a new process so the test can see what it prints at shutdown
+DOWNLOAD_ROW_SCRIPT = (
+    "import pickle, sys; from cyfi.data.satellite_data import download_row; "
+    "assert download_row(*pickle.loads(open(sys.argv[1], 'rb').read()))"
+)
 
 
 def test_known_features(train_data, features_config, satellite_meta):
@@ -125,14 +131,19 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
             )
 
 
-def test_download_row_closes_files(tmp_path, satellite_meta, train_data, features_config, mocker):
-    rasterio_open = mocker.spy(rasterio, "open")
+def test_download_row_closes_files(tmp_path, satellite_meta, train_data, features_config):
     samples = add_unique_identifier(train_data)
-    assert download_row((0, satellite_meta.iloc[0]), samples, tmp_path, features_config)
+    args_path = tmp_path / "args.pkl"
+    args_path.write_bytes(
+        pickle.dumps(((0, satellite_meta.iloc[0]), samples, tmp_path, features_config))
+    )
 
     # Files left open are closed at interpreter shutdown, which prints "Error in sys.excepthook"
-    assert len(rasterio_open.spy_return_list) == 1
-    assert all(ds.closed for ds in rasterio_open.spy_return_list)
+    result = subprocess.run(
+        [sys.executable, "-c", DOWNLOAD_ROW_SCRIPT, str(args_path)], capture_output=True, text=True
+    )
+    assert result.returncode == 0
+    assert "sys.excepthook" not in result.stderr
 
 
 def test_retry_stac(mocker):
