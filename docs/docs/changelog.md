@@ -3,6 +3,7 @@
 ### v1.2.1 - (unreleased)
 
 - Retry Planetary Computer requests that fail transiently, and only connect when imagery is needed ([PR #203](https://github.com/drivendataorg/cyfi/pull/203))
+- Error gracefully if every image found is too cloudy ([PR #210](https://github.com/drivendataorg/cyfi/pull/210))
 
 ### v1.2.0 - 2026-10-19
 
