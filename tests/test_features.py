@@ -164,7 +164,8 @@ def test_land_cover_features(train_data):
 
 def cloud_filter_config():
     """Features config where the first item in satellite_meta is too cloudy and the second
-    is clear. In the sample bounding boxes, they have 0.41% and 0.12% cloud cover.
+    is clear. Their cloud fractions in the sample bounding boxes are 0.0041 and 0.0012, so
+    max_cloud_percent (a fraction despite its name) is set between them.
     """
     return FeaturesConfig(
         use_sentinel_bands=["B02"],
