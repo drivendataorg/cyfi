@@ -61,7 +61,7 @@ def calculate_satellite_features(
     satellite_features = pd.DataFrame([features for features in satellite_features if features])
 
     # Drop rows where bounding box contained too many clouds
-    if config.max_cloud_percent is not None and not satellite_features.empty:
+    if config.max_cloud_percent is not None:
         logger.info(
             f"Dropping {(satellite_features.cloud_pct > config.max_cloud_percent).sum():,} row(s) where bounding box has too many clouds."
         )

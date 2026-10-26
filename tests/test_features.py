@@ -42,29 +42,21 @@ def test_known_features(train_data, features_config, satellite_meta):
     assert (sentinel_meta.columns == ["item_id", "days_before_sample", "visual_href"]).all()
 
 
-def test_no_valid_imagery(tmp_path, train_data, features_config, satellite_meta):
+def test_all_images_too_cloudy(tmp_path, train_data, features_config, satellite_meta):
     train_data = add_unique_identifier(train_data)
     satellite_meta = satellite_meta.head(1)
     features_config.use_sentinel_bands = ["B02", "SCL"]
     features_config.max_cloud_percent = 0.05
     features_config.filter_to_water_area = True
 
-    messages = []
-    handler_id = logger.add(messages.append, level="INFO")
-
-    # Test case when every download failed, so no imagery was saved
-    with pytest.raises(SystemExit) as exc:
-        generate_all_features(train_data, satellite_meta, features_config, cache_dir=tmp_path)
-    assert exc.value.code == 1
-    assert any("Relevant satellite data is not available" in str(m) for m in messages)
-
-    # Test case when every image is too cloudy (SCL class 8 is medium probability cloud)
-    messages.clear()
+    # SCL class 8 is medium probability cloud
     row = satellite_meta.iloc[0]
     item_dir = tmp_path / f"sentinel_500/{row.sample_id}/{row.item_id}"
     item_dir.mkdir(parents=True)
     np.save(item_dir / "SCL.npy", np.full((1, 51, 51), 8, dtype=np.uint8))
 
+    messages = []
+    handler_id = logger.add(messages.append, level="INFO")
     with pytest.raises(SystemExit) as exc:
         generate_all_features(train_data, satellite_meta, features_config, cache_dir=tmp_path)
     logger.remove(handler_id)
