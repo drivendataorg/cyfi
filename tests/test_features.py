@@ -10,7 +10,6 @@ from pystac_client.exceptions import APIError
 import pytest
 import rasterio
 from rasterio.transform import from_origin
-from xarray.backends.file_manager import FILE_CACHE
 
 from cyfi.config import FeaturesConfig
 from cyfi.data.features import generate_all_features, calculate_metadata_features
@@ -128,7 +127,7 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
             )
 
 
-def test_download_row_closes_files(tmp_path, features_config):
+def test_download_row_closes_files(tmp_path, mocker):
     # Write a small local GeoTIFF around the sample point
     tif_path = tmp_path / "B02.tif"
     with rasterio.open(
@@ -144,13 +143,25 @@ def test_download_row_closes_files(tmp_path, features_config):
     ) as dst:
         dst.write(np.ones((1, 100, 100), dtype="uint16"))
 
+    config = FeaturesConfig(
+        use_sentinel_bands=["B02"],
+        image_feature_meter_window=500,
+        satellite_image_features=["B02_mean"],
+        satellite_meta_features=[],
+        sample_meta_features=[],
+        filter_to_water_area=False,
+        max_cloud_percent=None,
+    )
     samples = pd.DataFrame({"latitude": [35.9], "longitude": [-78.9]}, index=["sample"])
     row = pd.Series({"sample_id": "sample", "item_id": "item", "B02_href": str(tif_path)})
-    assert download_row((0, row), samples, tmp_path / "imagery", features_config)
-    assert (tmp_path / "imagery" / "sample" / "item" / "B02.npy").exists()
+
+    rasterio_open = mocker.spy(rasterio, "open")
+    assert download_row((0, row), samples, tmp_path / "imagery", config)
+    assert np.load(tmp_path / "imagery" / "sample" / "item" / "B02.npy").size > 0
 
     # Files left open are closed at interpreter shutdown, which prints "Error in sys.excepthook"
-    assert not any(str(tif_path) in str(key) for key in FILE_CACHE)
+    assert rasterio_open.spy_return_list
+    assert all(ds.closed for ds in rasterio_open.spy_return_list)
 
 
 def test_retry_stac(mocker):
