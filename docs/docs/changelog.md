@@ -2,7 +2,7 @@
 
 ### v1.2.1 - (unreleased)
 
-- Show the date of the Sentinel-2 image used for the estimate in `cyfi predict-point` output ([PR #207](https://github.com/drivendataorg/cyfi/pull/207))
+- Show the date of the Sentinel-2 image used for the estimate and how many days before the sample date it was taken in `cyfi predict-point` output ([PR #207](https://github.com/drivendataorg/cyfi/pull/207))
 - Retry Planetary Computer requests that fail transiently, and only connect when imagery is needed ([PR #203](https://github.com/drivendataorg/cyfi/pull/203))
 
 ### v1.2.0 - 2026-10-19

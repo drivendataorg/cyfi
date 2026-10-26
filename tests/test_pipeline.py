@@ -20,6 +20,14 @@ def test_prep_predict_data(predict_data, tmp_path):
     assert len(pipe.predict_samples) == len(predict_data)
 
 
+def test_run_prediction_keeps_image_meta(predict_data_path, local_model_path):
+    # default cache dir reuses imagery downloaded by test_cli_predict
+    pipeline = CyFiPipeline.from_disk(local_model_path)
+    pipeline.run_prediction(predict_data_path)
+    assert pipeline.predict_image_meta.index.isin(pipeline.output_df.index).all()
+    assert "days_before_sample" in pipeline.predict_image_meta.columns
+
+
 def test_cache_dir(features_config):
     pipe = CyFiPipeline(
         features_config=FeaturesConfig(image_feature_meter_window=200),
