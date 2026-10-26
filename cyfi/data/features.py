@@ -38,7 +38,8 @@ def calculate_satellite_features(
         pd.DataFrame: Dataframe where the index is sample ID and there is one column
             for each satellite feature. There will only be rows for samples with
             satellite imagery. Each row is a unique sample ID, with features from
-            the best available pystac item.
+            the best available pystac item. The dataframe is empty if no images pass
+            the filters.
     """
     # Calculate satellite metadata features
     if "month" in config.satellite_meta_features:
