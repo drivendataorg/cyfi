@@ -125,13 +125,13 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
             )
 
 
-def test_download_row_closes_files(tmp_path, satellite_meta, train_data, features_config, mocker):
+def test_download_row_closes_file(tmp_path, satellite_meta, train_data, features_config, mocker):
     rasterio_open = mocker.spy(rasterio, "open")
     samples = add_unique_identifier(train_data)
     assert download_row((0, satellite_meta.iloc[0]), samples, tmp_path, features_config)
 
-    assert len(rasterio_open.spy_return_list) == 1
-    assert all(ds.closed for ds in rasterio_open.spy_return_list)
+    assert rasterio_open.call_count == 1
+    assert rasterio_open.spy_return.closed
 
 
 def test_retry_stac(mocker):
