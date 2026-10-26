@@ -52,7 +52,7 @@ def test_no_valid_imagery(tmp_path, train_data, features_config, satellite_meta)
     messages = []
     handler_id = logger.add(messages.append, level="INFO")
 
-    # Test case when no imagery was saved for any item
+    # Test case when every download failed, so no imagery was saved
     with pytest.raises(SystemExit) as exc:
         generate_all_features(train_data, satellite_meta, features_config, cache_dir=tmp_path)
     assert exc.value.code == 1
