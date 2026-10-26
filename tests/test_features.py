@@ -1,3 +1,4 @@
+import functools
 import os
 from pathlib import Path
 import sys
@@ -8,6 +9,7 @@ from pystac import STACError
 from pystac_client.exceptions import APIError
 import pytest
 import rasterio
+import requests
 
 from cyfi.config import FeaturesConfig
 from cyfi.data.features import generate_all_features, calculate_metadata_features
@@ -16,12 +18,24 @@ from cyfi.data.satellite_data import (
     download_satellite_data,
     generate_candidate_metadata,
     retry_stac,
+    search_planetary_computer,
 )
 from cyfi.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
+
+
+def serial_map(fn, *iterables, **kwargs):
+    # Stands in for process_map so patched searches apply, and keeps the test's log handler
+    return list(map(functools.partial(fn, log_level=None), *iterables))
+
+
+def search_rate_limited_north_of_40(date, latitude, longitude, **kwargs):
+    if latitude > 40:
+        raise APIError("Request rate limited or blocked")
+    return search_planetary_computer(date, latitude, longitude, **kwargs)
 
 
 def test_known_features(train_data, features_config, satellite_meta):
@@ -98,6 +112,43 @@ def test_generate_candidate_metadata(train_data, features_config):
     assert "visual_href" in candidate_meta.columns
 
 
+def test_generate_candidate_metadata_search_failures(train_data, features_config, mocker, capsys):
+    mocker.patch("cyfi.data.satellite_data.process_map", serial_map)
+    train_data = add_unique_identifier(train_data)
+    handler_id = logger.add(sys.stdout, level="DEBUG")
+
+    # Test case when some searches fail after retrying
+    mocker.patch(
+        "cyfi.data.satellite_data.search_planetary_computer",
+        side_effect=search_rate_limited_north_of_40,
+    )
+    candidate_meta, sample_item_map = generate_candidate_metadata(train_data, features_config)
+    failed_ids = train_data[train_data.latitude > 40].index
+    assert len(candidate_meta) > 0
+    assert all(sample_item_map[sample_id]["sentinel_item_ids"] == [] for sample_id in failed_ids)
+    output = capsys.readouterr().out
+    assert f"Sentinel-2 search failed for sample ID {failed_ids[0]}" in output
+    assert f"Sentinel-2 search failed for {len(failed_ids)} sample point(s)" in output
+
+    # Test case when every search fails, here with the error from a failed signing token request
+    mocker.patch(
+        "cyfi.data.satellite_data.search_planetary_computer",
+        side_effect=requests.exceptions.RetryError("Max retries exceeded"),
+    )
+    with pytest.raises(ValueError, match="search failed for every sample point \\(RetryError"):
+        generate_candidate_metadata(train_data, features_config)
+    mocker.stopall()
+
+    # Test case when every search succeeds but finds no imagery, before Sentinel-2 launched
+    with pytest.raises(SystemExit) as exc:
+        generate_candidate_metadata(train_data.assign(date="2014-08-01"), features_config)
+    logger.remove(handler_id)
+    assert exc.value.code == 1
+    assert "No Sentinel-2 imagery was found for any of the provided sample points" in (
+        capsys.readouterr().out
+    )
+
+
 def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_config, capsys):
     features_config.use_sentinel_bands = ["B02", "B03"]
     train_data = add_unique_identifier(train_data)
@@ -166,7 +217,9 @@ def test_retry_stac(mocker):
     assert retry_stac(func, "arg", key="value") == "ok"
     assert func.call_count == 3
     func.assert_called_with("arg", key="value")
-    assert sleep.call_args_list == [mocker.call(2), mocker.call(4)]
+    # Waits are 2s and 4s with up to 50% jitter
+    assert 1 <= sleep.call_args_list[0].args[0] <= 3
+    assert 2 <= sleep.call_args_list[1].args[0] <= 6
 
     # Test case when the error is not from the API, which should not be retried
     func = mocker.Mock(side_effect=ValueError("bad input"))
