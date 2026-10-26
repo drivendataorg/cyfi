@@ -123,10 +123,10 @@ class CyFiPipeline:
 
         features.to_csv(self.cache_dir / f"features_{split}.csv", index=True)
         selected_image_meta.to_csv(self.cache_dir / f"sentinel_metadata_{split}.csv", index=True)
-        return features
+        return selected_image_meta, features
 
     def _prepare_train_features(self):
-        self.train_features = self._prepare_features(self.train_samples)
+        _, self.train_features = self._prepare_features(self.train_samples)
 
     def _train_model_without_folds(self):
         # Set early stopping to None since we have no validation set
@@ -291,7 +291,9 @@ class CyFiPipeline:
         self.predict_samples = samples
 
     def _prepare_predict_features(self):
-        self.predict_features = self._prepare_features(self.predict_samples, train_split=False)
+        self.predict_image_meta, self.predict_features = self._prepare_features(
+            self.predict_samples, train_split=False
+        )
 
     def _predict_model(self):
         preds = []

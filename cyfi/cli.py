@@ -169,6 +169,14 @@ def predict_point(
     pipeline.output_df["latitude"] = [latitude]
     pipeline.output_df["longitude"] = [longitude]
 
+    # add the acquisition date of the Sentinel-2 image the estimate is based on
+    days_before_sample = pipeline.predict_image_meta.days_before_sample
+    image_date = pd.to_datetime(pipeline.output_df.date) - pd.to_timedelta(
+        days_before_sample, unit="D"
+    )
+    pipeline.output_df["image_date"] = image_date.dt.strftime("%Y-%m-%d")
+    pipeline.output_df["days_before_sample"] = days_before_sample
+
     # format as integer with comma for console
     pipeline.output_df["density_cells_per_ml"] = pipeline.output_df.density_cells_per_ml.map(
         "{:,.0f}".format
