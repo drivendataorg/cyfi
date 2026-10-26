@@ -202,8 +202,9 @@ def test_cli_predict_point_reports_image_date(mocker, predict_data, local_model_
     )
     assert result.exit_code == 0
 
-    lines = [line.split() for line in result.stderr.splitlines() if line.strip()]
-    rows = {line[0]: line[-1] for line in lines}
+    rows = {
+        line.split()[0]: line.split()[-1] for line in result.stderr.splitlines() if line.strip()
+    }
     assert rows["image_date"] == "2021-05-15"
     assert rows["days_before_sample"] == "3"
 
