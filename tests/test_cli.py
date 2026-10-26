@@ -1,5 +1,6 @@
 from pathlib import Path
 import platform
+import re
 import shutil
 import signal
 import subprocess
@@ -24,6 +25,7 @@ runner = CliRunner()
 
 # mock prediction to test CLI args without downloading imagery
 def pipeline_predict_mock(self, predict_csv, preds_path=None):
+    sample_id = pd.Index(["a1b2c3"], name="sample_id")
     self.output_df = pd.DataFrame(
         {
             "date": ["2021-05-17"],
@@ -31,7 +33,15 @@ def pipeline_predict_mock(self, predict_csv, preds_path=None):
             "longitude": [-76.7],
             "severity": ["moderate"],
             "density_cells_per_ml": 32078.0,
-        }
+        },
+        index=sample_id,
+    )
+    self.predict_image_meta = pd.DataFrame(
+        {
+            "item_id": ["S2A_MSIL2A_20210509T155911_R097_T18SUE_20210510T020000"],
+            "days_before_sample": [8],
+        },
+        index=sample_id,
     )
 
 
@@ -155,6 +165,10 @@ def test_cli_predict_point(mocker):  # noqa: F811
         ],
     )
     assert result.exit_code == 0
+
+    # check the selected image's date is reported alongside the estimate
+    assert re.search(r"image_date\s+2021-05-09", result.stderr)
+    assert re.search(r"days_before_sample\s+8", result.stderr)
 
     # try predicting in future
     result = runner.invoke(
