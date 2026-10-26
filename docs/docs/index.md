@@ -161,24 +161,20 @@ Launch the [CyFi Explorer](explorer.md) to view the Sentinel-2 imagery used to g
 
 ### Using CyFi with AI agents
 
-CyFi has an [agent skill](https://github.com/drivendataorg/cyfi/tree/main/skills) for AI coding agents such as Claude Code, Codex, or Cursor. The skill walks the agent through gathering your locations and dates, running CyFi, explaining the results, and opening the CyFi Explorer.
-
-To set it up, give your agent this prompt:
+CyFi comes with a guide for AI coding agents such as Claude Code, Codex, or Cursor. To use it, ask your agent to use CyFi, for example:
 
 ```text
-I want to estimate cyanobacteria levels in lakes using CyFi (https://github.com/drivendataorg/cyfi). Install the `cyfi` package and its `cyfi` skill, then tell me current conditions at <lake or location>.
+Use CyFi (pip install cyfi) to get the current cyanobacteria conditions at <lake or location>.
 ```
 
-Or install the skill by hand. For Claude Code, copy it into `~/.claude/skills/` (every project) or `.claude/skills/` (one project):
+The agent installs CyFi and finds the guide through `cyfi --help`. The guide walks the agent through finding the location, running CyFi, explaining the results, and opening the CyFi Explorer. To read it yourself, run `cyfi agent-guide`.
+
+The guide is also an [agent skill](https://github.com/drivendataorg/cyfi/blob/main/cyfi/skills/cyfi/SKILL.md). To have your agent use it without being asked, install it with the [skills CLI](https://skills.sh) (`npx skills add drivendataorg/cyfi`), or save it to your agent's skills directory yourself. For example, for Claude Code:
 
 ```bash
-git clone https://github.com/drivendataorg/cyfi
-cp -r cyfi/skills/cyfi ~/.claude/skills/cyfi
+mkdir -p ~/.claude/skills/cyfi
+cyfi agent-guide > ~/.claude/skills/cyfi/SKILL.md
 ```
-
-For an agent with no skill mechanism, paste [`skills/cyfi/SKILL.md`](https://github.com/drivendataorg/cyfi/blob/main/skills/cyfi/SKILL.md) into its prompt or project instructions.
-
-------
 
 ## About the model
 

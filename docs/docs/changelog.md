@@ -2,7 +2,7 @@
 
 ### v1.2.1 - (unreleased)
 
-- Add an agent skill for running CyFi and opening the CyFi Explorer with AI coding agents ([PR #206](https://github.com/drivendataorg/cyfi/pull/206))
+- Add a guide for AI coding agents, printed by `cyfi agent-guide` and usable as an agent skill ([PR #206](https://github.com/drivendataorg/cyfi/pull/206))
 - Retry Planetary Computer requests that fail transiently, and only connect when imagery is needed ([PR #203](https://github.com/drivendataorg/cyfi/pull/203))
 
 ### v1.2.0 - 2026-10-19

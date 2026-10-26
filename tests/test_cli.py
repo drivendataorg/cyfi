@@ -270,6 +270,13 @@ def test_python_m_execution():
     assert "Usage: python -m cyfi" in result.stdout
 
 
+def test_cli_agent_guide():
+    result = runner.invoke(app, ["agent-guide"])
+    assert result.exit_code == 0
+    assert result.output.startswith("---\nname: cyfi\n")
+    assert "cyfi agent-guide" in runner.invoke(app, ["--help"]).output
+
+
 def url_is_up(url: str) -> bool:
     """Check if a URL is up by making a GET request."""
     try:

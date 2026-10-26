@@ -17,6 +17,7 @@ from cyfi.version import __version__
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
 DEFAULT_MODEL_PATH = str(Path(__file__).parent / "assets/model_v0.zip")
+SKILL_PATH = Path(__file__).parent / "skills" / "cyfi" / "SKILL.md"
 
 
 class CRS(str, Enum):
@@ -63,7 +64,11 @@ def main(
         help="Show CyFi version.",
     ),
 ):
-    pass
+    """Estimate cyanobacteria density in small, inland water bodies using Sentinel-2 satellite
+    imagery.
+
+    AI agents: run `cyfi agent-guide` before running CyFi for a person.
+    """
 
 
 @app.command()
@@ -208,6 +213,12 @@ def evaluate(
 
 # add CyFi explorer
 app.command()(visualize.visualize)
+
+
+@app.command()
+def agent_guide():
+    """Print CyFi's agent skill: how an AI agent should run CyFi and explain the results"""
+    typer.echo(SKILL_PATH.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
