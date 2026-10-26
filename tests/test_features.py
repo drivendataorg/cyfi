@@ -130,7 +130,6 @@ def test_download_row_closes_files(tmp_path, satellite_meta, train_data, feature
     samples = add_unique_identifier(train_data)
     assert download_row((0, satellite_meta.iloc[0]), samples, tmp_path, features_config)
 
-    # Files left open are closed at interpreter shutdown, which prints "Error in sys.excepthook"
     assert len(rasterio_open.spy_return_list) == 1
     assert all(ds.closed for ds in rasterio_open.spy_return_list)
 
