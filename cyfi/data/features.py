@@ -60,7 +60,7 @@ def calculate_satellite_features(
     satellite_features = pd.DataFrame([features for features in satellite_features if features])
 
     # Drop rows where bounding box contained too many clouds
-    if config.max_cloud_percent is not None:
+    if config.max_cloud_percent is not None and not satellite_features.empty:
         logger.info(
             f"Dropping {(satellite_features.cloud_pct > config.max_cloud_percent).sum():,} row(s) where bounding box has too many clouds."
         )
@@ -69,7 +69,7 @@ def calculate_satellite_features(
         ]
 
     # Drop rows where bounding box did not contain any water
-    if config.filter_to_water_area:
+    if config.filter_to_water_area and not satellite_features.empty:
         logger.info(
             f"Dropping {(satellite_features.num_water_pixels == 0).sum():,} row(s) where bouding box does not contain any water."
         )
@@ -80,6 +80,10 @@ def calculate_satellite_features(
         f"Dropping {satellite_features.isna().any(axis=1).sum():,} row(s) where bouding box contains missing pixels."
     )
     satellite_features = satellite_features[~satellite_features.isna().any(axis=1)]
+
+    # No images are left, so the caller will log that no satellite data is available
+    if satellite_features.empty:
+        return satellite_features
 
     # Winsorize top and bottom 1% of satellite band features
     satellite_features[config.satellite_image_features] = satellite_features[

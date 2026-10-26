@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import shutil
 import sys
 
 from loguru import logger
@@ -40,6 +41,27 @@ def test_known_features(train_data, features_config, satellite_meta):
 
     # Check expected columns in sentinel metadata (cloud_pct and num_water_pixels are not included because features_config doesn't use these)
     assert (sentinel_meta.columns == ["item_id", "days_before_sample", "visual_href"]).all()
+
+
+def test_no_valid_imagery(tmp_path, train_data, features_config, satellite_meta):
+    train_data = add_unique_identifier(train_data)
+    features_config.use_sentinel_bands = ["B02", "SCL"]
+    features_config.max_cloud_percent = 0.05
+    features_config.filter_to_water_area = True
+
+    # Test case when no imagery was saved for any item
+    with pytest.raises(SystemExit):
+        generate_all_features(train_data, satellite_meta, features_config, cache_dir=tmp_path)
+
+    # Test case when every image is too cloudy (SCL class 8 is medium probability cloud)
+    item_dir = Path("sentinel_500/3a2c48812b551d720f8d56772efa6df1")
+    item_dir = item_dir / "S2B_MSIL2A_20190730T154819_R054_T18TVL_20201005T200628"
+    (tmp_path / item_dir).mkdir(parents=True)
+    shutil.copy(ASSETS_DIR / "feature_cache" / item_dir / "B02.npy", tmp_path / item_dir)
+    np.save(tmp_path / item_dir / "SCL.npy", np.full((1, 51, 51), 8, dtype=np.uint8))
+
+    with pytest.raises(SystemExit):
+        generate_all_features(train_data, satellite_meta, features_config, cache_dir=tmp_path)
 
 
 def test_generate_candidate_metadata(train_data, features_config):
