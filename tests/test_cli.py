@@ -204,11 +204,8 @@ def test_cli_predict_point_reports_image_date(mocker, predict_data, local_model_
 
     lines = [line.split() for line in result.stderr.splitlines() if line.strip()]
     rows = {line[0]: line[-1] for line in lines}
-    days_before_sample = int(rows["days_before_sample"])
-    assert 0 <= days_before_sample <= 30
-    assert pd.Timestamp(rows["image_date"]) == pd.Timestamp(sample.date) - pd.Timedelta(
-        days=days_before_sample
-    )
+    assert rows["image_date"] == "2021-05-15"
+    assert rows["days_before_sample"] == "3"
 
 
 def test_cli_predict_point_crs(mocker):  # noqa: F811
