@@ -160,7 +160,7 @@ def test_download_row_closes_files(tmp_path, mocker):
     assert np.load(tmp_path / "imagery" / "sample" / "item" / "B02.npy").size > 0
 
     # Files left open are closed at interpreter shutdown, which prints "Error in sys.excepthook"
-    assert rasterio_open.spy_return_list
+    assert len(rasterio_open.spy_return_list) == 1
     assert all(ds.closed for ds in rasterio_open.spy_return_list)
 
 
