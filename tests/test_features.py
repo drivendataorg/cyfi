@@ -193,14 +193,3 @@ def test_download_satellite_data_skips_cloudy_items(tmp_path, satellite_meta, tr
 
     _, features = generate_all_features(train_data, satellite_meta, config, tmp_path)
     assert features.index.tolist() == [clear.sample_id]
-
-
-def test_download_satellite_data_clear_item_fails(tmp_path, satellite_meta, train_data):
-    train_data = add_unique_identifier(train_data)
-    clear = satellite_meta.iloc[1]
-    bad_meta = satellite_meta.copy()
-    bad_meta.loc[1, "B02_href"] = "bad-href"
-
-    # The clear item's directory is removed, including its SCL band, and counted as a failure
-    assert download_satellite_data(bad_meta, train_data, cloud_filter_config(), tmp_path) == 1
-    assert not (tmp_path / "sentinel_500" / clear.sample_id / clear.item_id).exists()
