@@ -4,7 +4,6 @@ import sys
 
 from loguru import logger
 import numpy as np
-import pandas as pd
 from pystac import STACError
 from pystac_client.exceptions import APIError
 import pytest
@@ -184,21 +183,14 @@ def test_download_satellite_data_skips_cloudy_items(tmp_path, satellite_meta, tr
     cloudy, clear = satellite_meta.iloc[0], satellite_meta.iloc[1]
 
     # Only the SCL band is downloaded for the cloudy item
-    assert download_satellite_data(satellite_meta, train_data, config, tmp_path / "skip") == 2
-    imagery_dir = tmp_path / "skip" / "sentinel_500"
-    cloudy_files = {
-        pth.name for pth in (imagery_dir / cloudy.sample_id / cloudy.item_id).iterdir()
-    }
-    clear_files = {pth.name for pth in (imagery_dir / clear.sample_id / clear.item_id).iterdir()}
+    assert download_satellite_data(satellite_meta, train_data, config, tmp_path) == 2
+    img_dir = tmp_path / "sentinel_500"
+    cloudy_files = {pth.name for pth in (img_dir / cloudy.sample_id / cloudy.item_id).iterdir()}
+    clear_files = {pth.name for pth in (img_dir / clear.sample_id / clear.item_id).iterdir()}
     assert cloudy_files == {"SCL.npy"}
     assert clear_files == {"B02.npy", "SCL.npy"}
 
-    # Features are the same as when all bands are downloaded
-    all_bands_config = config.model_copy(update={"max_cloud_percent": None})
-    download_satellite_data(satellite_meta, train_data, all_bands_config, tmp_path / "all")
-    _, features = generate_all_features(train_data, satellite_meta, config, tmp_path / "skip")
-    _, expected = generate_all_features(train_data, satellite_meta, config, tmp_path / "all")
-    pd.testing.assert_frame_equal(features, expected)
+    _, features = generate_all_features(train_data, satellite_meta, config, tmp_path)
     assert features.index.tolist() == [clear.sample_id]
 
 

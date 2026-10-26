@@ -2,7 +2,7 @@
 
 ### v1.2.1 - (unreleased)
 
-- Download only the cloud cover band for images that are too cloudy to use, which makes downloads faster without changing results ([PR #205](https://github.com/drivendataorg/cyfi/pull/205))
+- Skip downloading most bands for images that are too cloudy to use, which speeds up large runs ([PR #205](https://github.com/drivendataorg/cyfi/pull/205))
 - Retry Planetary Computer requests that fail transiently, and only connect when imagery is needed ([PR #203](https://github.com/drivendataorg/cyfi/pull/203))
 
 ### v1.2.0 - 2026-10-19
