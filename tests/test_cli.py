@@ -202,11 +202,9 @@ def test_cli_predict_point_reports_image_date(mocker, predict_data, local_model_
     )
     assert result.exit_code == 0
 
-    rows = {
-        line.split()[0]: line.split()[-1] for line in result.stderr.splitlines() if line.strip()
-    }
-    assert rows["image_date"] == "2021-05-15"
-    assert rows["days_before_sample"] == "3"
+    words = result.stderr.split()
+    assert words[words.index("image_date") + 1] == "2021-05-15"
+    assert words[words.index("days_before_sample") + 1] == "3"
 
 
 def test_cli_predict_point_crs(mocker):  # noqa: F811
