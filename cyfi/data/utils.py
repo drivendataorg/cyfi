@@ -31,6 +31,20 @@ def add_unique_identifier(df: pd.DataFrame) -> pd.DataFrame:
     return df.set_index("sample_id")
 
 
+def calculate_cloud_percent(scl_array: np.ndarray) -> float:
+    """Calculate the portion of pixels classified as clouds in a scene classification
+    (SCL) band array. Cloud classes are 7 (unclassified or low probability clouds),
+    8 (medium probability clouds), 9 (high probability clouds), and 10 (thin cirrus).
+
+    Args:
+        scl_array (np.ndarray): SCL band array with dimensions (band, y, x)
+
+    Returns:
+        float: Portion of pixels that are clouds, from 0 to 1
+    """
+    return ((scl_array >= 7) & (scl_array <= 10)).sum() / (scl_array.shape[1] * scl_array.shape[2])
+
+
 def convert_density_to_severity(density_series: pd.Series) -> pd.Series:
     """Convert exact density to binned severity
 

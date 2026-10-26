@@ -3,6 +3,8 @@
 ### v1.2.1 - (unreleased)
 
 - Show the date of the Sentinel-2 image used for the estimate and how many days before the sample date it was taken in `cyfi predict-point` output ([PR #207](https://github.com/drivendataorg/cyfi/pull/207))
+- Close satellite imagery files after reading them ([PR #208](https://github.com/drivendataorg/cyfi/pull/208))
+- Skip downloading most bands for images that are too cloudy to use, which speeds up large runs ([PR #205](https://github.com/drivendataorg/cyfi/pull/205))
 - Retry Planetary Computer requests that fail transiently, and only connect when imagery is needed ([PR #203](https://github.com/drivendataorg/cyfi/pull/203))
 
 ### v1.2.0 - 2026-10-19

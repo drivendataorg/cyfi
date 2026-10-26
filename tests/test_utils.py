@@ -2,6 +2,7 @@ import numpy as np
 
 from cyfi.data.utils import (
     add_unique_identifier,
+    calculate_cloud_percent,
     convert_density_to_log_density,
     convert_log_density_to_density,
 )
@@ -29,3 +30,10 @@ def test_convert_density_to_log_density(train_data):
 def test_convert_log_density_to_density(train_data):
     converted_density = convert_log_density_to_density(train_data.log_density)
     assert np.isclose(converted_density.iloc[0], 5867499.999999985)
+
+
+def test_calculate_cloud_percent():
+    # SCL classes 7 through 10 are clouds
+    scl = np.array([[[4, 6, 7, 8], [9, 10, 11, 3]]])
+    assert calculate_cloud_percent(scl) == 0.5
+    assert calculate_cloud_percent(np.full((1, 3, 3), 6)) == 0

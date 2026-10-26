@@ -7,10 +7,12 @@ import numpy as np
 from pystac import STACError
 from pystac_client.exceptions import APIError
 import pytest
+import rasterio
 
 from cyfi.config import FeaturesConfig
 from cyfi.data.features import generate_all_features, calculate_metadata_features
 from cyfi.data.satellite_data import (
+    download_row,
     download_satellite_data,
     generate_candidate_metadata,
     retry_stac,
@@ -123,6 +125,15 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
             )
 
 
+def test_download_row_closes_file(tmp_path, satellite_meta, train_data, features_config, mocker):
+    rasterio_open = mocker.spy(rasterio, "open")
+    samples = add_unique_identifier(train_data)
+    assert download_row((0, satellite_meta.iloc[0]), samples, tmp_path, features_config)
+
+    assert rasterio_open.call_count == 1
+    assert rasterio_open.spy_return.closed
+
+
 def test_retry_stac(mocker):
     sleep = mocker.patch("cyfi.data.satellite_data.time.sleep")
 
@@ -160,3 +171,36 @@ def test_land_cover_features(train_data):
     assert features.loc["9c601f226c2af07d570134127a7fda27", "land_cover"] == 90
     assert features.loc["3a2c48812b551d720f8d56772efa6df1", "land_cover"] == 70
     assert features.shape[0] == train_data.shape[0]
+
+
+def cloud_filter_config():
+    """Features config where the first item in satellite_meta is too cloudy and the second
+    is clear. Their cloud fractions in the sample bounding boxes are 0.0041 and 0.0012, so
+    max_cloud_percent (a fraction despite its name) is set between them.
+    """
+    return FeaturesConfig(
+        use_sentinel_bands=["B02"],
+        image_feature_meter_window=500,
+        satellite_image_features=["B02_mean", "B02_min", "B02_max"],
+        satellite_meta_features=[],
+        sample_meta_features=[],
+        filter_to_water_area=False,
+        max_cloud_percent=0.002,
+    )
+
+
+def test_download_satellite_data_skips_cloudy_items(tmp_path, satellite_meta, train_data):
+    config = cloud_filter_config()
+    train_data = add_unique_identifier(train_data)
+    cloudy, clear = satellite_meta.iloc[0], satellite_meta.iloc[1]
+
+    # Only the SCL band is downloaded for the cloudy item
+    assert download_satellite_data(satellite_meta, train_data, config, tmp_path) == 2
+    img_dir = tmp_path / "sentinel_500"
+    cloudy_files = {pth.name for pth in (img_dir / cloudy.sample_id / cloudy.item_id).iterdir()}
+    clear_files = {pth.name for pth in (img_dir / clear.sample_id / clear.item_id).iterdir()}
+    assert cloudy_files == {"SCL.npy"}
+    assert clear_files == {"B02.npy", "SCL.npy"}
+
+    _, features = generate_all_features(train_data, satellite_meta, config, tmp_path)
+    assert features.index.tolist() == [clear.sample_id]
