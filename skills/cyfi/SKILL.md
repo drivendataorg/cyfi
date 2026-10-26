@@ -10,14 +10,14 @@ CyFi estimates cyanobacteria density (cells/ml) and a severity level for a locat
 ## Generate estimates
 
 1. Write a csv with `date` (YYYY-MM-DD), `latitude` and `longitude` in decimal degrees (WGS-84), one row per location. For "current conditions", use today's date. When the person names a lake or site, look up its coordinates and show them before running. A point should be on the water. Never invent a location or date.
-2. Run `cyfi predict <csv> -d <dir> --keep-metadata`, even for one location. `--keep-metadata` saves which image each estimate used, which the next section and the Explorer need. `cyfi predict-point` doesn't report the image.
-3. Runs download imagery: a few minutes for a handful of locations, about 15 minutes per 100, plus a 2 GB land cover map the first time. Tell the person before a long run. Run one job at a time, since parallel jobs hit the imagery service's rate limit. If a run succeeds but prints "Error in sys.excepthook" lines, the estimates are fine; don't alarm the person.
+2. Run `cyfi predict <csv> -d <dir> --keep-metadata`, even for one location. `--keep-metadata` saves which image each estimate used, which the next section and the Explorer need. Prefer it to `cyfi predict-point`, whose results the Explorer can't show.
+3. Runs download imagery: a few minutes for a handful of locations, about 15 minutes per 100, plus a 2 GB land cover map the first time. Tell the person before a long run. Run one job at a time, since parallel jobs hit the imagery service's rate limit.
 
 ## Explain the results
 
 Give a short table of the location, estimate, severity, and image date, using `days_before_sample` in `sentinel_metadata.csv`. Then:
 
-- An empty estimate means no clear image in the 30 days before the date. Suggest another date rather than guessing.
+- An empty estimate means no clear image in the 30 days before the date. If no location had a clear image, CyFi stops with "Relevant satellite data is not available". Either way, suggest another date rather than guessing.
 - Say how old the image is. An image from three weeks before may not reflect conditions now.
 - Severity uses WHO thresholds: low is under 20,000 cells/ml, moderate 20,000 to 100,000, and high over 100,000.
 - An estimate describes the water in a 4 km x 4 km box around the point. Nearby points in one lake get nearly the same estimate, so don't present CyFi as mapping variation within a lake. Separate lakes within a few kilometers share part of their box, so say so when their estimates are close.
