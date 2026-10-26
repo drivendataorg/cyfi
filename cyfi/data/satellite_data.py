@@ -19,6 +19,7 @@ import rioxarray
 from tqdm.contrib.concurrent import process_map
 
 from cyfi.config import FeaturesConfig
+from cyfi.data.utils import calculate_cloud_percent
 
 # The trailing slash is required otherwise pystac re-fetches the root on the first search
 STAC_API_URL = "https://planetarycomputer.microsoft.com/api/stac/v1/"
@@ -435,9 +436,14 @@ def download_row(
         config.image_feature_meter_window,
     )
 
+    bands = config.use_sentinel_bands
+    if config.max_cloud_percent is not None:
+        # Download SCL first so the other bands can be skipped for cloudy images
+        bands = sorted(bands, key=lambda band: band != "SCL")
+
     try:
         # Iterate over bands and save
-        for band in config.use_sentinel_bands:
+        for band in bands:
             # Check if the file already exists
             array_save_path = sample_image_dir / f"{band}.npy"
             if not array_save_path.exists():
@@ -453,6 +459,10 @@ def download_row(
                     .to_numpy()
                 )
                 np.save(array_save_path, band_array)
+
+            if band == "SCL" and config.max_cloud_percent is not None:
+                if calculate_cloud_percent(np.load(array_save_path)) > config.max_cloud_percent:
+                    return True
 
         return True
 
@@ -486,7 +496,8 @@ def download_satellite_data(
         cache_dir (Union[str, Path]): Cache directory to save raw imagery
 
     Returns:
-        int: Number of items that were successfully downloaded
+        int: Number of items that were successfully downloaded. An image that is too
+            cloudy counts as downloaded once its SCL band is saved.
     """
     # Iterate over all rows (item / sample combos)
     imagery_dir = Path(cache_dir) / f"sentinel_{config.image_feature_meter_window}"

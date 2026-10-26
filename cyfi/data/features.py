@@ -16,6 +16,7 @@ import xarray as xr
 
 
 from cyfi.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
+from cyfi.data.utils import calculate_cloud_percent
 
 
 def calculate_satellite_features(
@@ -142,9 +143,7 @@ def _calculate_satellite_features_for_sample_item(
 
     # Don't calculate features for the item if the cloud ratio is too high
     if config.max_cloud_percent is not None:
-        cloud_ratio = ((scl_array >= 7) & (scl_array <= 10)).sum() / (
-            scl_array.shape[1] * scl_array.shape[2]
-        )
+        cloud_ratio = calculate_cloud_percent(scl_array)
         sample_item_features["cloud_pct"] = cloud_ratio
         if cloud_ratio > config.max_cloud_percent:
             return sample_item_features
