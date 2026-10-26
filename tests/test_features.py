@@ -4,13 +4,18 @@ import sys
 
 from loguru import logger
 import numpy as np
+import pandas as pd
 from pystac import STACError
 from pystac_client.exceptions import APIError
 import pytest
+import rasterio
+from rasterio.transform import from_origin
+from xarray.backends.file_manager import FILE_CACHE
 
 from cyfi.config import FeaturesConfig
 from cyfi.data.features import generate_all_features, calculate_metadata_features
 from cyfi.data.satellite_data import (
+    download_row,
     download_satellite_data,
     generate_candidate_metadata,
     retry_stac,
@@ -121,6 +126,31 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
             assert set([pth.stem for pth in sample_item_dir.iterdir()]) == set(
                 features_config.use_sentinel_bands
             )
+
+
+def test_download_row_closes_files(tmp_path, features_config):
+    # Write a small local GeoTIFF around the sample point
+    tif_path = tmp_path / "B02.tif"
+    with rasterio.open(
+        tif_path,
+        "w",
+        driver="GTiff",
+        width=100,
+        height=100,
+        count=1,
+        dtype="uint16",
+        crs="EPSG:4326",
+        transform=from_origin(-78.95, 35.95, 0.001, 0.001),
+    ) as dst:
+        dst.write(np.ones((1, 100, 100), dtype="uint16"))
+
+    samples = pd.DataFrame({"latitude": [35.9], "longitude": [-78.9]}, index=["sample"])
+    row = pd.Series({"sample_id": "sample", "item_id": "item", "B02_href": str(tif_path)})
+    assert download_row((0, row), samples, tmp_path / "imagery", features_config)
+    assert (tmp_path / "imagery" / "sample" / "item" / "B02.npy").exists()
+
+    # Files left open are closed at interpreter shutdown, which prints "Error in sys.excepthook"
+    assert not any(str(tif_path) in str(key) for key in FILE_CACHE)
 
 
 def test_retry_stac(mocker):

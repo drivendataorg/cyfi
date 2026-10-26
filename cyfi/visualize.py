@@ -72,17 +72,14 @@ def visualize(
         )
 
         # crop image and reproject
-        cropped_img_array = (
-            rioxarray.open_rasterio(pc.sign(sample.visual_href))
-            .rio.clip_box(
+        with rioxarray.open_rasterio(pc.sign(sample.visual_href)) as img:
+            cropped_img_array = img.rio.clip_box(
                 minx=minx,
                 miny=miny,
                 maxx=maxx,
                 maxy=maxy,
                 crs=sample_crs,
-            )
-            .rio.reproject(sample_crs)
-        )
+            ).rio.reproject(sample_crs)
 
         # plot imagery with point on it
         fig, ax = plt.subplots(figsize=(8, 6), frameon=False)
