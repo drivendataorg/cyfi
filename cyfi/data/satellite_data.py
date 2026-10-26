@@ -447,17 +447,15 @@ def download_row(
             # Check if the file already exists
             array_save_path = sample_image_dir / f"{band}.npy"
             if not array_save_path.exists():
-                band_array = (
-                    rioxarray.open_rasterio(pc.sign(row[f"{band}_href"]))
-                    .rio.clip_box(
+                # Close now, or rasterio prints "Error in sys.excepthook" at worker shutdown
+                with rioxarray.open_rasterio(pc.sign(row[f"{band}_href"])) as band_data:
+                    band_array = band_data.rio.clip_box(
                         minx=minx,
                         miny=miny,
                         maxx=maxx,
                         maxy=maxy,
                         crs="EPSG:4326",
-                    )
-                    .to_numpy()
-                )
+                    ).to_numpy()
                 np.save(array_save_path, band_array)
 
             if band == "SCL" and config.max_cloud_percent is not None:

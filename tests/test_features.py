@@ -7,10 +7,12 @@ import numpy as np
 from pystac import STACError
 from pystac_client.exceptions import APIError
 import pytest
+import rasterio
 
 from cyfi.config import FeaturesConfig
 from cyfi.data.features import generate_all_features, calculate_metadata_features
 from cyfi.data.satellite_data import (
+    download_row,
     download_satellite_data,
     generate_candidate_metadata,
     retry_stac,
@@ -121,6 +123,15 @@ def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_
             assert set([pth.stem for pth in sample_item_dir.iterdir()]) == set(
                 features_config.use_sentinel_bands
             )
+
+
+def test_download_row_closes_file(tmp_path, satellite_meta, train_data, features_config, mocker):
+    rasterio_open = mocker.spy(rasterio, "open")
+    samples = add_unique_identifier(train_data)
+    assert download_row((0, satellite_meta.iloc[0]), samples, tmp_path, features_config)
+
+    assert rasterio_open.call_count == 1
+    assert rasterio_open.spy_return.closed
 
 
 def test_retry_stac(mocker):
