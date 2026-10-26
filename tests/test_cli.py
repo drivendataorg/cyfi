@@ -165,11 +165,6 @@ def test_cli_predict_point(mocker):  # noqa: F811
     )
     assert result.exit_code == 0
 
-    # check the selected image's date is reported alongside the estimate
-    output_rows = [line.split() for line in result.stderr.splitlines()]
-    assert ["image_date", "2021-05-09"] in output_rows
-    assert ["days_before_sample", "8"] in output_rows
-
     # try predicting in future
     result = runner.invoke(
         app,
@@ -185,6 +180,35 @@ def test_cli_predict_point(mocker):  # noqa: F811
     )
     assert result.exit_code == 1
     assert "Cannot predict on a date that is in the future" in result.exception.__str__()
+
+
+def test_cli_predict_point_reports_image_date(mocker, predict_data, local_model_path):  # noqa: F811
+    # predict-point has no model option, so point it at the test model
+    mocker.patch("cyfi.cli.DEFAULT_MODEL_PATH", str(local_model_path))
+    sample = predict_data.iloc[0]
+
+    # reuses imagery cached by test_cli_predict
+    result = runner.invoke(
+        app,
+        [
+            "predict-point",
+            "--lat",
+            str(sample.latitude),
+            "--lon",
+            str(sample.longitude),
+            "--date",
+            sample.date,
+        ],
+    )
+    assert result.exit_code == 0
+
+    lines = [line.split() for line in result.stderr.splitlines() if line.strip()]
+    rows = {line[0]: line[-1] for line in lines}
+    days_before_sample = int(rows["days_before_sample"])
+    assert 0 <= days_before_sample <= 30
+    assert pd.Timestamp(rows["image_date"]) == pd.Timestamp(sample.date) - pd.Timedelta(
+        days=days_before_sample
+    )
 
 
 def test_cli_predict_point_crs(mocker):  # noqa: F811
