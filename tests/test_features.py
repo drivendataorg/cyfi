@@ -44,6 +44,30 @@ def test_known_features(train_data, features_config, satellite_meta):
     assert (sentinel_meta.columns == ["item_id", "days_before_sample", "visual_href"]).all()
 
 
+def test_all_images_too_cloudy(tmp_path, train_data, features_config, satellite_meta, capsys):
+    train_data = add_unique_identifier(train_data)
+    satellite_meta = satellite_meta.head(1)
+    features_config.use_sentinel_bands = ["B02", "SCL"]
+    features_config.max_cloud_percent = 0.05
+    features_config.filter_to_water_area = True
+
+    # SCL class 8 is medium probability cloud
+    row = satellite_meta.iloc[0]
+    item_dir = tmp_path / f"sentinel_500/{row.sample_id}/{row.item_id}"
+    item_dir.mkdir(parents=True)
+    np.save(item_dir / "SCL.npy", np.full((1, 51, 51), 8, dtype=np.uint8))
+
+    # Log to stdout so we can check the results with capsys
+    handler_id = logger.add(sys.stdout, level="INFO")
+    with pytest.raises(SystemExit) as exc:
+        generate_all_features(train_data, satellite_meta, features_config, cache_dir=tmp_path)
+    logger.remove(handler_id)
+    assert exc.value.code == 1
+    output = capsys.readouterr().out
+    assert "Dropping 1 row(s) where bounding box has too many clouds" in output
+    assert "Relevant satellite data is not available" in output
+
+
 def test_generate_candidate_metadata(train_data, features_config):
     train_data = add_unique_identifier(train_data)
 

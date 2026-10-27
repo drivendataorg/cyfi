@@ -2,6 +2,7 @@
 
 ### v1.2.1 - (unreleased)
 
+- Error gracefully if every image found is too cloudy ([PR #210](https://github.com/drivendataorg/cyfi/pull/210))
 - Show the date of the Sentinel-2 image used for the estimate and how many days before the sample date it was taken in `cyfi predict-point` output ([PR #207](https://github.com/drivendataorg/cyfi/pull/207))
 - Close satellite imagery files after reading them ([PR #208](https://github.com/drivendataorg/cyfi/pull/208))
 - Skip downloading most bands for images that are too cloudy to use, which speeds up large runs ([PR #205](https://github.com/drivendataorg/cyfi/pull/205))
