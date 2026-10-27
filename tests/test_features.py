@@ -44,7 +44,7 @@ def test_known_features(train_data, features_config, satellite_meta):
     assert (sentinel_meta.columns == ["item_id", "days_before_sample", "visual_href"]).all()
 
 
-def test_all_images_too_cloudy(tmp_path, train_data, features_config, satellite_meta):
+def test_all_images_too_cloudy(tmp_path, train_data, features_config, satellite_meta, capsys):
     train_data = add_unique_identifier(train_data)
     satellite_meta = satellite_meta.head(1)
     features_config.use_sentinel_bands = ["B02", "SCL"]
@@ -57,16 +57,15 @@ def test_all_images_too_cloudy(tmp_path, train_data, features_config, satellite_
     item_dir.mkdir(parents=True)
     np.save(item_dir / "SCL.npy", np.full((1, 51, 51), 8, dtype=np.uint8))
 
-    messages = []
-    handler_id = logger.add(messages.append, level="INFO")
+    # Log to stdout so we can check the results with capsys
+    handler_id = logger.add(sys.stdout, level="INFO")
     with pytest.raises(SystemExit) as exc:
         generate_all_features(train_data, satellite_meta, features_config, cache_dir=tmp_path)
     logger.remove(handler_id)
     assert exc.value.code == 1
-    assert any(
-        "Dropping 1 row(s) where bounding box has too many clouds" in str(m) for m in messages
-    )
-    assert any("Relevant satellite data is not available" in str(m) for m in messages)
+    output = capsys.readouterr().out
+    assert "Dropping 1 row(s) where bounding box has too many clouds" in output
+    assert "Relevant satellite data is not available" in output
 
 
 def test_generate_candidate_metadata(train_data, features_config):
