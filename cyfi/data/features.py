@@ -16,6 +16,7 @@ import xarray as xr
 
 
 from cyfi.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
+from cyfi.data.utils import calculate_cloud_percent
 
 
 def calculate_satellite_features(
@@ -38,7 +39,8 @@ def calculate_satellite_features(
         pd.DataFrame: Dataframe where the index is sample ID and there is one column
             for each satellite feature. There will only be rows for samples with
             satellite imagery. Each row is a unique sample ID, with features from
-            the best available pystac item.
+            the best available pystac item. The dataframe is empty if no images pass
+            the filters.
     """
     # Calculate satellite metadata features
     if "month" in config.satellite_meta_features:
@@ -69,7 +71,7 @@ def calculate_satellite_features(
         ]
 
     # Drop rows where bounding box did not contain any water
-    if config.filter_to_water_area:
+    if config.filter_to_water_area and not satellite_features.empty:
         logger.info(
             f"Dropping {(satellite_features.num_water_pixels == 0).sum():,} row(s) where bouding box does not contain any water."
         )
@@ -80,6 +82,10 @@ def calculate_satellite_features(
         f"Dropping {satellite_features.isna().any(axis=1).sum():,} row(s) where bouding box contains missing pixels."
     )
     satellite_features = satellite_features[~satellite_features.isna().any(axis=1)]
+
+    # No images are left, so the caller will log that no satellite data is available
+    if satellite_features.empty:
+        return satellite_features
 
     # Winsorize top and bottom 1% of satellite band features
     satellite_features[config.satellite_image_features] = satellite_features[
@@ -142,9 +148,7 @@ def _calculate_satellite_features_for_sample_item(
 
     # Don't calculate features for the item if the cloud ratio is too high
     if config.max_cloud_percent is not None:
-        cloud_ratio = ((scl_array >= 7) & (scl_array <= 10)).sum() / (
-            scl_array.shape[1] * scl_array.shape[2]
-        )
+        cloud_ratio = calculate_cloud_percent(scl_array)
         sample_item_features["cloud_pct"] = cloud_ratio
         if cloud_ratio > config.max_cloud_percent:
             return sample_item_features

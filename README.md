@@ -76,15 +76,17 @@ Just specify the latitude, longitude, and date as arguments at the command line.
 cyfi predict-point --lat 41.2 --lon -73.2 --date 2023-09-14
 ```
 
-This will print out the estimated cyanobacteria density and associated severity level based on WHO thresholds.
+This will print out the estimated cyanobacteria density and associated severity level based on WHO thresholds, along with the date of the Sentinel-2 image the estimate is based on and how many days before the sample date it was taken.
 
 ```
-2023-10-04 16:25:40.581 | SUCCESS  | cyfi.cli:predict_point:154 - Estimate generated:
+2026-10-25 23:17:31.939 | SUCCESS  | cyfi.cli:predict_point:184 - Estimate generated:
 date                    2023-09-14
 latitude                      41.2
 longitude                    -73.2
-density_cells_per_ml        32,820
+density_cells_per_ml        36,957
 severity                  moderate
+image_date              2023-09-14
+days_before_sample               0
 ```
 
 To see all of the available options, run `cyfi predict-point --help`.
