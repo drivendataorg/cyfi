@@ -161,11 +161,11 @@ However users should feel free to to use their own thresholds as makes sense for
 
 Launch the [CyFi Explorer](explorer.md) to view the Sentinel-2 imagery used to generate each cyanobacteria estimate!
 
-### Using CyFi with AI agents
+### Using CyFi with AI assistants
 
-CyFi has an [agent skill](https://github.com/drivendataorg/cyfi/tree/main/skills) for AI coding agents such as Claude Code, Codex, or Cursor. The skill walks the agent through gathering your locations and dates, running CyFi, explaining the results, and opening the CyFi Explorer.
+CyFi has an [agent skill](https://github.com/drivendataorg/cyfi/tree/main/skills) for AI assistants that can run commands on your computer, such as Claude Code, Codex, or Cursor. The skill walks the assistant through gathering your locations and dates, running CyFi, explaining the results, and opening the CyFi Explorer.
 
-To set it up, give your agent this prompt:
+To set it up, give your assistant this prompt:
 
 ```text
 I want to estimate cyanobacteria levels in lakes using CyFi (https://github.com/drivendataorg/cyfi). Install the `cyfi` package and its `cyfi` skill, then tell me current conditions at <lake or location>.
@@ -178,7 +178,7 @@ git clone https://github.com/drivendataorg/cyfi
 cp -r cyfi/skills/cyfi ~/.claude/skills/cyfi
 ```
 
-For an agent with no skill mechanism, paste [`skills/cyfi/SKILL.md`](https://github.com/drivendataorg/cyfi/blob/main/skills/cyfi/SKILL.md) into its prompt or project instructions.
+For an assistant with no skill mechanism, paste [`skills/cyfi/SKILL.md`](https://github.com/drivendataorg/cyfi/blob/main/skills/cyfi/SKILL.md) into its prompt or project instructions.
 
 ------
 

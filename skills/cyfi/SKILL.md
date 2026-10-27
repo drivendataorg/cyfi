@@ -9,13 +9,13 @@ CyFi estimates cyanobacteria density (cells/ml) and a severity level for a locat
 
 ## Generate estimates
 
-1. Write a csv with `date` (YYYY-MM-DD), `latitude` and `longitude` in decimal degrees (WGS-84), one row per location. For "current conditions", use today's date. When the person names a lake or site, look up its coordinates and show them before running. A point should be on the water. Never invent a location or date.
+1. Write a csv with `date` (YYYY-MM-DD), `latitude` and `longitude` in decimal degrees (WGS-84), one row per location. For "current conditions", use today's date. When the person names a lake or site, look up its coordinates and show them before running. A point should be on the water. Never invent a location or date. Sentinel-2 imagery starts in mid-2015, so don't run earlier dates; CyFi fails on them with `KeyError: 'item_id'`.
 2. Run `cyfi predict <csv> -d <dir> --keep-metadata`, even for one location. `--keep-metadata` saves which image each estimate used, which the next section and the Explorer need. Prefer it to `cyfi predict-point`, whose results the Explorer can't show.
-3. Runs download imagery: a few minutes for a handful of locations, about 15 minutes per 100, plus a 2 GB land cover map the first time. Tell the person before a long run. Run one job at a time, since parallel jobs hit the imagery service's rate limit.
+3. Runs download imagery: a few minutes for a handful of locations, about 15 minutes per 100, plus a 2 GB land cover map the first time. Tell the person before a long run. Run one job at a time, since parallel jobs hit the imagery service's rate limit. Re-running the same locations and dates reuses the downloaded imagery and takes well under a minute, so if an earlier run skipped `--keep-metadata`, re-run it with `-o --keep-metadata`.
 
 ## Explain the results
 
-Give a short table of the location, estimate, severity, and image date, using `days_before_sample` in `sentinel_metadata.csv`. Then:
+Give a short table of the location, estimate, severity, and image date (the date minus `days_before_sample` in `sentinel_metadata.csv`). Then:
 
 - An empty estimate means no clear image in the 30 days before the date. If no location had a clear image, CyFi stops with "Relevant satellite data is not available". Either way, suggest another date rather than guessing.
 - Say how old the image is. An image from three weeks before may not reflect conditions now.
@@ -25,6 +25,6 @@ Give a short table of the location, estimate, severity, and image date, using `d
 
 ## Open the CyFi Explorer
 
-Offer this after any run. `cyfi visualize <dir>` opens a local web app with a map of every estimate and the Sentinel-2 image behind the selected one, so the person can see the water for themselves. It needs the `preds.csv` and `sentinel_metadata.csv` from a `--keep-metadata` run, and an internet connection to load imagery. It keeps running until stopped, so start it in the background with `--port 7860` and give the person <http://127.0.0.1:7860>. Its own startup message can be held back when output goes to a file. Locations without an estimate don't appear. Stop it when the person is done. Each row of `sentinel_metadata.csv` also has a `visual_href` link to the image, if they'd rather not open the Explorer.
+Offer this after any run. `cyfi visualize <dir>` opens a local web app with a map of every estimate and the Sentinel-2 image behind the selected one, so the person can see the water for themselves. It needs the `preds.csv` and `sentinel_metadata.csv` from a `--keep-metadata` run, and an internet connection to load imagery. It keeps running until stopped, so start it as a detached process that outlives your command, not as a background task with a time limit, for example `nohup cyfi visualize <dir> --port 7860 > explorer.log 2>&1 &`. Check that <http://127.0.0.1:7860> loads before giving it to the person; its startup message can be held back when output goes to a file. Locations without an estimate don't appear. Stop the process when the person is done. Each row of `sentinel_metadata.csv` also has a `visual_href` link to the full Sentinel-2 tile, a large file, if they'd rather not open the Explorer.
 
 When CyFi does something wrong or confusing, suggest the person open an issue at <https://github.com/drivendataorg/cyfi/issues>.
