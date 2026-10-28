@@ -1,4 +1,3 @@
-import functools
 import os
 from pathlib import Path
 import sys
@@ -9,7 +8,6 @@ from pystac import STACError
 from pystac_client.exceptions import APIError
 import pytest
 import rasterio
-import requests
 
 from cyfi.config import FeaturesConfig
 from cyfi.data.features import generate_all_features, calculate_metadata_features
@@ -28,8 +26,8 @@ IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 
 def serial_map(fn, *iterables, **kwargs):
-    # Stands in for process_map so patched searches apply, and keeps the test's log handler
-    return list(map(functools.partial(fn, log_level=None), *iterables))
+    # Stands in for process_map so the patched search applies in the same process
+    return list(map(fn, *iterables))
 
 
 def search_rate_limited_north_of_40(date, latitude, longitude, **kwargs):
@@ -113,11 +111,12 @@ def test_generate_candidate_metadata(train_data, features_config):
 
 
 def test_generate_candidate_metadata_search_failures(train_data, features_config, mocker, capsys):
-    mocker.patch("cyfi.data.satellite_data.process_map", serial_map)
     train_data = add_unique_identifier(train_data)
-    handler_id = logger.add(sys.stdout, level="DEBUG")
+    # Log to stdout so we can check the results with capsys
+    handler_id = logger.add(sys.stdout, level="INFO")
 
     # Test case when some searches fail after retrying
+    mocker.patch("cyfi.data.satellite_data.process_map", serial_map)
     mocker.patch(
         "cyfi.data.satellite_data.search_planetary_computer",
         side_effect=search_rate_limited_north_of_40,
@@ -126,27 +125,15 @@ def test_generate_candidate_metadata_search_failures(train_data, features_config
     failed_ids = train_data[train_data.latitude > 40].index
     assert len(candidate_meta) > 0
     assert all(sample_item_map[sample_id]["sentinel_item_ids"] == [] for sample_id in failed_ids)
-    output = capsys.readouterr().out
-    assert f"Sentinel-2 search failed for sample ID {failed_ids[0]}" in output
-    assert f"Sentinel-2 search failed for {len(failed_ids)} sample point(s)" in output
-
-    # Test case when every search fails, here with the error from a failed signing token request
-    mocker.patch(
-        "cyfi.data.satellite_data.search_planetary_computer",
-        side_effect=requests.exceptions.RetryError("Max retries exceeded"),
-    )
-    with pytest.raises(ValueError, match="search failed for every sample point \\(RetryError"):
-        generate_candidate_metadata(train_data, features_config)
+    assert "Sentinel-2 search failed for 2 sample point(s)" in capsys.readouterr().out
     mocker.stopall()
 
-    # Test case when every search succeeds but finds no imagery, before Sentinel-2 launched
+    # Test case when no imagery is found, for dates before Sentinel-2 launched
     with pytest.raises(SystemExit) as exc:
         generate_candidate_metadata(train_data.assign(date="2014-08-01"), features_config)
     logger.remove(handler_id)
     assert exc.value.code == 1
-    assert "No Sentinel-2 imagery was found for any of the provided sample points" in (
-        capsys.readouterr().out
-    )
+    assert "No Sentinel-2 imagery was found" in capsys.readouterr().out
 
 
 def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_config, capsys):

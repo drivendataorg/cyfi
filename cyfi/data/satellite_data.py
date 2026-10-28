@@ -234,8 +234,7 @@ def _generate_candidate_metadata_for_sample(
     latitude: float,
     longitude: float,
     config: FeaturesConfig,
-    log_level: Optional[int] = None,
-) -> Tuple[pd.DataFrame, Dict, Optional[str]]:
+) -> Tuple[pd.DataFrame, Dict, bool]:
     """Generate metadata for the satellite item candidates for one sample
 
     Args:
@@ -244,20 +243,12 @@ def _generate_candidate_metadata_for_sample(
         latitude (float): Sample latitude
         longitude (float): Sample longitude
         config (FeaturesConfig): Features configuration
-        log_level (Optional[int]): Log level to use for this search.
-            If None, makes no changes to the logger. Defaults to None.
 
     Returns:
-        Tuple[pd.DataFrame, Dict, Optional[str]]: Tuple of (metadata for sentinel
-            item candidates, dictionary mapping current sample ID to the
-            relevant pystac item IDs, error message if the search failed)
+        Tuple[pd.DataFrame, Dict, bool]: Tuple of (metadata for sentinel item
+            candidates, dictionary mapping current sample ID to the
+            relevant pystac item IDs, whether the search failed)
     """
-    # process_map runs in separate worker processes
-    # update to use the same log level specified in the CLI
-    if log_level is not None:
-        logger.remove()
-        logger.add(sys.stderr, level=log_level)
-
     try:
         # Search planetary computer
         search_results = search_planetary_computer(
@@ -272,8 +263,8 @@ def _generate_candidate_metadata_for_sample(
         # Get satelite metadata
         sample_items_meta = get_items_metadata(search_results, latitude, longitude, config)
     # Signing items fetches a token with requests, which raises its own errors
-    except (*STAC_ERRORS, requests.exceptions.RequestException) as e:
-        return pd.DataFrame(), {sample_id: {"sentinel_item_ids": []}}, f"{type(e).__name__}: {e}"
+    except (*STAC_ERRORS, requests.exceptions.RequestException):
+        return pd.DataFrame(), {sample_id: {"sentinel_item_ids": []}}, True
 
     sample_map = {
         sample_id: {
@@ -283,7 +274,7 @@ def _generate_candidate_metadata_for_sample(
         }
     }
 
-    return sample_items_meta, sample_map, None
+    return sample_items_meta, sample_map, False
 
 
 def generate_candidate_metadata(
@@ -306,11 +297,7 @@ def generate_candidate_metadata(
         f"Searching Sentinel-2 for satellite imagery for {samples.shape[0]:,} sample points."
     )
     results = process_map(
-        functools.partial(
-            _generate_candidate_metadata_for_sample,
-            config=config,
-            log_level=logger._core.min_level,
-        ),
+        functools.partial(_generate_candidate_metadata_for_sample, config=config),
         samples.index,
         samples.date,
         samples.latitude,
@@ -321,34 +308,18 @@ def generate_candidate_metadata(
         disable=(logger._core.min_level > 20),
     )
 
-    errors = {
-        sample_id: error for sample_id, (_, _, error) in zip(samples.index, results) if error
-    }
-    for sample_id, error in errors.items():
-        logger.debug(f"Sentinel-2 search failed for sample ID {sample_id} - {error}")
-    if errors and len(errors) == len(results):
-        raise ValueError(
-            f"Sentinel-2 search failed for every sample point ({next(iter(errors.values()))}). "
-            "Please try again later. To show the error for each sample point, run with `-vv`."
-        )
-    if errors:
+    n_failed = sum(res[2] for res in results)
+    if n_failed > 0:
         logger.warning(
-            f"Sentinel-2 search failed for {len(errors):,} sample point(s). "
-            f"Search succeeded for {len(results) - len(errors):,} sample point(s)."
+            f"Sentinel-2 search failed for {n_failed:,} sample point(s) after retrying."
         )
 
     # Consolidate parallel results
     sentinel_meta = pd.concat([res[0] for res in results])
     if sentinel_meta.empty:
-        if errors:
-            logger.error(
-                "No Sentinel-2 imagery was found for the sample points whose search succeeded. "
-                "Please try again later to search the rest."
-            )
-        else:
-            logger.error(
-                "No Sentinel-2 imagery was found for any of the provided sample points. Please try a different location or date."
-            )
+        logger.error(
+            "No Sentinel-2 imagery was found for any of the provided sample points. Please try a different location or date."
+        )
         exit(1)
     sentinel_meta = sentinel_meta.groupby("item_id", as_index=False).first().reset_index(drop=True)
 
