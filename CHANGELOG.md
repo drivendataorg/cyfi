@@ -2,7 +2,7 @@
 
 ### v1.2.1 - (unreleased)
 
-- Add an agent skill for running CyFi and opening the CyFi Explorer with AI coding agents ([PR #206](https://github.com/drivendataorg/cyfi/pull/206))
+- Add an agent skill for running CyFi and opening the CyFi Explorer with AI coding agents ([PR #206](https://github.com/drivendataorg/cyfi/pull/206), [PR #213](https://github.com/drivendataorg/cyfi/pull/213))
 - Error gracefully if every image found is too cloudy ([PR #210](https://github.com/drivendataorg/cyfi/pull/210))
 - Show the date of the Sentinel-2 image used for the estimate and how many days before the sample date it was taken in `cyfi predict-point` output ([PR #207](https://github.com/drivendataorg/cyfi/pull/207))
 - Close satellite imagery files after reading them ([PR #208](https://github.com/drivendataorg/cyfi/pull/208))

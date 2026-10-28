@@ -111,11 +111,15 @@ Launch the [CyFi Explorer](https://cyfi.drivendata.org/explorer/) to view the Se
 
 CyFi has an [agent skill](https://github.com/drivendataorg/cyfi/tree/main/skills) for AI coding agents such as Claude Code, Codex, or Cursor. The skill walks the agent through gathering your locations and dates, running CyFi, explaining the results, and opening the CyFi Explorer.
 
-To set it up, give your agent this prompt:
+**One-time setup.** Ask your agent:
 
-> I want to estimate cyanobacteria levels in lakes using CyFi (https://github.com/drivendataorg/cyfi). Install the `cyfi` package and its `cyfi` skill, then tell me current conditions at [lake or location].
+> Install CyFi and its agent skill from https://github.com/drivendataorg/cyfi
 
-Or install the skill by hand. For Claude Code, copy it into `~/.claude/skills/` (every project) or `.claude/skills/` (one project):
+**From then on**, ask in plain language:
+
+> Use CyFi to estimate cyanobacteria in [your lake or location]
+
+To install the skill by hand instead, copy it into `~/.claude/skills/` (every project) or `.claude/skills/` (one project) for Claude Code:
 
 ```bash
 git clone https://github.com/drivendataorg/cyfi
