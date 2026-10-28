@@ -1,5 +1,9 @@
 # CyFi changelog
 
+### v1.3.1 - (unreleased)
+
+- Skip sample points whose imagery search fails after retrying instead of stopping the run, and exit with a clear error when there is no Sentinel-2 imagery for any sample point, such as for dates before mid-2015 ([PR #216](https://github.com/drivendataorg/cyfi/pull/216))
+
 ### v1.3.0 - 2026-10-28
 
 - Add an agent skill for running CyFi and opening the CyFi Explorer with AI coding agents ([PR #206](https://github.com/drivendataorg/cyfi/pull/206), [PR #213](https://github.com/drivendataorg/cyfi/pull/213))
