@@ -113,7 +113,7 @@ CyFi has an [agent skill](https://github.com/drivendataorg/cyfi/tree/main/skills
 
 **One-time setup.** Ask your agent:
 
-> Install CyFi and its agent skill from cyfi.drivendata.org
+> Install CyFi and its agent skill from https://github.com/drivendataorg/cyfi
 
 **From then on**, ask in plain language:
 
