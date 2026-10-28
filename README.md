@@ -109,7 +109,7 @@ Launch the [CyFi Explorer](https://cyfi.drivendata.org/explorer/) to view the Se
 
 ### Using CyFi with AI agents
 
-CyFi has an [agent skill](https://github.com/drivendataorg/cyfi/tree/main/skills) for AI coding agents that can run commands on your computer, such as Claude Code, Codex, or Cursor. The skill walks the agent through gathering your locations and dates, running CyFi, explaining the results, and opening the CyFi Explorer.
+CyFi has an [agent skill](https://github.com/drivendataorg/cyfi/tree/main/skills) for AI coding agents such as Claude Code, Codex, or Cursor. The skill walks the agent through gathering your locations and dates, running CyFi, explaining the results, and opening the CyFi Explorer.
 
 **One-time setup.** Ask your agent:
 
