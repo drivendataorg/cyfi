@@ -107,6 +107,25 @@ Launch the [CyFi Explorer](https://cyfi.drivendata.org/explorer/) to view the Se
 
 ![Screenshot of CyFi explorer showing the predictions table along with the Sentinel-2 imagery.](https://s3.amazonaws.com/drivendata-public-assets/cyfi_explorer_screenshot.jpg)
 
+### Using CyFi with AI agents
+
+CyFi has an [agent skill](https://github.com/drivendataorg/cyfi/tree/main/skills) for AI coding agents such as Claude Code, Codex, or Cursor. The skill walks the agent through gathering your locations and dates, running CyFi, explaining the results, and opening the CyFi Explorer.
+
+To set it up, give your agent this prompt:
+
+```text
+I want to estimate cyanobacteria levels in lakes using CyFi (https://github.com/drivendataorg/cyfi). Install the `cyfi` package and its `cyfi` skill, then tell me current conditions at <lake or location>.
+```
+
+Or install the skill by hand. For Claude Code, copy it into `~/.claude/skills/` (every project) or `.claude/skills/` (one project):
+
+```bash
+git clone https://github.com/drivendataorg/cyfi
+cp -r cyfi/skills/cyfi ~/.claude/skills/cyfi
+```
+
+For an agent with no skill mechanism, paste [`skills/cyfi/SKILL.md`](https://github.com/drivendataorg/cyfi/blob/main/skills/cyfi/SKILL.md) into its prompt or project instructions.
+
 ## Reference paper
 
 Dorne, E., Wetstone, K., Cerquera, T. B., & Gupta, S. (2024). Cyanobacteria detection in small, inland water bodies with CyFi. In Proceedings of the 23nd Python in Science Conference (pp. 154–173). <https://doi.org/10.25080/pdhk7238>
