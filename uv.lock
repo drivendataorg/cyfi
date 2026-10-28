@@ -22,7 +22,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-10-12T22:15:30.264652Z"
+exclude-newer = "2026-10-21T16:45:26.981692Z"
 exclude-newer-span = "P7D"
 
 [[package]]
@@ -933,7 +933,7 @@ wheels = [
 
 [[package]]
 name = "cyfi"
-version = "1.2.0"
+version = "1.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "cloudpathlib", extra = ["s3"] },

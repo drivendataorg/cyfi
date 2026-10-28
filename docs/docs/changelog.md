@@ -1,6 +1,6 @@
 # CyFi changelog
 
-### v1.2.1 - (unreleased)
+### v1.2.1 - 2026-10-28
 
 - Add an agent skill for running CyFi and opening the CyFi Explorer with AI coding agents ([PR #206](https://github.com/drivendataorg/cyfi/pull/206), [PR #213](https://github.com/drivendataorg/cyfi/pull/213))
 - Error gracefully if every image found is too cloudy ([PR #210](https://github.com/drivendataorg/cyfi/pull/210))
