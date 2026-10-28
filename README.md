@@ -113,9 +113,7 @@ CyFi has an [agent skill](https://github.com/drivendataorg/cyfi/tree/main/skills
 
 To set it up, give your agent this prompt:
 
-```text
-I want to estimate cyanobacteria levels in lakes using CyFi (https://github.com/drivendataorg/cyfi). Install the `cyfi` package and its `cyfi` skill, then tell me current conditions at <lake or location>.
-```
+> I want to estimate cyanobacteria levels in lakes using CyFi (https://github.com/drivendataorg/cyfi). Install the `cyfi` package and its `cyfi` skill, then tell me current conditions at [lake or location].
 
 Or install the skill by hand. For Claude Code, copy it into `~/.claude/skills/` (every project) or `.claude/skills/` (one project):
 
