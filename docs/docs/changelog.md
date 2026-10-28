@@ -2,6 +2,7 @@
 
 ### v1.3.1 - (unreleased)
 
+- Fix the CyFi Explorer map, which failed to load with plotly 7 ([PR #217](https://github.com/drivendataorg/cyfi/pull/217))
 - Skip sample points whose imagery search fails after retrying instead of stopping the run, and exit with a clear error when there is no Sentinel-2 imagery for any sample point ([PR #216](https://github.com/drivendataorg/cyfi/pull/216))
 
 ### v1.3.0 - 2026-10-28
