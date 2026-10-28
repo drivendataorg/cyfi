@@ -1,5 +1,9 @@
 # CyFi changelog
 
+### v1.3.1 - (unreleased)
+
+- Fix the CyFi Explorer map, which failed to load with plotly 7 ([PR #217](https://github.com/drivendataorg/cyfi/pull/217))
+
 ### v1.3.0 - 2026-10-28
 
 - Add an agent skill for running CyFi and opening the CyFi Explorer with AI coding agents ([PR #206](https://github.com/drivendataorg/cyfi/pull/206), [PR #213](https://github.com/drivendataorg/cyfi/pull/213))
