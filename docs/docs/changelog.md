@@ -2,7 +2,7 @@
 
 ### v1.3.1 - (unreleased)
 
-- Fix the CyFi Explorer map, which failed to load with plotly 7 ([PR #217](https://github.com/drivendataorg/cyfi/pull/217))
+- Fix the CyFi Explorer map, which failed to load with plotly 7 ([PR #218](https://github.com/drivendataorg/cyfi/pull/218))
 
 ### v1.3.0 - 2026-10-28
 
