@@ -171,7 +171,7 @@ CyFi has an [agent skill](https://github.com/drivendataorg/cyfi/tree/main/skills
 
 **From then on**, ask in plain language:
 
-> Use CyFi to check [your lake or location]
+> Use CyFi to estimate cyanobacteria in [your lake or location]
 
 To install the skill by hand instead, copy it into `~/.claude/skills/` (every project) or `.claude/skills/` (one project) for Claude Code:
 
