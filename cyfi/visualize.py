@@ -115,7 +115,7 @@ def visualize(
         color_map = {"low": "teal", "moderate": "gold", "high": "red"}
         map_df["color"] = map_df.severity.map(color_map)
         fig = go.Figure(
-            go.Scattermapbox(
+            go.Scattermap(
                 customdata=map_df,
                 lat=map_df["latitude"].tolist(),
                 lon=map_df["longitude"].tolist(),
@@ -128,11 +128,11 @@ def visualize(
         )
 
         fig.update_layout(
-            mapbox_style="carto-positron",
+            map_style="carto-positron",
             hovermode="closest",
-            mapbox=dict(
+            map=dict(
                 bearing=0,
-                center=go.layout.mapbox.Center(
+                center=dict(
                     lat=37.0902,
                     lon=-95.7129,
                 ),
