@@ -169,7 +169,10 @@ def _calculate_satellite_features_for_sample_item(
         # Filter array to water area
         if config.filter_to_water_area:
             if band != "SCL":
-                scaled_scl = cv2.resize(scl_array[0], (arr.shape[2], arr.shape[1]))
+                # SCL values are class labels, so interpolating between them creates false classes
+                scaled_scl = cv2.resize(
+                    scl_array[0], (arr.shape[2], arr.shape[1]), interpolation=cv2.INTER_NEAREST
+                )
                 arr = arr[0][scaled_scl == 6]
                 sample_item_features["num_water_pixels"] = arr.size
 

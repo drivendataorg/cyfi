@@ -11,7 +11,11 @@ import rasterio
 import requests
 
 from cyfi.config import FeaturesConfig
-from cyfi.data.features import generate_all_features, calculate_metadata_features
+from cyfi.data.features import (
+    _calculate_satellite_features_for_sample_item,
+    calculate_metadata_features,
+    generate_all_features,
+)
 from cyfi.data.satellite_data import (
     _generate_candidate_metadata_for_sample,
     download_row,
@@ -258,3 +262,30 @@ def test_download_satellite_data_skips_cloudy_items(tmp_path, satellite_meta, tr
 
     _, features = generate_all_features(train_data, satellite_meta, config, tmp_path)
     assert features.index.tolist() == [clear.sample_id]
+
+
+def save_item_arrays(cache_dir, config, arrays):
+    """Save band arrays where feature calculation looks for sample "s" and item "i" """
+    item_dir = cache_dir / f"sentinel_{config.image_feature_meter_window}" / "s" / "i"
+    item_dir.mkdir(parents=True)
+    for band, arr in arrays.items():
+        np.save(item_dir / f"{band}.npy", arr)
+
+
+def test_water_mask_keeps_scl_classes(tmp_path):
+    config = FeaturesConfig(
+        use_sentinel_bands=["B02"], satellite_image_features=["B02_mean"], max_cloud_percent=None
+    )
+    # Bare soil (5) next to unclassified (7) has no water. Interpolating SCL to the 10 m band
+    # would turn the pixels between them into water (6).
+    save_item_arrays(
+        tmp_path,
+        config,
+        {
+            "SCL": np.array([[[5, 7], [7, 5]]], dtype=np.uint8),
+            "B02": np.full((1, 4, 4), 1000, dtype=np.uint16),
+        },
+    )
+    features = _calculate_satellite_features_for_sample_item("s", "i", config, tmp_path)
+    assert features["num_water_pixels"] == 0
+    assert "B02_mean" not in features
