@@ -289,3 +289,20 @@ def test_water_mask_keeps_scl_classes(tmp_path):
     features = _calculate_satellite_features_for_sample_item("s", "i", config, tmp_path)
     assert features["num_water_pixels"] == 0
     assert "B02_mean" not in features
+
+
+@pytest.mark.parametrize("n_missing, has_features", [(5, True), (20, False)])
+def test_missing_water_pixels(tmp_path, n_missing, has_features):
+    config = FeaturesConfig(
+        use_sentinel_bands=["B02"], satellite_image_features=["B02_mean"], max_cloud_percent=None
+    )
+    # 100 water pixels at 10 m, some with no data (0) as at the edge of the satellite's pass
+    b02 = np.full((1, 10, 10), 1000, dtype=np.uint16)
+    b02.flat[:n_missing] = 0
+    save_item_arrays(tmp_path, config, {"SCL": np.full((1, 5, 5), 6, dtype=np.uint8), "B02": b02})
+    features = _calculate_satellite_features_for_sample_item("s", "i", config, tmp_path)
+    # A few missing pixels are left out; more than 10% skips the image
+    if has_features:
+        assert features["B02_mean"] == 1000
+    else:
+        assert np.isnan(features.get("B02_mean", np.nan))
