@@ -1,5 +1,10 @@
 # CyFi changelog
 
+### v1.4.0 - (unreleased)
+
+- Fix the water mask, which counted some land and cloud pixels as water because the scene classification band was interpolated when resized. Estimates change for some sample points, and points with no water in the bounding box no longer get an estimate ([PR #XXX](https://github.com/drivendataorg/cyfi/pull/XXX))
+- Calculate features from the pixels that have data instead of skipping an image when any water pixel has no data, which happens at the edge of a satellite's pass. Fewer sample points fall back to an older image or get no estimate ([PR #XXX](https://github.com/drivendataorg/cyfi/pull/XXX))
+
 ### v1.3.1 - 2026-11-02
 
 - Fix the CyFi Explorer map, which failed to load with plotly 7 ([PR #218](https://github.com/drivendataorg/cyfi/pull/218))
