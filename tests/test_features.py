@@ -8,32 +8,22 @@ from pystac import STACError
 from pystac_client.exceptions import APIError
 import pytest
 import rasterio
+import requests
 
 from cyfi.config import FeaturesConfig
 from cyfi.data.features import generate_all_features, calculate_metadata_features
 from cyfi.data.satellite_data import (
+    _generate_candidate_metadata_for_sample,
     download_row,
     download_satellite_data,
     generate_candidate_metadata,
     retry_stac,
-    search_planetary_computer,
 )
 from cyfi.data.utils import add_unique_identifier
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
-
-
-def serial_map(fn, *iterables, **kwargs):
-    # Stands in for process_map so the patched search applies in the same process
-    return list(map(fn, *iterables))
-
-
-def search_rate_limited_north_of_40(date, latitude, longitude, **kwargs):
-    if latitude > 40:
-        raise APIError("Request rate limited or blocked")
-    return search_planetary_computer(date, latitude, longitude, **kwargs)
 
 
 def test_known_features(train_data, features_config, satellite_meta):
@@ -110,27 +100,27 @@ def test_generate_candidate_metadata(train_data, features_config):
     assert "visual_href" in candidate_meta.columns
 
 
-def test_generate_candidate_metadata_search_failures(train_data, features_config, mocker, capsys):
-    train_data = add_unique_identifier(train_data)
+@pytest.mark.parametrize(
+    "error",
+    [APIError("Request rate limited or blocked"), requests.exceptions.ConnectionError("token")],
+)
+def test_search_failure_skips_sample(features_config, mocker, error):
+    mocker.patch("cyfi.data.satellite_data.search_planetary_computer", side_effect=error)
+    meta, sample_map, failed = _generate_candidate_metadata_for_sample(
+        "s", "2019-08-01", 41.0, -73.0, features_config
+    )
+    assert failed
+    assert meta.empty
+    assert sample_map == {"s": {"sentinel_item_ids": []}}
+
+
+def test_generate_candidate_metadata_no_imagery(train_data, features_config, capsys):
+    # Sentinel-2 imagery starts in mid-2015
+    train_data = add_unique_identifier(train_data.assign(date="2014-08-01"))
     # Log to stdout so we can check the results with capsys
     handler_id = logger.add(sys.stdout, level="INFO")
-
-    # Test case when some searches fail after retrying
-    mocker.patch("cyfi.data.satellite_data.process_map", serial_map)
-    mocker.patch(
-        "cyfi.data.satellite_data.search_planetary_computer",
-        side_effect=search_rate_limited_north_of_40,
-    )
-    candidate_meta, sample_item_map = generate_candidate_metadata(train_data, features_config)
-    failed_ids = train_data[train_data.latitude > 40].index
-    assert len(candidate_meta) > 0
-    assert all(sample_item_map[sample_id]["sentinel_item_ids"] == [] for sample_id in failed_ids)
-    assert "Sentinel-2 search failed for 2 sample point(s)" in capsys.readouterr().out
-    mocker.stopall()
-
-    # Test case when no imagery is found, for dates before Sentinel-2 launched
     with pytest.raises(SystemExit) as exc:
-        generate_candidate_metadata(train_data.assign(date="2014-08-01"), features_config)
+        generate_candidate_metadata(train_data, features_config)
     logger.remove(handler_id)
     assert exc.value.code == 1
     assert "No Sentinel-2 imagery was found" in capsys.readouterr().out
