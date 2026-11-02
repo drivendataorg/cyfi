@@ -173,11 +173,19 @@ def _calculate_satellite_features_for_sample_item(
         # Filter array to water area
         if config.filter_to_water_area:
             if band != "SCL":
-                # SCL is a class map, so interpolating it would create false classes
-                scaled_scl = cv2.resize(
-                    scl_array[0], (arr.shape[2], arr.shape[1]), interpolation=cv2.INTER_NEAREST
-                )
-                arr = arr[0][scaled_scl == 6]
+                # Enlarge the coarser of the band and SCL to the other's grid, so the 20 m water
+                # mask is never shrunk and loses small water bodies at 60 m. Use nearest neighbor
+                # because SCL is a class map, and interpolating it would create false classes.
+                scl = scl_array[0]
+                if arr.shape[1] < scl.shape[0]:
+                    arr = cv2.resize(
+                        arr[0], (scl.shape[1], scl.shape[0]), interpolation=cv2.INTER_NEAREST_EXACT
+                    )[None]
+                else:
+                    scl = cv2.resize(
+                        scl, (arr.shape[2], arr.shape[1]), interpolation=cv2.INTER_NEAREST_EXACT
+                    )
+                arr = arr[0][scl == 6]
                 sample_item_features["num_water_pixels"] = arr.size
 
         # If the bounding box does not contain any water pixels (if filtering), do not calculate features

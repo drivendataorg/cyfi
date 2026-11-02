@@ -290,6 +290,22 @@ def test_water_mask_keeps_scl_classes(tmp_path):
     assert "B02_mean" not in features
 
 
+def test_water_mask_keeps_small_water_in_coarser_bands(tmp_path):
+    config = FeaturesConfig(
+        use_sentinel_bands=["B02"], satellite_image_features=["B02_mean"], max_cloud_percent=None
+    )
+    # One band pixel covering a 3x3 SCL block, as for a 60 m band, with water off-center.
+    # Shrinking SCL to the band's grid would lose the water.
+    scl = np.full((1, 3, 3), 5, dtype=np.uint8)
+    scl[0, 0, 1] = 6
+    save_item_arrays(
+        tmp_path, config, {"SCL": scl, "B02": np.full((1, 1, 1), 1000, dtype=np.uint16)}
+    )
+    features = _calculate_satellite_features_for_sample_item("s", "i", config, tmp_path)
+    assert features["num_water_pixels"] == 1
+    assert features["B02_mean"] == 1000
+
+
 @pytest.mark.parametrize("n_missing, has_features", [(10, True), (11, False)])
 def test_missing_water_pixels(tmp_path, n_missing, has_features):
     config = FeaturesConfig(
