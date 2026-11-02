@@ -18,7 +18,8 @@ import xarray as xr
 from cyfi.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
 from cyfi.data.utils import calculate_cloud_percent
 
-# Skip an image when more than this share of a band's water pixels have no data
+# Skip an image when more than this share of a band's water pixels (or all pixels, if not
+# filtering to water) have no data
 MAX_NO_DATA_FRACTION = 0.1
 
 
@@ -82,7 +83,7 @@ def calculate_satellite_features(
 
     # Drop where missing pixels (features will be nan)
     logger.info(
-        f"Dropping {satellite_features.isna().any(axis=1).sum():,} row(s) where bouding box contains missing pixels."
+        f"Dropping {satellite_features.isna().any(axis=1).sum():,} row(s) where bouding box has too many missing pixels."
     )
     satellite_features = satellite_features[~satellite_features.isna().any(axis=1)]
 
@@ -179,16 +180,19 @@ def _calculate_satellite_features_for_sample_item(
                 arr = arr[0][scaled_scl == 6]
                 sample_item_features["num_water_pixels"] = arr.size
 
-        # If the bounding box does not contain any water pixels (if filtering) or has entirely no data pixels, do not calculate features
-        if arr.size == 0 or np.isnan(arr).all():
+        # If the bounding box does not contain any water pixels (if filtering), do not calculate features
+        if arr.size == 0:
             return sample_item_features
 
         # Water pixels at the edge of the satellite's pass can have no data, since band edges
         # don't line up with SCL's. Leave them out instead of letting them make every feature
         # NaN. SCL is kept whole because percent_water counts the whole box.
         if band != "SCL":
+            # NaN features drop the image along with others that have missing pixels
             if np.isnan(arr).mean() > MAX_NO_DATA_FRACTION:
-                return sample_item_features
+                return sample_item_features | dict.fromkeys(
+                    config.satellite_image_features, np.nan
+                )
             arr = arr[~np.isnan(arr)]
 
         band_arrays[band] = arr

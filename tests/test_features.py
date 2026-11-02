@@ -290,7 +290,7 @@ def test_water_mask_keeps_scl_classes(tmp_path):
     assert "B02_mean" not in features
 
 
-@pytest.mark.parametrize("n_missing, has_features", [(5, True), (20, False)])
+@pytest.mark.parametrize("n_missing, has_features", [(10, True), (11, False)])
 def test_missing_water_pixels(tmp_path, n_missing, has_features):
     config = FeaturesConfig(
         use_sentinel_bands=["B02"], satellite_image_features=["B02_mean"], max_cloud_percent=None
@@ -304,3 +304,31 @@ def test_missing_water_pixels(tmp_path, n_missing, has_features):
         assert features["B02_mean"] == 1000
     else:
         assert np.isnan(features.get("B02_mean", np.nan))
+
+
+def test_all_images_missing_too_many_pixels(
+    tmp_path, train_data, features_config, satellite_meta, capsys
+):
+    train_data = add_unique_identifier(train_data)
+    satellite_meta = satellite_meta.head(1)
+    features_config.use_sentinel_bands = ["B02", "SCL"]
+    features_config.filter_to_water_area = True
+
+    # 20 of 100 water pixels have no data
+    row = satellite_meta.iloc[0]
+    item_dir = tmp_path / f"sentinel_500/{row.sample_id}/{row.item_id}"
+    item_dir.mkdir(parents=True)
+    b02 = np.full((1, 10, 10), 1000, dtype=np.uint16)
+    b02.flat[:20] = 0
+    np.save(item_dir / "B02.npy", b02)
+    np.save(item_dir / "SCL.npy", np.full((1, 5, 5), 6, dtype=np.uint8))
+
+    # Log to stdout so we can check the results with capsys
+    handler_id = logger.add(sys.stdout, level="INFO")
+    with pytest.raises(SystemExit) as exc:
+        generate_all_features(train_data, satellite_meta, features_config, cache_dir=tmp_path)
+    logger.remove(handler_id)
+    assert exc.value.code == 1
+    output = capsys.readouterr().out
+    assert "Dropping 1 row(s) where bouding box has too many missing pixels" in output
+    assert "Relevant satellite data is not available" in output
