@@ -276,8 +276,7 @@ def test_water_mask_keeps_scl_classes(tmp_path):
     config = FeaturesConfig(
         use_sentinel_bands=["B02"], satellite_image_features=["B02_mean"], max_cloud_percent=None
     )
-    # Bare soil (5) next to unclassified (7) has no water. Interpolating SCL to the 10 m band
-    # would turn the pixels between them into water (6).
+    # Interpolating bare soil (5) and unclassified (7) would create water (6) between them
     save_item_arrays(
         tmp_path,
         config,
@@ -296,12 +295,11 @@ def test_missing_water_pixels(tmp_path, n_missing, has_features):
     config = FeaturesConfig(
         use_sentinel_bands=["B02"], satellite_image_features=["B02_mean"], max_cloud_percent=None
     )
-    # 100 water pixels at 10 m, some with no data (0) as at the edge of the satellite's pass
+    # 100 water pixels, some with no data (0)
     b02 = np.full((1, 10, 10), 1000, dtype=np.uint16)
     b02.flat[:n_missing] = 0
     save_item_arrays(tmp_path, config, {"SCL": np.full((1, 5, 5), 6, dtype=np.uint8), "B02": b02})
     features = _calculate_satellite_features_for_sample_item("s", "i", config, tmp_path)
-    # A few missing pixels are left out; more than 10% skips the image
     if has_features:
         assert features["B02_mean"] == 1000
     else:

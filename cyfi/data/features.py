@@ -18,9 +18,7 @@ import xarray as xr
 from cyfi.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
 from cyfi.data.utils import calculate_cloud_percent
 
-# Skip an image when more than this share of a band's pixels are missing. Features are
-# calculated from the remaining pixels, so an image with a few missing pixels is kept;
-# dropping it would fall back to an older image or leave no estimate.
+# Skip an image when more than this share of a band's water pixels have no data
 MAX_NO_DATA_FRACTION = 0.1
 
 
@@ -174,7 +172,7 @@ def _calculate_satellite_features_for_sample_item(
         # Filter array to water area
         if config.filter_to_water_area:
             if band != "SCL":
-                # SCL values are class labels, so interpolating between them creates false classes
+                # SCL is a class map, so interpolating it would create false classes
                 scaled_scl = cv2.resize(
                     scl_array[0], (arr.shape[2], arr.shape[1]), interpolation=cv2.INTER_NEAREST
                 )
@@ -185,10 +183,9 @@ def _calculate_satellite_features_for_sample_item(
         if arr.size == 0 or np.isnan(arr).all():
             return sample_item_features
 
-        # Some "water" pixels can still be missing. At the edge of the satellite's pass, a 20 m
-        # SCL pixel labeled water covers 10 m band pixels that fall outside the pass, and the
-        # 60 m bands' edges don't line up with SCL's. Leave those pixels out rather than letting
-        # them make every feature NaN. SCL is kept whole because percent_water counts the box.
+        # Water pixels at the edge of the satellite's pass can have no data, since band edges
+        # don't line up with SCL's. Leave them out instead of letting them make every feature
+        # NaN. SCL is kept whole because percent_water counts the whole box.
         if band != "SCL":
             if np.isnan(arr).mean() > MAX_NO_DATA_FRACTION:
                 return sample_item_features
