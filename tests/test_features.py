@@ -8,10 +8,12 @@ from pystac import STACError
 from pystac_client.exceptions import APIError
 import pytest
 import rasterio
+import requests
 
 from cyfi.config import FeaturesConfig
 from cyfi.data.features import generate_all_features, calculate_metadata_features
 from cyfi.data.satellite_data import (
+    _generate_candidate_metadata_for_sample,
     download_row,
     download_satellite_data,
     generate_candidate_metadata,
@@ -98,6 +100,32 @@ def test_generate_candidate_metadata(train_data, features_config):
     assert "visual_href" in candidate_meta.columns
 
 
+@pytest.mark.parametrize(
+    "error",
+    [APIError("Request rate limited or blocked"), requests.exceptions.ConnectionError("token")],
+)
+def test_search_failure_skips_sample(features_config, mocker, error):
+    mocker.patch("cyfi.data.satellite_data.search_planetary_computer", side_effect=error)
+    meta, sample_map, failed = _generate_candidate_metadata_for_sample(
+        "s", "2019-08-01", 41.0, -73.0, features_config
+    )
+    assert failed
+    assert meta.empty
+    assert sample_map == {"s": {"sentinel_item_ids": []}}
+
+
+def test_generate_candidate_metadata_no_imagery(train_data, features_config, capsys):
+    # Sentinel-2 imagery starts in mid-2015
+    train_data = add_unique_identifier(train_data.assign(date="2014-08-01"))
+    # Log to stdout so we can check the results with capsys
+    handler_id = logger.add(sys.stdout, level="INFO")
+    with pytest.raises(SystemExit) as exc:
+        generate_candidate_metadata(train_data, features_config)
+    logger.remove(handler_id)
+    assert exc.value.code == 1
+    assert "No Sentinel-2 imagery was found" in capsys.readouterr().out
+
+
 def test_download_satellite_data(tmp_path, satellite_meta, train_data, features_config, capsys):
     features_config.use_sentinel_bands = ["B02", "B03"]
     train_data = add_unique_identifier(train_data)
@@ -166,7 +194,9 @@ def test_retry_stac(mocker):
     assert retry_stac(func, "arg", key="value") == "ok"
     assert func.call_count == 3
     func.assert_called_with("arg", key="value")
-    assert sleep.call_args_list == [mocker.call(2), mocker.call(4)]
+    # Waits are 2s and 4s with up to 50% jitter
+    assert 1 <= sleep.call_args_list[0].args[0] <= 3
+    assert 2 <= sleep.call_args_list[1].args[0] <= 6
 
     # Test case when the error is not from the API, which should not be retried
     func = mocker.Mock(side_effect=ValueError("bad input"))

@@ -1,6 +1,7 @@
 from datetime import timedelta
 import functools
 import json
+import random
 import shutil
 import sys
 import time
@@ -15,6 +16,7 @@ import planetary_computer as pc
 from pystac import STACError, STACTypeError
 from pystac_client import Client, ItemSearch
 from pystac_client.exceptions import APIError
+import requests
 import rioxarray
 from tqdm.contrib.concurrent import process_map
 
@@ -45,9 +47,10 @@ def retry_stac(func: Callable, *args, attempts: int = 5, **kwargs) -> Any:
         except STAC_ERRORS as e:
             if attempt == attempts:
                 raise
-            wait = 2**attempt
+            # Jitter keeps parallel workers from retrying in lockstep
+            wait = 2**attempt * random.uniform(0.5, 1.5)
             logger.debug(
-                f"STAC request failed ({type(e).__name__}: {e.__cause__ or e}). Retrying in {wait}s"
+                f"STAC request failed ({type(e).__name__}: {e.__cause__ or e}). Retrying in {wait:.1f}s"
             )
             time.sleep(wait)
 
@@ -231,7 +234,7 @@ def _generate_candidate_metadata_for_sample(
     latitude: float,
     longitude: float,
     config: FeaturesConfig,
-) -> Tuple[pd.DataFrame, Dict]:
+) -> Tuple[pd.DataFrame, Dict, bool]:
     """Generate metadata for the satellite item candidates for one sample
 
     Args:
@@ -242,22 +245,26 @@ def _generate_candidate_metadata_for_sample(
         config (FeaturesConfig): Features configuration
 
     Returns:
-        Tuple[pd.DataFrame, Dict]: Tuple of (metadata for sentinel item
+        Tuple[pd.DataFrame, Dict, bool]: Tuple of (metadata for sentinel item
             candidates, dictionary mapping current sample ID to the
-            relevant pystac item IDs)
+            relevant pystac item IDs, whether the search failed)
     """
-    # Search planetary computer
-    search_results = search_planetary_computer(
-        date,
-        latitude,
-        longitude,
-        collections=["sentinel-2-l2a"],
-        days_search_window=config.pc_days_search_window,
-        meters_search_window=config.pc_meters_search_window,
-    )
+    try:
+        # Search planetary computer
+        search_results = search_planetary_computer(
+            date,
+            latitude,
+            longitude,
+            collections=["sentinel-2-l2a"],
+            days_search_window=config.pc_days_search_window,
+            meters_search_window=config.pc_meters_search_window,
+        )
 
-    # Get satelite metadata
-    sample_items_meta = get_items_metadata(search_results, latitude, longitude, config)
+        # Get satelite metadata
+        sample_items_meta = get_items_metadata(search_results, latitude, longitude, config)
+    # Signing items fetches a token with requests, which raises its own errors
+    except (*STAC_ERRORS, requests.exceptions.RequestException):
+        return pd.DataFrame(), {sample_id: {"sentinel_item_ids": []}}, True
 
     sample_map = {
         sample_id: {
@@ -267,7 +274,7 @@ def _generate_candidate_metadata_for_sample(
         }
     }
 
-    return sample_items_meta, sample_map
+    return sample_items_meta, sample_map, False
 
 
 def generate_candidate_metadata(
@@ -301,11 +308,20 @@ def generate_candidate_metadata(
         disable=(logger._core.min_level > 20),
     )
 
+    n_failed = sum(res[2] for res in results)
+    if n_failed > 0:
+        logger.warning(
+            f"Sentinel-2 search failed for {n_failed:,} sample point(s) after retrying."
+        )
+
     # Consolidate parallel results
-    sentinel_meta = [res[0] for res in results]
-    sentinel_meta = (
-        pd.concat(sentinel_meta).groupby("item_id", as_index=False).first().reset_index(drop=True)
-    )
+    sentinel_meta = pd.concat([res[0] for res in results])
+    if sentinel_meta.empty:
+        logger.error(
+            "No Sentinel-2 imagery was found for any of the provided sample points. Please try a different location or date."
+        )
+        exit(1)
+    sentinel_meta = sentinel_meta.groupby("item_id", as_index=False).first().reset_index(drop=True)
 
     sample_item_map = {}
     for res in results:
