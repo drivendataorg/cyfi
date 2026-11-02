@@ -2,8 +2,8 @@
 
 ### v1.4.0 - (unreleased)
 
-- Fix the water mask, which counted some land and cloud pixels as water because the scene classification band was interpolated when resized. Estimates change for some sample points, and points with no water in the bounding box no longer get an estimate ([PR #219](https://github.com/drivendataorg/cyfi/pull/219))
-- Calculate features from the pixels that have data instead of skipping an image when any water pixel has no data, which happens at the edge of a satellite's pass. Fewer sample points fall back to an older image or get no estimate ([PR #219](https://github.com/drivendataorg/cyfi/pull/219))
+- Fix the water mask, which counted some land and cloud pixels as water because the scene classification band was interpolated when resized. Estimates change for some sample points ([PR #219](https://github.com/drivendataorg/cyfi/pull/219))
+- Calculate features from the pixels that have data, and skip an image only when more than 10% of its water pixels have no data instead of when any do. Missing pixels happen at the edge of a satellite's pass. Fewer sample points fall back to an older image or get no estimate ([PR #219](https://github.com/drivendataorg/cyfi/pull/219))
 - Retrain the model with these fixes (`model_v1`), on the same training data and settings as `model_v0`. It gives fewer false bloom alarms ([PR #219](https://github.com/drivendataorg/cyfi/pull/219))
 
 ### v1.3.1 - 2026-11-02
