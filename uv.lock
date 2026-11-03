@@ -1249,7 +1249,7 @@ requires-dist = [
     { name = "geopy" },
     { name = "gitpython" },
     { name = "gradio", specifier = ">=5.0" },
-    { name = "lightgbm" },
+    { name = "lightgbm", specifier = ">=4" },
     { name = "loguru" },
     { name = "matplotlib" },
     { name = "numpy" },

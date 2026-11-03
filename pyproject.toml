@@ -30,7 +30,7 @@ dependencies = [
   "geopy",
   "GitPython",
   "gradio>=5.0",
-  "lightgbm",
+  "lightgbm>=4",
   "loguru",
   "matplotlib",
   "numpy",
