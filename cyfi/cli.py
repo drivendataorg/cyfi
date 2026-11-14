@@ -16,7 +16,7 @@ from cyfi.version import __version__
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
-DEFAULT_MODEL_PATH = str(Path(__file__).parent / "assets/model_v0.zip")
+DEFAULT_MODEL_PATH = str(Path(__file__).parent / "assets/model_v1.zip")
 
 
 class CRS(str, Enum):

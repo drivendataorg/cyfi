@@ -18,6 +18,9 @@ import xarray as xr
 from cyfi.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
 from cyfi.data.utils import calculate_cloud_percent
 
+# Skip an image when more than this share of a band's water pixels have missing values
+MAX_NO_DATA_FRACTION = 0.1
+
 
 def calculate_satellite_features(
     satellite_meta: pd.DataFrame,
@@ -79,7 +82,7 @@ def calculate_satellite_features(
 
     # Drop where missing pixels (features will be nan)
     logger.info(
-        f"Dropping {satellite_features.isna().any(axis=1).sum():,} row(s) where bouding box contains missing pixels."
+        f"Dropping {satellite_features.isna().any(axis=1).sum():,} row(s) where bouding box has too many missing pixels."
     )
     satellite_features = satellite_features[~satellite_features.isna().any(axis=1)]
 
@@ -153,6 +156,10 @@ def _calculate_satellite_features_for_sample_item(
         if cloud_ratio > config.max_cloud_percent:
             return sample_item_features
 
+    # Count water on SCL's own grid, so it doesn't depend on which band is resized
+    if config.filter_to_water_area:
+        sample_item_features["num_water_pixels"] = (scl_array == 6).sum()
+
     # Load band arrays into a dictionary with band names for keys
     band_arrays = {}
     for band in config.use_sentinel_bands:
@@ -169,19 +176,36 @@ def _calculate_satellite_features_for_sample_item(
         # Filter array to water area
         if config.filter_to_water_area:
             if band != "SCL":
-                scaled_scl = cv2.resize(scl_array[0], (arr.shape[2], arr.shape[1]))
-                arr = arr[0][scaled_scl == 6]
-                sample_item_features["num_water_pixels"] = arr.size
+                # SCL is categorical, so use nearest neighbor; bilinear would create fake water
+                scl = scl_array[0]
+                # Enlarge coarse 60 m bands to 20 m rather than shrink SCL, to keep small water
+                if arr.shape[1] < scl.shape[0]:
+                    arr = cv2.resize(
+                        arr[0], (scl.shape[1], scl.shape[0]), interpolation=cv2.INTER_NEAREST_EXACT
+                    )[None]
+                else:
+                    scl = cv2.resize(
+                        scl, (arr.shape[2], arr.shape[1]), interpolation=cv2.INTER_NEAREST_EXACT
+                    )
+                arr = arr[0][scl == 6]
 
-        # If the bounding box does not contain any water pixels (if filtering) or has entirely no data pixels, do not calculate features
-        if arr.size == 0 or np.isnan(arr).all():
+        # If the bounding box does not contain any water pixels (if filtering), do not calculate features
+        if arr.size == 0:
             return sample_item_features
+
+        # Drop pixels missing band values; SCL keeps every pixel since percent_water uses it
+        if band != "SCL":
+            # NaN features drop the image
+            if np.isnan(arr).mean() > MAX_NO_DATA_FRACTION:
+                return sample_item_features | dict.fromkeys(
+                    config.satellite_image_features, np.nan
+                )
+            arr = arr[~np.isnan(arr)]
 
         band_arrays[band] = arr
 
     # Iterate over features to generate
     for feature in config.satellite_image_features:
-        # note: features will be nan if any pixel in bounding box is nan
         sample_item_features[feature] = SATELLITE_FEATURE_CALCULATORS[feature](band_arrays)
 
     return sample_item_features

@@ -1,5 +1,11 @@
 # CyFi changelog
 
+### v1.4.0 - (unreleased)
+
+- Retrain the model with the water mask and missing band value fixes as `model_v1`, which replaces `model_v0` and requires LightGBM 4 ([PR #219](https://github.com/drivendataorg/cyfi/pull/219))
+- Skip an image only when more than 10% of its water pixels have missing band values ([PR #219](https://github.com/drivendataorg/cyfi/pull/219))
+- Fix the water mask by resizing the scene classification band with nearest neighbor instead of bilinear interpolation, which counted some land and cloud pixels as water ([PR #219](https://github.com/drivendataorg/cyfi/pull/219))
+
 ### v1.3.1 - 2026-11-02
 
 - Fix the CyFi Explorer map, which failed to load with plotly 7 ([PR #218](https://github.com/drivendataorg/cyfi/pull/218))

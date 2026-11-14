@@ -247,13 +247,13 @@ def test_cli_predict_point_crs(mocker):  # noqa: F811
 
 
 def test_graceful_exit_when_no_satellite_data():
-    # use location and date in SF where it was cloudy all month and there is no valid imagery
+    # use location and date in SF where every image in the prior 30 days is too cloudy
     result = runner.invoke(
         app,
         [
             "predict-point",
             "--date",
-            "2024-01-04",
+            "2023-01-16",
             "--lat",
             "37.753",
             "--lon",
