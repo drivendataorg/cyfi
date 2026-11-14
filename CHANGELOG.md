@@ -2,7 +2,7 @@
 
 ### v1.4.0 - (unreleased)
 
-- Remove the 1,000 offset that Sentinel-2 adds to reflectance values in images processed since January 25, 2022, which the model wasn't trained with ([PR #224](https://github.com/drivendataorg/cyfi/pull/224))
+- Remove the 1,000 offset that Sentinel-2 adds to reflectance values in images processed since January 25, 2022 ([PR #224](https://github.com/drivendataorg/cyfi/pull/224))
 - Retrain the model with the water mask and missing band value fixes as `model_v1`, which replaces `model_v0` and requires LightGBM 4 ([PR #219](https://github.com/drivendataorg/cyfi/pull/219))
 - Skip an image only when more than 10% of its water pixels have missing band values ([PR #219](https://github.com/drivendataorg/cyfi/pull/219))
 - Fix the water mask by resizing the scene classification band with nearest neighbor instead of bilinear interpolation, which counted some land and cloud pixels as water ([PR #219](https://github.com/drivendataorg/cyfi/pull/219))
