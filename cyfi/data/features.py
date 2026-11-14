@@ -18,7 +18,7 @@ import xarray as xr
 from cyfi.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
 from cyfi.data.utils import calculate_cloud_percent
 
-# Skip an image when more than this share of a band's water pixels are missing values
+# Skip an image when more than this share of a band's water pixels have missing values
 MAX_NO_DATA_FRACTION = 0.1
 
 
