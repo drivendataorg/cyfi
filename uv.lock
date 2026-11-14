@@ -1254,7 +1254,7 @@ requires-dist = [
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "odc-stac" },
-    { name = "opencv-python" },
+    { name = "opencv-python", specifier = ">=4.4" },
     { name = "pandas" },
     { name = "planetary-computer" },
     { name = "platformdirs" },

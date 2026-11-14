@@ -35,7 +35,7 @@ dependencies = [
   "matplotlib",
   "numpy",
   "odc-stac",
-  "opencv-python",
+  "opencv-python>=4.4",
   "pandas",
   "planetary-computer",
   "platformdirs",
