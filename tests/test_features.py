@@ -12,6 +12,7 @@ import requests
 
 from cyfi.config import FeaturesConfig
 from cyfi.data.features import (
+    REFLECTANCE_OFFSET,
     _calculate_satellite_features_for_sample_item,
     calculate_metadata_features,
     generate_all_features,
@@ -48,6 +49,24 @@ def test_known_features(train_data, features_config, satellite_meta):
 
     # Check expected columns in sentinel metadata (cloud_pct and num_water_pixels are not included because features_config doesn't use these)
     assert (sentinel_meta.columns == ["item_id", "days_before_sample", "visual_href"]).all()
+
+
+def test_reflectance_offset_removed(tmp_path, features_config):
+    # The same pixels from an image processed before the offset and one processed after it
+    before = "S2B_MSIL2A_20210921T184959_R113_T10SFF_20210922T084716"
+    after = "S2B_MSIL2A_20220921T184959_R113_T10SFF_20220922T084716"
+    pixels = np.arange(1, 101, dtype=np.uint16).reshape(1, 10, 10)
+    for item_id, arr in [(before, pixels), (after, pixels + REFLECTANCE_OFFSET)]:
+        item_dir = tmp_path / "sentinel_500/sample" / item_id
+        item_dir.mkdir(parents=True)
+        np.save(item_dir / "B02.npy", arr)
+
+    features = [
+        _calculate_satellite_features_for_sample_item("sample", item_id, features_config, tmp_path)
+        for item_id in [before, after]
+    ]
+    for feature in features_config.satellite_image_features:
+        assert features[0][feature] == features[1][feature]
 
 
 def test_all_images_too_cloudy(tmp_path, train_data, features_config, satellite_meta, capsys):
