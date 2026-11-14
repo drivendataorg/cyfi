@@ -306,7 +306,7 @@ def test_small_water_kept_for_60m_bands(tmp_path):
 
 
 @pytest.mark.parametrize("n_missing, has_features", [(10, True), (11, False)])
-def test_missing_water_pixels(tmp_path, n_missing, has_features):
+def test_missing_pixel_cutoff(tmp_path, n_missing, has_features):
     config = FeaturesConfig(
         use_sentinel_bands=["B02"], satellite_image_features=["B02_mean"], max_cloud_percent=None
     )
