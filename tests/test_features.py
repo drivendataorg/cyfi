@@ -294,8 +294,7 @@ def test_water_mask_keeps_small_water_in_coarser_bands(tmp_path):
     config = FeaturesConfig(
         use_sentinel_bands=["B02"], satellite_image_features=["B02_mean"], max_cloud_percent=None
     )
-    # One band pixel covering a 3x3 SCL block, as for a 60 m band, with water off-center.
-    # Shrinking SCL to the band's grid would lose the water.
+    # One 60 m band pixel over a 3x3 SCL block with off-center water; shrinking SCL loses it
     scl = np.full((1, 3, 3), 5, dtype=np.uint8)
     scl[0, 0, 1] = 6
     save_item_arrays(

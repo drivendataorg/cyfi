@@ -18,8 +18,7 @@ import xarray as xr
 from cyfi.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
 from cyfi.data.utils import calculate_cloud_percent
 
-# Skip an image when more than this share of a band's water pixels (or all pixels, if not
-# filtering to water) have no data
+# Skip an image when more than this share of a band's water pixels have no data
 MAX_NO_DATA_FRACTION = 0.1
 
 
@@ -173,9 +172,7 @@ def _calculate_satellite_features_for_sample_item(
         # Filter array to water area
         if config.filter_to_water_area:
             if band != "SCL":
-                # Enlarge the coarser of the band and SCL to the other's grid, so the 20 m water
-                # mask is never shrunk and loses small water bodies at 60 m. Use nearest neighbor
-                # because SCL is a class map, and interpolating it would create false classes.
+                # Class map: use nearest neighbor, and enlarge the coarser grid to keep small water
                 scl = scl_array[0]
                 if arr.shape[1] < scl.shape[0]:
                     arr = cv2.resize(
@@ -192,11 +189,9 @@ def _calculate_satellite_features_for_sample_item(
         if arr.size == 0:
             return sample_item_features
 
-        # Water pixels at the edge of the satellite's pass can have no data, since band edges
-        # don't line up with SCL's. Leave them out instead of letting them make every feature
-        # NaN. SCL is kept whole because percent_water counts the whole box.
+        # Drop no-data pixels (at the edge of a pass); keep SCL whole for percent_water
         if band != "SCL":
-            # NaN features drop the image along with others that have missing pixels
+            # NaN features drop the image
             if np.isnan(arr).mean() > MAX_NO_DATA_FRACTION:
                 return sample_item_features | dict.fromkeys(
                     config.satellite_image_features, np.nan
