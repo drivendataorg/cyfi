@@ -51,9 +51,19 @@ def calculate_satellite_features(
 
     # Iterate over selected sample / item combinations
     logger.info(f"Generating satellite features for {satellite_meta.shape[0]:,} images.")
+    # Sentinel-2 adds 1,000 to reflectance in images with processing baseline 04.00 or later
+    baseline = pd.to_numeric(
+        satellite_meta.get("s2:processing_baseline", pd.Series(index=satellite_meta.index)),
+        errors="coerce",
+    )
+    offset_items = frozenset(satellite_meta.item_id[baseline >= 4])
+
     satellite_features = process_map(
         functools.partial(
-            _calculate_satellite_features_for_sample_item, config=config, cache_dir=cache_dir
+            _calculate_satellite_features_for_sample_item,
+            config=config,
+            cache_dir=cache_dir,
+            offset_items=offset_items,
         ),
         satellite_meta.sample_id,
         satellite_meta.item_id,
@@ -130,7 +140,11 @@ def calculate_satellite_features(
 
 
 def _calculate_satellite_features_for_sample_item(
-    sample_id: str, item_id: str, config: FeaturesConfig, cache_dir: Path
+    sample_id: str,
+    item_id: str,
+    config: FeaturesConfig,
+    cache_dir: Path,
+    offset_items: frozenset = frozenset(),
 ):
     """Generate the satellite features for specific combination of
     sample and pystac item ID
@@ -160,10 +174,6 @@ def _calculate_satellite_features_for_sample_item(
     if config.filter_to_water_area:
         sample_item_features["num_water_pixels"] = (scl_array == 6).sum()
 
-    # Images processed since 2022-01-25 (the date ending the item ID) add 1,000 to reflectance
-    processed = item_id.split("_")[-1][:8]
-    has_offset = processed.isdigit() and processed >= "20220125"
-
     # Load band arrays into a dictionary with band names for keys
     band_arrays = {}
     for band in config.use_sentinel_bands:
@@ -177,9 +187,9 @@ def _calculate_satellite_features_for_sample_item(
         arr = np.where(arr == 0, np.nan, arr)
         sample_item_features["num_no_data"] = np.isnan(arr).sum()
 
-        # AOT, SCL and WVP aren't reflectance, so they have no offset
-        if has_offset and band not in {"AOT", "SCL", "WVP"}:
-            arr = arr - 1000
+        # AOT, SCL and WVP aren't reflectance; older images floored dark pixels at 1
+        if item_id in offset_items and band not in {"AOT", "SCL", "WVP"}:
+            arr = np.maximum(arr - 1000, 1)
 
         # Filter array to water area
         if config.filter_to_water_area:
