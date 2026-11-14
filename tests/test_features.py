@@ -315,6 +315,8 @@ def test_missing_pixel_cutoff(tmp_path, n_missing, has_features):
     b02.flat[:n_missing] = 0
     save_item_arrays(tmp_path, config, {"SCL": np.full((1, 5, 5), 6, dtype=np.uint8), "B02": b02})
     features = _calculate_satellite_features_for_sample_item("s", "i", config, tmp_path)
+    # 25 SCL water pixels, though B02's 10 m grid has 100
+    assert features["num_water_pixels"] == 25
     if has_features:
         assert features["B02_mean"] == 1000
     else:

@@ -156,6 +156,10 @@ def _calculate_satellite_features_for_sample_item(
         if cloud_ratio > config.max_cloud_percent:
             return sample_item_features
 
+    # Count water on SCL's own grid, so it doesn't depend on which band is resized
+    if config.filter_to_water_area:
+        sample_item_features["num_water_pixels"] = (scl_array == 6).sum()
+
     # Load band arrays into a dictionary with band names for keys
     band_arrays = {}
     for band in config.use_sentinel_bands:
@@ -184,7 +188,6 @@ def _calculate_satellite_features_for_sample_item(
                         scl, (arr.shape[2], arr.shape[1]), interpolation=cv2.INTER_NEAREST_EXACT
                     )
                 arr = arr[0][scl == 6]
-                sample_item_features["num_water_pixels"] = arr.size
 
         # If the bounding box does not contain any water pixels (if filtering), do not calculate features
         if arr.size == 0:
