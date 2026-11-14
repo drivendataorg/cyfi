@@ -18,7 +18,7 @@ import xarray as xr
 from cyfi.config import FeaturesConfig, SATELLITE_FEATURE_CALCULATORS
 from cyfi.data.utils import calculate_cloud_percent
 
-# Skip an image when more than this share of a band's water pixels have no data
+# Skip an image when more than this share of a band's water pixels are missing values
 MAX_NO_DATA_FRACTION = 0.1
 
 
@@ -193,7 +193,7 @@ def _calculate_satellite_features_for_sample_item(
         if arr.size == 0:
             return sample_item_features
 
-        # Drop no-data pixels; SCL keeps every pixel in the box since percent_water uses it
+        # Drop pixels missing band values; SCL keeps every pixel since percent_water uses it
         if band != "SCL":
             # NaN features drop the image
             if np.isnan(arr).mean() > MAX_NO_DATA_FRACTION:

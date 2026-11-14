@@ -310,7 +310,7 @@ def test_missing_pixel_cutoff(tmp_path, n_missing, has_features):
     config = FeaturesConfig(
         use_sentinel_bands=["B02"], satellite_image_features=["B02_mean"], max_cloud_percent=None
     )
-    # 100 water pixels, some with no data (0)
+    # 100 water pixels, some missing band values (0)
     b02 = np.full((1, 10, 10), 1000, dtype=np.uint16)
     b02.flat[:n_missing] = 0
     save_item_arrays(tmp_path, config, {"SCL": np.full((1, 5, 5), 6, dtype=np.uint8), "B02": b02})
