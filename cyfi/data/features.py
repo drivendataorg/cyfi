@@ -172,8 +172,9 @@ def _calculate_satellite_features_for_sample_item(
         # Filter array to water area
         if config.filter_to_water_area:
             if band != "SCL":
-                # Class map: use nearest neighbor, and enlarge the coarser grid to keep small water
+                # SCL is categorical, so use nearest neighbor; bilinear would create fake water
                 scl = scl_array[0]
+                # Enlarge coarse 60 m bands to 20 m rather than shrink SCL, to keep small water
                 if arr.shape[1] < scl.shape[0]:
                     arr = cv2.resize(
                         arr[0], (scl.shape[1], scl.shape[0]), interpolation=cv2.INTER_NEAREST_EXACT
@@ -189,7 +190,7 @@ def _calculate_satellite_features_for_sample_item(
         if arr.size == 0:
             return sample_item_features
 
-        # Drop no-data pixels (at the edge of a pass); keep SCL whole for percent_water
+        # Drop no-data pixels; SCL keeps every pixel in the box since percent_water uses it
         if band != "SCL":
             # NaN features drop the image
             if np.isnan(arr).mean() > MAX_NO_DATA_FRACTION:
