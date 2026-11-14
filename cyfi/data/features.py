@@ -21,11 +21,6 @@ from cyfi.data.utils import calculate_cloud_percent
 # Skip an image when more than this share of a band's water pixels have missing values
 MAX_NO_DATA_FRACTION = 0.1
 
-# Sentinel-2 adds this to reflectance bands in images processed from 2022-01-25 (baseline 04.00)
-REFLECTANCE_OFFSET = 1000
-OFFSET_FIRST_PROCESSED = "20220125"
-NON_REFLECTANCE_BANDS = {"AOT", "SCL", "WVP"}
-
 
 def calculate_satellite_features(
     satellite_meta: pd.DataFrame,
@@ -165,9 +160,9 @@ def _calculate_satellite_features_for_sample_item(
     if config.filter_to_water_area:
         sample_item_features["num_water_pixels"] = (scl_array == 6).sum()
 
-    # Item IDs end with the processing date
+    # Images processed since 2022-01-25 (the date ending the item ID) add 1,000 to reflectance
     processed = item_id.split("_")[-1][:8]
-    has_offset = processed.isdigit() and processed >= OFFSET_FIRST_PROCESSED
+    has_offset = processed.isdigit() and processed >= "20220125"
 
     # Load band arrays into a dictionary with band names for keys
     band_arrays = {}
@@ -182,8 +177,9 @@ def _calculate_satellite_features_for_sample_item(
         arr = np.where(arr == 0, np.nan, arr)
         sample_item_features["num_no_data"] = np.isnan(arr).sum()
 
-        if has_offset and band not in NON_REFLECTANCE_BANDS:
-            arr = arr - REFLECTANCE_OFFSET
+        # AOT, SCL and WVP aren't reflectance, so they have no offset
+        if has_offset and band not in {"AOT", "SCL", "WVP"}:
+            arr = arr - 1000
 
         # Filter array to water area
         if config.filter_to_water_area:

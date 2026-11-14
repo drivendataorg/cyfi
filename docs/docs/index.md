@@ -235,7 +235,7 @@ Satellite imagery feature generation for each observation is as follows:
 - select the most recent image that has a bouding box containing fewer than 5% of cloud pixels
 - filter the pixels in the bounding box to the water area using the [scene classification (SCL) band](https://sentinels.copernicus.eu/web/sentinel/technical-guides/sentinel-2-msi/level-2a/algorithm-overview)
 - leave out water pixels with missing band values, and skip an image if more than 10% of its water pixels have missing band values
-- remove the 1,000 offset that Sentinel-2 adds to reflectance values in images processed since January 25, 2022 (processing baseline 04.00)
+- remove the 1,000 offset that Sentinel-2 adds to reflectance values in images processed since January 25, 2022
 - generate summary statistics (e.g., mean, max, min) and ratios (e.g, NDVI) using the 15 Sentinel-2 bands
 
 The land cover value for each sampling point is looked up from the static land cover map, and added to the satellite features.
