@@ -186,7 +186,7 @@ def _calculate_satellite_features_for_sample_item(
         arr = np.where(arr == 0, np.nan, arr)
         sample_item_features["num_no_data"] = np.isnan(arr).sum()
 
-        # AOT, SCL and WVP aren't reflectance; older images floored dark pixels at 1
+        # Skip AOT, SCL and WVP, which aren't reflectance; floor at 1 to match older images
         if item_id in offset_items and band not in {"AOT", "SCL", "WVP"}:
             arr = np.maximum(arr - 1000, 1)
 
