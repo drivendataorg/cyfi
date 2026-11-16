@@ -1,6 +1,6 @@
 # CyFi changelog
 
-### v1.4.0 - (unreleased)
+### v1.4.0 - 2026-11-16
 
 - Remove the 1,000 offset that Sentinel-2 adds to reflectance values in images processed since early 2022 ([PR #224](https://github.com/drivendataorg/cyfi/pull/224))
 - Retrain the model with the water mask and missing band value fixes as `model_v1`, which replaces `model_v0` and requires LightGBM 4 ([PR #219](https://github.com/drivendataorg/cyfi/pull/219))
