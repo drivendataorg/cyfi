@@ -202,7 +202,11 @@ def get_items_metadata(
             bbox_dict = bbox_from_geometry(item.geometry)
             item_meta.update(bbox_dict)
 
-        for optional_item_property in ["eo:cloud_cover", "s2:nodata_pixel_percentage"]:
+        for optional_item_property in [
+            "eo:cloud_cover",
+            "s2:nodata_pixel_percentage",
+            "s2:processing_baseline",
+        ]:
             if optional_item_property in item.properties:
                 item_meta.update({optional_item_property: item.properties[optional_item_property]})
 
