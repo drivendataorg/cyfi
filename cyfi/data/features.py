@@ -53,8 +53,7 @@ def calculate_satellite_features(
     logger.info(f"Generating satellite features for {satellite_meta.shape[0]:,} images.")
     # Sentinel-2 adds 1,000 to reflectance in images with processing baseline 04.00 or later
     baseline = pd.to_numeric(
-        satellite_meta.get("s2:processing_baseline", pd.Series(index=satellite_meta.index)),
-        errors="coerce",
+        satellite_meta.get("s2:processing_baseline", pd.Series(index=satellite_meta.index))
     )
     offset_items = frozenset(satellite_meta.item_id[baseline >= 4])
 
